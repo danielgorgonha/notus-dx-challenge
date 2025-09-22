@@ -142,25 +142,28 @@ src/
 - **Manutenível**: Código organizado e tipado
 
 #### **Tempo Gasto**
-- **Setup inicial**: ~2 horas
-- **Configuração**: ~1 hora
-- **Documentação**: ~2 horas
-- **Total**: ~5 horas
+- **Setup inicial**: ~1.5 horas
+- **Configuração**: ~30 minutos
+- **Documentação**: ~1 hora
+- **Total**: ~3 horas
 
-### 🚀 Próximos Passos (Dia 2)
+### 🚀 Próximos Passos (Dia 2) - 2h
 
-#### **Prioridades**
-1. **Configurar Privy**: Obter APP_ID e testar autenticação
-2. **Testar Notus API**: Fazer primeira chamada
-3. **Criar dashboard**: Interface básica
-4. **Implementar auth flow**: Login/logout funcional
+#### **Estratégia 2h/dia**
+- **30min**: Setup e configuração
+- **60min**: Desenvolvimento principal  
+- **30min**: Testes e documentação
+
+#### **Prioridades (2h)**
+1. **Configurar Privy**: Obter APP_ID e testar autenticação (30min)
+2. **Testar Notus API**: Fazer primeira chamada (60min)
+3. **Criar dashboard**: Interface básica (30min)
 
 #### **Tarefas Planejadas**
-- [ ] Configurar credenciais Privy
-- [ ] Testar autenticação Web3
-- [ ] Criar smart wallet
-- [ ] Implementar dashboard básico
-- [ ] Testar primeira chamada da Notus API
+- [ ] Configurar credenciais Privy (30min)
+- [ ] Testar autenticação Web3 (30min)
+- [ ] Criar smart wallet (30min)
+- [ ] Implementar dashboard básico (30min)
 
 ### 📊 Métricas do Dia
 
@@ -169,7 +172,7 @@ src/
 | Arquivos criados | 25+ |
 | Linhas de código | 2000+ |
 | Dependências instaladas | 15+ |
-| Tempo total | 5 horas |
+| Tempo total | 3 horas |
 | Commits realizados | 5 |
 | Documentação | 6 arquivos |
 
