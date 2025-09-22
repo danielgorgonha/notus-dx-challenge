@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notus DX Challenge - Web3 Wallet Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0A0A0F 0%, #1A1A1F 50%, #0066FF 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100vh;
+            background: rgba(26, 26, 31, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+        }
+
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 102, 255, 0.2);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            margin: 4px 0;
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: rgba(0, 102, 255, 0.2);
+            color: #0066FF;
+            border: 1px solid rgba(0, 102, 255, 0.3);
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0066FF, #00D9A0);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 102, 255, 0.4);
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 8px 0;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.875rem;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .token-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-right: 12px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div style="padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #0066FF, #00D9A0); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                    <svg class="nav-icon" viewBox="0 0 24 24" style="margin: 0; stroke: white;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 1.25rem;">Notus DX</div>
+                    <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem;">Challenge</div>
+                </div>
+            </div>
+        </div>
+
+        <nav style="padding: 24px;">
+            <a href="#dashboard" class="nav-item active">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
+                </svg>
+                Dashboard
+            </a>
+            <a href="#wallet" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                Smart Wallet
+            </a>
+            <a href="#swap" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                </svg>
+                Swap & Transfer
+            </a>
+            <a href="#liquidity" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                Liquidity Pools
+            </a>
+            <a href="#history" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                History
+            </a>
+        </nav>
+
+        <div style="position: absolute; bottom: 24px; left: 24px; right: 24px;">
+            <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px;">
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #00D9A0, #0066FF); border-radius: 50%; margin-right: 12px;"></div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.875rem;">0x1234...5678</div>
+                        <div style="color: #00D9A0; font-size: 0.75rem;">Connected</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header style="padding: 32px; background: rgba(26,26,31,0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 8px;">Dashboard</h1>
+                    <p style="color: rgba(255,255,255,0.6);">Testing Notus API - Authentication, Transfers, Swaps, and Liquidity Pools</p>
+                </div>
+                <button class="btn-primary">Connect Wallet</button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main style="padding: 32px;">
+            <!-- Stats Overview -->
+            <div class="grid-3" style="margin-bottom: 32px;">
+                <div class="stat-card">
+                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #0066FF, #00D9A0); border-radius: 12px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+                        <svg style="width: 24px; height: 24px; stroke: white; fill: none; stroke-width: 2;" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                        </svg>
+                    </div>
+                    <div class="stat-label">Total Balance</div>
+                    <div class="stat-number">$3,247.82</div>
+                    <div style="color: #00D9A0; font-size: 0.875rem;">+12.5%</div>
+                </div>
+
+                <div class="stat-card">
+                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #8B5CF6, #EC4899); border-radius: 12px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+                        <svg style="width: 24px; height: 24px; stroke: white; fill: none; stroke-width: 2;" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-label">24h Volume</div>
+                    <div class="stat-number">$1,847.23</div>
+                    <div style="color: #FF4757; font-size: 0.875rem;">-3.2%</div>
+                </div>
+
+                <div class="stat-card">
+                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #00D9A0, #20B2AA); border-radius: 12px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+                        <svg style="width: 24px; height: 24px; stroke: white; fill: none; stroke-width: 2;" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-label">Active Pools</div>
+                    <div class="stat-number">7</div>
+                    <div style="color: #00D9A0; font-size: 0.875rem;">+2</div>
+                </div>
+            </div>
+
+            <!-- Portfolio & Quick Actions -->
+            <div class="grid-2" style="margin-bottom: 32px;">
+                <!-- Portfolio -->
+                <div class="glass-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h2 style="font-size: 1.25rem; font-weight: 700;">Portfolio</h2>
+                        <a href="#" style="color: #0066FF; text-decoration: none; font-size: 0.875rem;">View All</a>
+                    </div>
+                    
+                    <div class="transaction-item">
+                        <div style="display: flex; align-items: center;">
+                            <div class="token-icon" style="background: #0066FF; color: white;">USDC</div>
+                            <div>
+                                <div style="font-weight: 600;">USD Coin</div>
+                                <div style="color: rgba(255,255,255,0.6); font-size: 0.875rem;">1,250.00 USDC</div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 600;">$1,250.00</div>
+                            <div style="color: #00D9A0; font-size: 0.875rem;">+0.1%</div>
+                        </div>
+                    </div>
+
+                    <div class="transaction-item">
+                        <div style="display: flex; align-items: center;">
+                            <div class="token-icon" style="background: #8B5CF6; color: white;">ETH</div>
+                            <div>
+                                <div style="font-weight: 600;">Ethereum</div>
+                                <div style="color: rgba(255,255,255,0.6); font-size: 0.875rem;">0.875 ETH</div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 600;">$1,997.82</div>
+                            <div style="color: #00D9A0; font-size: 0.875rem;">+5.2%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="glass-card">
+                    <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 24px;">Quick Actions</h2>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                        <button style="padding: 20px; background: rgba(0,102,255,0.1); border: 1px solid rgba(0,102,255,0.2); border-radius: 12px; color: white; cursor: pointer; transition: all 0.2s;">
+                            <svg style="width: 32px; height: 32px; margin: 0 auto 12px; display: block; stroke: #0066FF; fill: none; stroke-width: 2;" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                            </svg>
+                            <div style="font-weight: 600; margin-bottom: 4px;">Swap</div>
+                            <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem;">Exchange tokens</div>
+                        </button>
+
+                        <button style="padding: 20px; background: rgba(0,217,160,0.1); border: 1px solid rgba(0,217,160,0.2); border-radius: 12px; color: white; cursor: pointer; transition: all 0.2s;">
+                            <svg style="width: 32px; height: 32px; margin: 0 auto 12px; display: block; stroke: #00D9A0; fill: none; stroke-width: 2;" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                            </svg>
+                            <div style="font-weight: 600; margin-bottom: 4px;">Send</div>
+                            <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem;">Transfer tokens</div>
+                        </button>
+
+                        <button style="padding: 20px; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2); border-radius: 12px; color: white; cursor: pointer; transition: all 0.2s;">
+                            <svg style="width: 32px; height: 32px; margin: 0 auto 12px; display: block; stroke: #8B5CF6; fill: none; stroke-width: 2;" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            <div style="font-weight: 600; margin-bottom: 4px;">Pool</div>
+                            <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem;">Add liquidity</div>
+                        </button>
+
+                        <button style="padding: 20px; background: rgba(255,193,7,0.1); border: 1px solid rgba(255,193,7,0.2); border-radius: 12px; color: white; cursor: pointer; transition: all 0.2s;">
+                            <svg style="width: 32px; height: 32px; margin: 0 auto 12px; display: block; stroke: #FFC107; fill: none; stroke-width: 2;" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <div style="font-weight: 600; margin-bottom: 4px;">KYC</div>
+                            <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem;">Verify identity</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h2 style="font-size: 1.25rem; font-weight: 700;">Recent Transactions</h2>
+                    <a href="#" style="color: #0066FF; text-decoration: none; font-size: 0.875rem;">View All</a>
+                </div>
+
+                <div class="transaction-item">
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 40px; height: 40px; background: rgba(0,217,160,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                            <svg style="width: 20px; height: 20px; stroke: #00D9A0; fill: none; stroke-width: 2;" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600;">Swap USDC → ETH</div>
+                            <div style="color: rgba(255,255,255,0.6); font-size: 0.875rem;">2 minutes ago</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: 600;">+0.45 ETH</div>
+                        <div style="color: rgba(255,255,255,0.6); font-size: 0.875rem;">-1,000 USDC</div>
+                    </div>
+                </div>
+
+                <div class="transaction-item">
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 40px; height: 40px; background: rgba(0,102,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                            <svg style="width: 20px; height: 20px; stroke: #0066FF; fill: none; stroke-width: 2;" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600;">Add Liquidity USDC/ETH</div>
+                            <div style="color: rgba(255,255,255,0.6); font-size: 0.875rem;">1 hour ago</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: 600;">+12.5 LP</div>
+                        <div style="color: rgba(255,255,255,0.6); font-size: 0.875rem;">Pool deposit</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Simple hover effects
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-4px)';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Button hover effects
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                if (!this.classList.contains('btn-primary')) {
+                    this.style.transform = 'scale(1.02)';
+                }
+            });
+            btn.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>
