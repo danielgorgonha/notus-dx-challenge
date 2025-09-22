@@ -4,13 +4,15 @@ export const privyConfig = {
   appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
   config: {
     // Configure login methods
-    loginMethods: ['email', 'wallet', 'google', 'twitter'],
+    loginMethods: ['google', 'twitter', 'email', 'wallet'],
     
     // Configure appearance
     appearance: {
-      theme: 'light',
-      accentColor: '#676FFF',
-      logo: 'https://your-domain.com/logo.png',
+      theme: 'dark',
+      accentColor: '#3B82F6', // Blue-500 from our design system
+      logo: undefined, // Use default Privy logo for now
+      showWalletLoginFirst: false,
+      walletList: ['metamask', 'walletconnect', 'coinbase_wallet'],
     },
     
     // Configure embedded wallets
@@ -21,8 +23,8 @@ export const privyConfig = {
     
     // Configure legal
     legal: {
-      termsAndConditionsUrl: 'https://your-domain.com/terms',
-      privacyPolicyUrl: 'https://your-domain.com/privacy',
+      termsAndConditionsUrl: 'https://notus.team/terms',
+      privacyPolicyUrl: 'https://notus.team/privacy',
     },
   },
 }

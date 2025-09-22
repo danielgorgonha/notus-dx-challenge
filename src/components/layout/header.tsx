@@ -1,5 +1,8 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
-import { Shield } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { Shield, LogOut, User } from "lucide-react";
 
 interface HeaderProps {
   title: string;
@@ -7,6 +10,8 @@ interface HeaderProps {
 }
 
 export function Header({ title, description }: HeaderProps) {
+  const { user, logout } = useAuth();
+
   return (
     <header className="bg-slate-900/80 backdrop-blur-xl border-b border-white/10">
       <div className="px-8 py-6">
@@ -17,10 +22,24 @@ export function Header({ title, description }: HeaderProps) {
               <p className="text-slate-300">{description}</p>
             )}
           </div>
-          <Button className="btn-primary">
-            <Shield className="mr-2 h-4 w-4" />
-            Connect Wallet
-          </Button>
+          <div className="flex items-center gap-4">
+            {user && (
+              <div className="flex items-center gap-2 text-slate-300">
+                <User className="h-4 w-4" />
+                <span className="text-sm">
+                  {user.email?.address || user.wallet?.address?.slice(0, 6)}...
+                </span>
+              </div>
+            )}
+            <Button 
+              variant="ghost" 
+              className="text-slate-300 hover:text-white hover:bg-white/10"
+              onClick={logout}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
       </div>
     </header>

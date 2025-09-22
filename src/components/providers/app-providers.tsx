@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PrivyProvider } from '@privy-io/react-auth'
+import { AuthProvider } from '@/contexts/auth-context'
 import { privyConfig } from '@/lib/api/privy'
 import { useState } from 'react'
 
@@ -24,7 +25,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         appId={privyConfig.appId}
         config={privyConfig.config}
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </PrivyProvider>
     </QueryClientProvider>
   )
