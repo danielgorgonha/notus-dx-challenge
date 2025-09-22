@@ -3,8 +3,8 @@ import { PrivyProvider } from '@privy-io/react-auth'
 export const privyConfig = {
   appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
   config: {
-    // Configure login methods
-    loginMethods: ['google', 'twitter', 'email', 'wallet'],
+    // Configure login methods - only use what's configured in Privy dashboard
+    loginMethods: ['email', 'wallet'],
     
     // Configure appearance
     appearance: {
@@ -25,6 +25,12 @@ export const privyConfig = {
     legal: {
       termsAndConditionsUrl: 'https://notus.team/terms',
       privacyPolicyUrl: 'https://notus.team/privacy',
+    },
+    
+    // Configure error handling
+    onError: (error: any) => {
+      console.error('Privy authentication error:', error);
+      // You can add custom error handling here
     },
   },
 }

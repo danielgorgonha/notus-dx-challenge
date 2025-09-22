@@ -188,14 +188,6 @@
   @apply bg-slate-800/50 border border-white/10 hover:bg-slate-700/50;
 }
 
-[data-privy-modal] button[type="submit"] {
-  @apply bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl border-0;
-}
-
-[data-privy-modal] [data-privy-submit-button] {
-  @apply bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl border-0;
-}
-
 /* Additional selectors for Privy modal buttons */
 [data-privy-modal] button:not([data-privy-wallet-button]):not([data-privy-social-button]) {
   @apply bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl border-0;
@@ -203,23 +195,4 @@
 
 [data-privy-modal] [data-privy-social-button] {
   @apply bg-slate-800/50 border border-white/10 hover:bg-slate-700/50 text-white;
-}
-
-/* Hide the standalone "Submit" text/link */
-[data-privy-modal] a[href*="submit"] {
-  display: none !important;
-}
-
-/* Hide any text element that contains "Submit" but is not a button */
-[data-privy-modal] span:not(button),
-[data-privy-modal] div:not(button),
-[data-privy-modal] p:not(button) {
-  display: none !important;
-}
-
-/* More specific approach - target common Privy elements */
-[data-privy-modal] [data-privy-email-submit],
-[data-privy-modal] .privy-email-submit,
-[data-privy-modal] .email-submit-text {
-  display: none !important;
 }
