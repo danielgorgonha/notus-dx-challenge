@@ -15,7 +15,22 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { ready, authenticated, user, login, logout } = usePrivy();
+  // Verifica se estamos dentro do PrivyProvider
+  let privyData = null;
+  try {
+    privyData = usePrivy();
+  } catch (error) {
+    // Se não estiver dentro do PrivyProvider, usa valores padrão
+    privyData = {
+      ready: false,
+      authenticated: false,
+      user: null,
+      login: async () => {},
+      logout: async () => {},
+    };
+  }
+
+  const { ready, authenticated, user, login, logout } = privyData;
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -28,8 +43,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: authenticated,
     isLoading,
     user,
-    login,
-    logout,
+    login: async () => {
+      if (typeof login === 'function') {
+        await login();
+      }
+    },
+    logout: async () => {
+      if (typeof logout === 'function') {
+        await logout();
+      }
+    },
     ready,
   };
 

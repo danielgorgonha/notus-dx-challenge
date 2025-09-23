@@ -1,9 +1,8 @@
-'use client'
+"use client";
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PrivyProvider } from '@privy-io/react-auth'
 import { AuthProvider } from '@/contexts/auth-context'
-import { privyConfig } from '@/lib/api/privy'
 import { useState } from 'react'
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
@@ -22,8 +21,28 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <PrivyProvider
-        appId={privyConfig.appId}
-        config={privyConfig.config}
+        appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
+        clientId={process.env.NEXT_PUBLIC_PRIVY_CLIENT_ID!}
+        config={{
+          appearance: {
+            theme: 'dark',
+            accentColor: '#3B82F6',
+            showWalletLoginFirst: false,
+          },
+          embeddedWallets: {
+            ethereum: {
+              createOnLogin: 'users-without-wallets',
+            },
+          },
+          mfa: {
+            noPromptOnMfaRequired: false,
+          },
+          loginMethods: ['email', 'wallet'],
+          legal: {
+            termsAndConditionsUrl: 'https://notus.team/terms',
+            privacyPolicyUrl: 'https://notus.team/privacy',
+          },
+        }}
       >
         <AuthProvider>
           {children}
