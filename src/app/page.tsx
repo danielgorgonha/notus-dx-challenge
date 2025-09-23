@@ -235,11 +235,11 @@ export default function LandingPage() {
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-emerald-400 mr-2" />
                   Performance metrics
-                  </li>
+          </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-emerald-400 mr-2" />
                   UX insights
-                  </li>
+          </li>
                 </ul>
               </CardContent>
             </Card>
