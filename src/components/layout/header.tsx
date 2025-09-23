@@ -2,14 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
-import { Shield, LogOut, User } from "lucide-react";
+import { Shield, LogOut, User, Plus } from "lucide-react";
 
 interface HeaderProps {
   title: string;
   description?: string;
+  onDepositClick?: () => void;
 }
 
-export function Header({ title, description }: HeaderProps) {
+export function Header({ title, description, onDepositClick }: HeaderProps) {
   const { user, logout } = useAuth();
 
   return (
@@ -23,6 +24,15 @@ export function Header({ title, description }: HeaderProps) {
             )}
           </div>
           <div className="flex items-center gap-4">
+            {onDepositClick && (
+              <Button 
+                className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white"
+                onClick={onDepositClick}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Depositar
+              </Button>
+            )}
             {user && (
               <div className="flex items-center gap-2 text-slate-300">
                 <User className="h-4 w-4" />
