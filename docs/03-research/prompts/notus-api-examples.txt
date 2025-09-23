@@ -1,0 +1,261 @@
+Análise Completa dos Exemplos Oficiais da Notus API
+
+Baseado na análise do repositório notus-api-examples-main, aqui está um resumo detalhado dos exemplos disponíveis e suas implementações:
+
+## 📦 Estrutura do Monorepo
+
+### Tecnologias Utilizadas
+- **Monorepo:** Turborepo para gerenciamento
+- **Package Manager:** Bun
+- **Frontend:** Next.js, React 19, TypeScript
+- **Styling:** Tailwind CSS, Radix UI
+- **Autenticação:** Privy, Web3Auth
+- **Blockchain:** Viem para interações
+
+### Packages Compartilhados
+- **packages/ui/:** Componentes reutilizáveis React + Tailwind + Radix UI
+- **packages/typescript-config/:** Configurações TypeScript compartilhadas
+
+## 🚀 Exemplos Disponíveis
+
+### 1. Privy Next.js Notus API
+**Localização:** examples/privy-nextjs-notus-api/
+
+#### Funcionalidades Demonstradas
+- Account abstraction via Notus API
+- Smart contract interactions
+- Web3 wallet connection
+- Transaction management
+
+#### Implementação Técnica
+```typescript
+// Configuração da API Notus
+export const notusAPI = ky.create({
+  prefixUrl: "https://api.notus.team/api/v1",
+  headers: {
+    "x-api-key": env.NOTUS_API_KEY,
+  },
+});
+
+// Factory Address para Smart Wallets
+export const FACTORY_ADDRESS = "0x7a1dbab750f12a90eb1b60d2ae3ad17d4d81effe";
+```
+
+#### Fluxo de Autenticação
+```typescript
+export async function auth() {
+  // 1. Obter token Privy dos cookies
+  const token = get("privy-id-token");
+  
+  // 2. Buscar/criar usuário no Privy
+  let user = await privy.getUser({ idToken: token.value });
+  if (!user.wallet?.address) {
+    user = await privy.createWallets({
+      userId: user.id,
+      createEthereumWallet: true,
+    });
+  }
+  
+  // 3. Verificar/registrar Smart Wallet na Notus
+  const { wallet } = await notusAPI.get("wallets/address", {
+    searchParams: {
+      externallyOwnedAccount: user.wallet?.address,
+      factory: FACTORY_ADDRESS,
+    },
+  });
+  
+  // 4. Registrar se não existir
+  if (!wallet.registeredAt) {
+    await notusAPI.post("wallets/register", {
+      json: {
+        externallyOwnedAccount: user.wallet?.address,
+        factory: FACTORY_ADDRESS,
+        salt: "0",
+      },
+    });
+  }
+  
+  return {
+    ...user,
+    accountAbstractionAddress: wallet.accountAbstraction,
+  };
+}
+```
+
+### 2. Fiat KYC Next.js Notus API
+**Localização:** examples/fiat-kyc-nextjs-notus-api/
+
+#### Funcionalidades Demonstradas
+- KYC Verification API (verificação de identidade)
+- Smart Wallet API (account abstraction)
+- Fiat Operations API (onramp/offramp com BRL)
+
+#### Arquitetura de Implementação
+- **Server Actions:** Para operações server-side
+- **HTTP Layer:** Camada de abstração para chamadas da API
+- **Schemas:** Validação de dados com TypeScript
+
+#### Fluxo KYC Completo
+```typescript
+// 1. Criar sessão KYC
+export async function createStandardIndividualSession(data) {
+  const response = await fetch(
+    "https://api.notus.team/api/v1/kyc/individual-verification-sessions/standard",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+      body: JSON.stringify({
+        ...data,
+        livenessRequired: false,
+      }),
+    }
+  );
+  
+  return await response.json();
+}
+
+// 2. Upload de documentos via URLs pré-assinadas
+export async function uploadFile({ file, url, fields }) {
+  const formData = new FormData();
+  for (const [key, value] of Object.entries(fields)) {
+    formData.append(key, value);
+  }
+  formData.append("file", file);
+  
+  return await fetch(url, {
+    method: "POST",
+    body: formData,
+  });
+}
+```
+
+#### Fluxo de Depósito Fiat (Onramp)
+1. **Request Quote:** Solicitar cotação de depósito
+2. **Create Order:** Criar ordem com detalhes PIX
+3. **Complete Payment:** Usuário faz pagamento PIX
+4. **Auto Transfer:** Crypto enviada automaticamente para wallet
+
+#### Fluxo de Saque Fiat (Offramp)
+1. **Request Quote:** Solicitar cotação de saque
+2. **Smart Wallet Setup:** Configurar smart wallet
+3. **Create Order:** Criar ordem com detalhes bancários
+4. **Sign & Execute:** Assinar e executar transação
+
+### 3. Web3Auth Wagmi
+**Localização:** examples/web3auth-wagmi/
+
+#### Funcionalidades
+- Integração com Web3Auth
+- Wagmi para interações blockchain
+- Vite + React setup
+
+### 4. KYC React Native
+**Localização:** examples/kyc-react-native/
+
+#### Funcionalidades
+- KYC em aplicação mobile
+- Upload de documentos
+- Verificação de identidade
+
+### 5. Liveness KYC SDK
+**Localização:** examples/liveness-kyc-sdk-notus-api/
+
+#### Funcionalidades
+- Verificação de liveness
+- SDK para KYC
+- Integração com Notus API
+
+## 🔧 Padrões de Implementação Identificados
+
+### 1. Configuração da API
+```typescript
+// Padrão consistente em todos os exemplos
+const notusAPI = ky.create({
+  prefixUrl: "https://api.notus.team/api/v1",
+  headers: {
+    "x-api-key": process.env.NOTUS_API_KEY,
+  },
+});
+```
+
+### 2. Factory Address
+```typescript
+// Endereço padrão para Smart Wallets
+export const FACTORY_ADDRESS = "0x7a1dbab750f12a90eb1b60d2ae3ad17d4d81effe";
+```
+
+### 3. Estrutura de Server Actions
+```typescript
+export async function actionName(data: SchemaType) {
+  try {
+    const result = await apiCall(data);
+    return {
+      success: true,
+      data: result,
+      error: null,
+    } as const;
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      data: null,
+    } as const;
+  }
+}
+```
+
+### 4. Tratamento de Erros
+- Try/catch consistente
+- Retorno padronizado com success/error/data
+- Logging de erros no console
+
+## 🌍 Recursos Suportados
+
+### Moedas e Países
+- **Fiat:** BRL (Real Brasileiro), USD
+- **Crypto:** USDC, BRZ
+- **Países:** Brasil, Estados Unidos
+- **Documentos:** RG, Passaporte, CNH
+
+### Blockchains
+- Ethereum Mainnet
+- Sepolia Testnet
+- Polygon (implícito nos exemplos)
+
+### Métodos de Pagamento
+- PIX (Brasil)
+- Transferência bancária
+
+## 📚 Implicações para o Notus DX Challenge
+
+### Exemplos Mais Relevantes
+1. **privy-nextjs-notus-api:** Base para autenticação e smart wallets
+2. **fiat-kyc-nextjs-notus-api:** Implementação completa de KYC e fiat operations
+
+### Padrões a Seguir
+1. **Server Actions** para operações server-side
+2. **HTTP Layer** para abstração da API
+3. **Schemas** para validação de dados
+4. **Error Handling** padronizado
+5. **Factory Address** consistente
+
+### Funcionalidades a Implementar
+1. **Smart Wallet Management** (baseado no exemplo Privy)
+2. **KYC Flow** (baseado no exemplo fiat-kyc)
+3. **Fiat Operations** (onramp/offramp)
+4. **Transaction Management** (gasless operations)
+
+### Estrutura de Projeto Recomendada
+```
+src/
+├── actions/          # Server Actions
+├── http/            # HTTP layer para API calls
+├── lib/             # Utilities e configurações
+├── components/      # Componentes React
+└── app/            # Next.js App Router
+```
+
+Os exemplos oficiais fornecem uma base sólida e padrões consistentes para implementar todas as funcionalidades necessárias para o Notus DX Challenge, especialmente as trilhas B e C com foco em swaps, transfers e liquidity pools.

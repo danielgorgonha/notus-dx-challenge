@@ -19,6 +19,8 @@ Esta pasta contém toda a documentação do projeto organizada por categorias pa
 
 ### 🔬 [03-research/](./03-research/)
 **Pesquisa e Análise**
+- Resumos da API Reference da Notus
+- Prompts e conversas de planejamento
 - Feedback da API Notus
 - Design system e identidade visual
 - Diagramas e fluxos
@@ -41,8 +43,9 @@ Esta pasta contém toda a documentação do projeto organizada por categorias pa
 
 ### **Para Desenvolvedores**
 1. Comece com [01-project/](./01-project/) para entender o contexto
-2. Consulte [02-development/](./02-development/) para o roadmap
-3. Use [03-research/](./03-research/) para documentar insights
+2. Consulte [02-development/daily-log.md](./02-development/daily-log.md) para acompanhar progresso
+3. Use [03-research/api-reference-summaries.md](./03-research/api-reference-summaries.md) para consultar endpoints
+4. Documente insights em [03-research/](./03-research/)
 
 ### **Para Stakeholders**
 1. Veja [01-project/](./01-project/) para objetivos
@@ -93,7 +96,7 @@ Esta pasta contém toda a documentação do projeto organizada por categorias pa
 |-----------|----------|--------|-------------------|
 | Project | 1 | ✅ | 22/09/2024 |
 | Development | 3 | 🚧 | 22/09/2024 |
-| Research | 3 | 🚧 | 22/09/2024 |
+| Research | 5 | 🚧 | 22/09/2024 |
 | Deliverables | 1 | 📋 | - |
 | Archive | 1 | ✅ | 22/09/2024 |
 

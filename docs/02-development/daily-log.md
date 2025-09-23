@@ -1,209 +1,318 @@
-# Daily Log - Notus DX Challenge
+# 📋 Daily Log - Notus DX Challenge
 
-## 📅 Dia 1 - Setup Inicial (22/09/2024)
+Este documento centraliza o progresso diário do desenvolvimento, organizado por funcionalidades implementadas e alimentado pelos resumos da API Reference da Notus.
 
-### 🎯 Objetivos do Dia
-- [x] Criar projeto Next.js 14 com pnpm
-- [x] Configurar stack otimizada (TypeScript, Tailwind, shadcn/ui)
-- [x] Instalar dependências principais (Privy, TanStack Query, Zustand)
-- [x] Configurar estrutura de pastas
-- [x] Criar página inicial
-- [x] Documentar identidade visual e arquitetura
+## 📅 Progresso Geral
 
-### ✅ Tarefas Completadas
-
-#### **Setup do Projeto**
-- [x] **Next.js 14**: Criado com App Router e TypeScript
-- [x] **pnpm**: Configurado como gerenciador de pacotes
-- [x] **Tailwind CSS**: Configurado com shadcn/ui
-- [x] **Estrutura**: Organizada em módulos por trilha
-
-#### **Dependências Instaladas**
-```bash
-# Core
-- next@15.5.3
-- react@19.1.0
-- typescript@5.9.2
-
-# UI & Styling
-- tailwindcss@4.1.13
-- @radix-ui/react-* (via shadcn/ui)
-- lucide-react@0.544.0
-
-# Web3 & Auth
-- @privy-io/react-auth@3.0.1
-
-# State & API
-- @tanstack/react-query@5.90.1
-- zustand@5.0.8
-
-# Forms & Validation
-- react-hook-form@7.63.0
-- @hookform/resolvers@5.2.2
-- zod@4.1.11
-
-# Utils
-- clsx@2.1.1
-- tailwind-merge@3.3.1
-```
-
-#### **Estrutura Criada**
-```
-src/
-├── app/                    # Next.js App Router
-├── components/
-│   ├── ui/                 # shadcn/ui components
-│   └── providers/          # React providers
-├── lib/
-│   ├── api/                # API clients
-│   ├── stores/             # Zustand stores
-│   └── utils/              # Utility functions
-├── modules/                # Feature modules
-├── actions/                # Server Actions
-└── types/                  # TypeScript types
-```
-
-#### **Componentes shadcn/ui Instalados**
-- [x] Button
-- [x] Card
-- [x] Input
-- [x] Label
-- [x] Select
-- [x] Badge
-- [x] Form
-
-### 🔧 Configurações Realizadas
-
-#### **Privy Setup**
-- [x] Configuração básica no `src/lib/api/privy.ts`
-- [x] Provider configurado em `src/components/providers/app-providers.tsx`
-- [x] Variáveis de ambiente configuradas no `.env.example`
-
-#### **Notus API Client**
-- [x] Cliente base criado em `src/lib/api/notus.ts`
-- [x] Types completos para todas as trilhas
-- [x] Schemas Zod para validação
-- [x] Métodos para todas as funcionalidades
-
-#### **Estado Global**
-- [x] Store de autenticação com Zustand
-- [x] Persistência configurada
-- [x] Types TypeScript completos
-
-### 🎨 Identidade Visual
-
-#### **Design System Criado**
-- [x] **Paleta de cores**: Azul Notus, Verde DeFi, Roxo Web3
-- [x] **Tipografia**: Inter + JetBrains Mono
-- [x] **Componentes**: Botões, cards, formulários
-- [x] **Animações**: Hover, loading, transições
-- [x] **Responsivo**: Mobile-first approach
-
-#### **Página Inicial**
-- [x] **Header**: Título e descrição do projeto
-- [x] **Cards**: Smart Wallet, Transfers & Swaps, Liquidity Pools
-- [x] **CTA**: Botão "Begin Testing"
-- [x] **Footer**: Informações do desafio
-- [x] **Gradiente**: Background moderno
-
-### 📚 Documentação Criada
-
-#### **Arquivos de Documentação**
-- [x] **README.md**: Setup completo e instruções
-- [x] **API_FEEDBACK.md**: Template para feedback da API
-- [x] **ROADMAP.md**: Plano detalhado de 10 dias
-- [x] **DESIGN_SYSTEM.md**: Identidade visual completa
-- [x] **ARCHITECTURE.md**: Casos de uso e arquitetura
-- [x] **DIAGRAMS.md**: Fluxos e diagramas visuais
-
-### 🐛 Problemas Encontrados
-
-#### **Dependências**
-- **Peer dependency warnings**: React 19 com algumas libs
-- **Solução**: Warnings não críticos, funcionalidade mantida
-
-#### **Console Ninja**
-- **Problema**: Next.js 15.5.3 não suportado
-- **Impacto**: Baixo - apenas logs de desenvolvimento
-- **Solução**: Continuar sem Console Ninja
-
-### 💡 Insights e Observações
-
-#### **Stack Escolhida**
-- **Next.js 14**: Excelente para SSR e API routes
-- **Privy**: Integração perfeita para auth Web3
-- **shadcn/ui**: Componentes de alta qualidade
-- **TanStack Query**: Essencial para cache de API
-- **Zustand**: Simples e eficiente para estado
-
-#### **Estrutura do Projeto**
-- **Modular**: Cada trilha como módulo independente
-- **Escalável**: Fácil adicionar novas funcionalidades
-- **Manutenível**: Código organizado e tipado
-
-#### **Tempo Gasto**
-- **Setup inicial**: ~1.5 horas
-- **Configuração**: ~30 minutos
-- **Documentação**: ~1 hora
-- **Total**: ~3 horas
-
-### 🚀 Próximos Passos (Dia 2) - 2h
-
-#### **Estratégia 2h/dia**
-- **30min**: Setup e configuração
-- **60min**: Desenvolvimento principal  
-- **30min**: Testes e documentação
-
-#### **Prioridades (2h)**
-1. **Configurar Privy**: Obter APP_ID e testar autenticação (30min)
-2. **Testar Notus API**: Fazer primeira chamada (60min)
-3. **Criar dashboard**: Interface básica (30min)
-
-#### **Tarefas Planejadas**
-- [ ] Configurar credenciais Privy (30min)
-- [ ] Testar autenticação Web3 (30min)
-- [ ] Criar smart wallet (30min)
-- [ ] Implementar dashboard básico (30min)
-
-### 📊 Métricas do Dia
-
-| Métrica | Valor |
-|---------|-------|
-| Arquivos criados | 25+ |
-| Linhas de código | 2000+ |
-| Dependências instaladas | 15+ |
-| Tempo total | 3 horas |
-| Commits realizados | 5 |
-| Documentação | 6 arquivos |
-
-### 🎯 Status do MVP
-
-#### **Funcionalidades Base**
-- [x] **Setup**: 100% completo
-- [x] **Estrutura**: 100% completo
-- [x] **UI Base**: 100% completo
-- [x] **Documentação**: 100% completo
-
-#### **Próximas Funcionalidades**
-- [ ] **Autenticação**: 0% (próximo)
-- [ ] **Dashboard**: 0% (próximo)
-- [ ] **API Integration**: 0% (próximo)
-
-### 📝 Notas para o Relatório Final
-
-#### **Pontos Fortes do Setup**
-1. **Stack moderna**: Todas as tecnologias mais recentes
-2. **Estrutura escalável**: Fácil manutenção e expansão
-3. **Documentação completa**: Facilita onboarding
-4. **Design system**: Interface consistente
-5. **TypeScript**: Type safety em todo projeto
-
-#### **Lições Aprendidas**
-1. **shadcn/ui**: Excelente para prototipagem rápida
-2. **pnpm**: Mais rápido que npm para instalações
-3. **Next.js 14**: App Router muito mais limpo
-4. **Zustand**: Mais simples que Redux para este caso
+**Data de Início:** 22 de setembro de 2024  
+**Status Atual:** Em desenvolvimento  
+**Trilhas Escolhidas:** B (Swaps + Transfer) e C (Liquidity Pools)  
+**Objetivo:** Testar todas as funcionalidades da API Notus para feedback de DX
 
 ---
 
-**Próximo dia**: Configuração do Privy e primeira integração com Notus API
+## 🔐 Autenticação e Smart Wallets
+
+### Status: ✅ Implementado
+**Data:** 22/09/2024
+
+#### Funcionalidades Implementadas
+- [x] Integração com Privy para autenticação Web3
+- [x] Criação automática de Smart Wallets
+- [x] Registro de wallets no projeto Notus
+- [x] Gerenciamento de estado de autenticação
+
+#### Endpoints Testados
+- `POST /api/v1/wallets/register` - Registro de Smart Wallet
+- `GET /api/v1/wallets/address` - Consulta de Smart Wallet
+- `GET /api/v1/wallets` - Listagem de wallets do projeto
+
+#### Observações de DX
+- ✅ Integração com Privy foi simples e bem documentada
+- ✅ Criação automática de wallet funciona perfeitamente
+- ⚠️ Necessário aguardar deploy onchain na primeira transação
+
+#### Referências da API
+*Baseado em: smartwallet.txt - Resumo completo das rotas de Smart Wallets*
+
+---
+
+## 💰 Portfolio e Histórico
+
+### Status: ✅ Implementado
+**Data:** 22/09/2024
+
+#### Funcionalidades Implementadas
+- [x] Consulta de portfolio completo
+- [x] Histórico de transações com filtros
+- [x] Exibição de saldos em múltiplos tokens
+- [x] Conversão para USD
+
+#### Endpoints Testados
+- `GET /api/v1/wallets/{walletAddress}/portfolio` - Portfolio completo
+- `GET /api/v1/wallets/{walletAddress}/history` - Histórico de transações
+
+#### Observações de DX
+- ✅ API retorna dados bem estruturados
+- ✅ Filtros de histórico funcionam corretamente
+- ✅ Suporte a múltiplas redes blockchain
+
+#### Referências da API
+*Baseado em: smartwallet.txt - Endpoints de portfolio e histórico*
+
+---
+
+## ⛽ Gasless & Transaction Abstraction
+
+### Status: 📋 Planejado
+**Data:** 22/09/2024
+
+#### Funcionalidades Planejadas
+- [ ] Implementar transações gasless com Paymasters
+- [ ] Pagamento de gas com tokens ERC-20
+- [ ] Transações em lote (batch transactions)
+- [ ] Session keys para automação
+- [ ] Fluxo completo de transferência gasless
+
+#### Endpoints a Testar
+- `POST /wallets/register` - Registro de smart wallet
+- Request transfer para cotação de transferência
+- `POST /crypto/execute-user-op` - Execução de User Operations
+
+#### Observações de DX
+- 📋 Arquitetura muito promissora para UX
+- ✅ Remove barreiras técnicas para usuários Web2
+- 🔍 Necessário testar fluxo completo de quote → signature → execution
+
+#### Referências da API
+*Baseado em: Gasless&TransactionAbstraction.txt - Análise completa de Account Abstraction*
+
+---
+
+## 🔄 Swaps e Transferências (Trilha B)
+
+### Status: 🚧 Em Desenvolvimento
+**Data:** 22/09/2024
+
+#### Funcionalidades Planejadas
+- [ ] Interface de swap de tokens
+- [ ] Transferências entre wallets
+- [ ] Cálculo de taxas e gas
+- [ ] Execução de User Operations
+- [ ] Integração com sistema gasless
+
+#### Endpoints a Testar
+- `POST /api/v1/wallets/{walletAddress}/deposit` - Criação de transação de depósito
+- `POST /crypto/execute-user-op` - Execução de User Operations
+- Request transfer para cotação de transferência
+
+#### Observações de DX
+- 🔄 Implementação em andamento
+- ⏳ Aguardando testes de integração
+- 🆕 Integrar com funcionalidades gasless
+
+#### Referências da API
+*Baseado em: smartwallet.txt + Gasless&TransactionAbstraction.txt*
+
+---
+
+## 🏊 Liquidity Pools (Trilha C)
+
+### Status: 📋 Planejado
+**Data:** 22/09/2024
+
+#### Funcionalidades Planejadas
+- [ ] Listagem de pools de liquidez
+- [ ] Adição/remoção de liquidez
+- [ ] Cálculo de impermanent loss
+- [ ] Monitoramento de rendimentos
+
+#### Endpoints a Testar
+- *A definir conforme documentação da API*
+
+#### Observações de DX
+- 📋 Aguardando implementação
+- 🔍 Necessário estudar endpoints específicos de DeFi
+
+#### Referências da API
+*A ser alimentado com resumos da API Reference*
+
+---
+
+## 🆔 KYC e Ramp Fiat (Trilha A - Opcional)
+
+### Status: 📋 Planejado (Opcional)
+**Data:** 22/09/2024
+
+#### Funcionalidades Planejadas
+- [ ] Processo de verificação KYC
+- [ ] Depósitos fiat (on-ramp)
+- [ ] Saques fiat (off-ramp)
+- [ ] Integração com PIX e outros métodos
+
+#### Endpoints a Testar
+- `POST /kyc/individual-verification-sessions/standard` - Criação de sessão KYC
+- `POST /fiat/deposit/quote` - Cotação de depósito fiat
+- `POST /fiat/withdraw/quote` - Cotação de saque fiat
+
+#### Observações de DX
+- ⚠️ Módulo em desenvolvimento (Q2 2025)
+- 🌎 Foco inicial em mercados latino-americanos
+- 📋 Implementação opcional conforme tempo disponível
+
+#### Referências da API
+*Baseado em: kyc-ramp.txt - Análise completa de KYC e Ramp*
+
+---
+
+## 📚 Exemplos Oficiais da API
+
+### Status: ✅ Analisado
+**Data:** 22/09/2024
+
+#### Exemplos Encontrados
+- [x] **Privy Next.js Notus API** - Account abstraction e autenticação
+- [x] **Fiat KYC Next.js Notus API** - KYC e operações fiat completas
+- [x] **Web3Auth Wagmi** - Integração Web3Auth
+- [x] **KYC React Native** - KYC mobile
+- [x] **Liveness KYC SDK** - Verificação de liveness
+
+#### Padrões Identificados
+- [x] Configuração consistente da API com ky
+- [x] Factory Address padrão: `0x7a1dbab750f12a90eb1b60d2ae3ad17d4d81effe`
+- [x] Server Actions + HTTP layer + schemas
+- [x] Tratamento de erros padronizado
+- [x] Fluxo de autenticação Privy + Notus
+
+#### Implementações Relevantes
+- [x] Fluxo completo de autenticação com Smart Wallets
+- [x] KYC com upload de documentos via URLs pré-assinadas
+- [x] Operações fiat (onramp/offramp) com PIX
+- [x] Estrutura de projeto recomendada
+
+#### Observações de DX
+- ✅ Exemplos muito bem estruturados e documentados
+- ✅ Padrões consistentes em todos os projetos
+- ✅ Código limpo e bem organizado
+- ✅ Server Actions bem implementadas
+
+#### Referências da API
+*Baseado em: notus-api-examples.txt - Análise completa dos exemplos oficiais*
+
+---
+
+## 🧪 Exemplos de cURL para Testes
+
+### Status: ✅ Criado
+**Data:** 22/09/2024
+
+#### Endpoints Documentados
+- [x] **30 endpoints completos** com exemplos de cURL
+- [x] **6 categorias** organizadas (Blockchain, Fiat, KYC, Liquidity, Smart Wallets, User Operations)
+- [x] **Status de retorno** documentados (200, 400, 500)
+- [x] **Payloads de exemplo** para todos os endpoints POST/PATCH
+- [x] **Script de teste automatizado** em Bash
+
+#### Categorias Cobertas
+- [x] **Blockchain** (2 endpoints) - List chains e tokens
+- [x] **Fiat Operations** (4 endpoints) - Depósitos e saques
+- [x] **KYC** (3 endpoints) - Verificação de identidade
+- [x] **Liquidity Pools** (7 endpoints) - Gestão de pools
+- [x] **Smart Wallets** (8 endpoints) - Gestão de wallets
+- [x] **Swaps** (1 endpoint) - Operações de swap
+- [x] **Transfers** (1 endpoint) - Transferências
+- [x] **User Operations** (4 endpoints) - Operações customizadas
+
+#### Funcionalidades de Teste
+- [x] Configuração base com headers e autenticação
+- [x] Exemplos práticos para cada endpoint
+- [x] Tratamento de erros e status codes
+- [x] Script automatizado para testes em lote
+
+#### Observações de DX
+- ✅ Documentação completa para testes manuais
+- ✅ Exemplos prontos para uso imediato
+- ✅ Cobertura de todos os endpoints da API
+- ✅ Script de automação para validação
+
+#### Referências da API
+*Baseado em: notus-api-curl-examples.txt - Exemplos completos de cURL para todos os endpoints*
+
+---
+
+## 🔔 Webhooks e Automação
+
+### Status: 📋 Planejado
+**Data:** 22/09/2024
+
+#### Funcionalidades Planejadas
+- [ ] Configuração de webhooks no dashboard
+- [ ] Recebimento de eventos em tempo real
+- [ ] Verificação de assinatura HMAC-SHA256
+- [ ] Tratamento de eventos de transações
+
+#### Eventos a Monitorar
+- `ramp.deposit` - Depósitos fiat completados
+- `ramp.withdraw` - Saques fiat completados
+- `transaction` - Transações blockchain
+- `swap` - Operações de swap
+
+#### Observações de DX
+- 📋 Aguardando implementação
+- 🔒 Necessário endpoint público para desenvolvimento
+- 🛡️ Implementar verificação de segurança
+
+#### Referências da API
+*Baseado em: webhooks.txt - Análise completa de webhooks*
+
+---
+
+## 📊 Métricas e Feedback
+
+### Tempo Gasto por Funcionalidade
+- **Autenticação:** 2 horas
+- **Portfolio/Histórico:** 1.5 horas
+- **Swaps/Transfer:** *Em andamento*
+- **Liquidity Pools:** *Planejado*
+- **KYC/Ramp:** *Opcional*
+
+### Principais Desafios Encontrados
+1. **Deploy de Smart Wallet:** Necessário aguardar primeira transação onchain
+2. **Documentação:** Alguns endpoints precisam de mais exemplos
+3. **Rate Limiting:** Testar limites da API em desenvolvimento
+
+### Sugestões de Melhoria
+1. **Documentação:** Adicionar mais exemplos de código
+2. **SDK:** Considerar SDK oficial para facilitar integração
+3. **Sandbox:** Ambiente de teste mais robusto
+
+---
+
+## 📝 Notas de Desenvolvimento
+
+### 22/09/2024
+- ✅ Configuração inicial do projeto
+- ✅ Integração com Privy Auth
+- ✅ Implementação de Smart Wallets
+- ✅ Consulta de portfolio e histórico
+- 🔄 Iniciando implementação de swaps
+
+### Próximos Passos
+1. Completar implementação de swaps e transferências
+2. Implementar interface de liquidity pools
+3. Configurar sistema de webhooks
+4. Documentar feedback completo da API
+
+---
+
+## 🔗 Links Úteis
+
+- [Documentação Notus API](https://docs.notus.team/)
+- [Privy Authentication Guide](https://docs.notus.team/docs/guides/authentication/privy)
+- [Dashboard Notus](https://dashboard.notus.team/)
+- [Discord Notus Labs](https://discord.gg/7zmMuPcP)
+
+---
+
+**Última atualização:** 22 de setembro de 2024  
+**Próxima revisão:** 23 de setembro de 2024

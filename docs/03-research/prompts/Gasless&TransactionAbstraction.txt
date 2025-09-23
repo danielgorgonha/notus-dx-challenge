@@ -1,0 +1,94 @@
+agora veja essas
+
+https://docs.notus.team/docs/guides/gasless-transaction-abstraction/overview
+https://docs.notus.team/docs/guides/gasless-transaction-abstraction/send-transaction
+
+favicon
+
+Buscado Documentation - Notus API
+notus.team
+
+
+Buscado Documentation - Notus API
+notus.team
+
+Notus Gasless & Transaction Abstraction - Análise Completa
+1. GASLESS & TRANSACTION ABSTRACTION OVERVIEW
+Problema Central
+Interagir com redes blockchain frequentemente envolve transações complexas e custosas, exigindo que usuários gerenciem taxas de gas, aprovem múltiplas operações e lidem com tokens nativos apenas para executar ações básicas 
+Documentation - Notus API
+
+Solução Técnica
+Gasless & Transaction Abstraction elimina essas dificuldades aproveitando paymasters ERC-4337, transações em lote e session keys, habilitando uma experiência de transação sem friction, eficiente em custos e automatizada 
+Documentation - Notus API
+
+Benefícios Para Desenvolvedores
+Com Gasless & Transaction Abstraction, desenvolvedores podem: eliminar friction de taxas de gas – habilitar transações gasless usando Paymasters integrados, permitindo usuários interagirem com blockchain sem possuir tokens nativos; opções flexíveis de pagamento de gas – permitir usuários pagarem taxas de gas com tokens ERC-20, removendo dependência de ativos nativos da rede; simplificar transações – usar transações em lote para agrupar múltiplas operações em uma única execução, reduzindo passos de aprovação e melhorando UX; automatizar workflows – implementar session keys para pré-autorizar transações para processos automatizados sem exigir aprovações repetidas do usuário 
+Documentation - Notus API
+
+2. SEND TRANSACTION - IMPLEMENTAÇÃO PRÁTICA
+Setup Inicial do Projeto
+Criar diretório e inicializar projeto Node.js, instalar viem (biblioteca para interações blockchain) para simplificar integração 
+Documentation - Notus API
+
+Configuração de Wallet e Constantes
+Usar chave privada para inicializar conta wallet, definir constantes incluindo BASE_URL da API Notus, API_KEY, endereços de tokens (UNI_POLYGON, USDC_POLYGON) e criar account usando privateKeyToAccount do viem 
+Documentation - Notus API
+
+Registro de Smart Wallet
+Antes de iniciar swap cross-chain, registrar e recuperar endereço da smart wallet usado para Account Abstraction. Fazer POST para /wallets/register com externallyOwnedAccount, factory address e salt. A resposta retorna smartWalletAddress em response.wallet.accountAbstraction 
+Documentation - Notus API
+
+Observação Importante: Nesta etapa, o endereço da smart wallet ainda não está deployed onchain. O deployment acontece automaticamente com a primeira transação onchain do usuário (swap ou transfer) via UserOperation 
+Documentation - Notus API
+
+Request Transfer - Solicitação de Cotação
+Enviar requisição de transferência para API Notus para obter cotação de execução do transfer. Definir parâmetros incluindo payGasFeeToken (token usado para pagar taxas de gas), token (token a transferir), amount, walletAddress, signerAddress, toAddress, chainId e gasFeePaymentMethod 
+Documentation - Notus API
+
+Consideração Técnica sobre Gas: O campo payGasFeeToken deve conter endereço de token ERC-20 mantido na smart wallet. Este token será usado para pagar tanto o transactionFeePercent do parceiro quanto as taxas de gas da UserOperation. Na maioria dos casos, payGasFeeToken é o mesmo que token, tipicamente o token que o usuário já possui na carteira 
+Documentation - Notus API
+
+Execute Transfer - Execução da Transação
+Assinar a cotação do transfer e executar o transfer usando API Notus. Usar account.signMessage com data.quoteId, depois fazer POST para /crypto/execute-user-op com signature e quoteId, retornando userOpHash 
+Documentation - Notus API
+
+Fluxo Técnico Completo
+1. Preparação
+Setup do ambiente Node.js com viem
+Configuração de API key e constantes
+Inicialização da conta wallet
+2. Account Abstraction Setup
+Registro da smart wallet via API
+Obtenção do endereço AA (ainda não deployed)
+3. Transaction Quote
+Solicitação de cotação para transferência
+Especificação de token, valor e método de pagamento de gas
+Recebimento do quoteId
+4. Transaction Execution
+Assinatura do quoteId com chave privada
+Execução via execute-user-op endpoint
+Retorno do userOpHash para tracking
+Implicações para o Notus DX Challenge
+Funcionalidades a Testar
+Para Trilha B (Swaps & Transfers):
+
+Implementar fluxo completo de transferência gasless
+Testar diferentes combinações de tokens para gas payment
+Validar user operations e tracking via userOpHash
+Para Trilha C (Liquidity Pools):
+
+Aplicar mesmo padrão para operações de pool
+Testar batch transactions para múltiplas operações
+Implementar session keys para automação
+Vantagens da Arquitetura
+UX Simplificada: Usuários não precisam possuir ETH/MATIC
+Flexibilidade: Gas payment com qualquer ERC-20
+Automação: Session keys permitem fluxos automatizados
+Eficiência: Batch transactions reduzem custos e complexity
+Pontos Críticos de Implementação
+Smart Wallet Deployment: Acontece automaticamente na primeira transação
+Gas Token Management: Garantir que wallet tenha saldo suficiente no token de gas
+Error Handling: Tratar falhas de signature e execution
+Monitoring: Usar userOpHash para acompanhar status das transações
+A arquitetura de Account Abstraction da Notus remove significativamente as barreiras técnicas para adoção Web3, especialmente para usuários vindos do Web2 que não estão familiarizados com conceitos como gas fees e multiple token management.

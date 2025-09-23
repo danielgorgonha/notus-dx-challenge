@@ -1,0 +1,674 @@
+# Notus API - Exemplos de cURL para Testes
+
+Este documento contém exemplos práticos de cURL para testar todos os endpoints da API Notus, organizados por categoria e incluindo status de retorno esperados.
+
+## 🔧 Configuração Base
+
+### Headers Obrigatórios
+```bash
+# Substitua YOUR_API_KEY pela sua chave da API
+export NOTUS_API_KEY="YOUR_API_KEY"
+export BASE_URL="https://api.notus.team/api/v1"
+
+# Headers padrão para todas as requisições
+-H "Content-Type: application/json" \
+-H "x-api-key: $NOTUS_API_KEY"
+```
+
+---
+
+## 🌐 Blockchain
+
+### 1. List Chains
+**Endpoint:** `GET /blockchain/chains`
+
+```bash
+curl -X GET "$BASE_URL/blockchain/chains" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY"
+```
+
+**Status de Retorno:**
+- `200` - Lista de chains disponíveis
+- `400` - Parâmetros inválidos
+- `500` - Erro interno do servidor
+
+### 2. List Tokens
+**Endpoint:** `GET /blockchain/tokens`
+
+```bash
+curl -X GET "$BASE_URL/blockchain/tokens" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY"
+```
+
+**Status de Retorno:**
+- `200` - Lista de tokens whitelist
+- `400` - Parâmetros inválidos
+- `500` - Erro interno do servidor
+
+---
+
+## 💰 Fiat Operations
+
+### 3. Create Fiat Deposit Quote
+**Endpoint:** `POST /fiat/deposit/quote`
+
+```bash
+curl -X POST "$BASE_URL/fiat/deposit/quote" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "paymentMethodToSend": "PIX",
+    "receiveCryptoCurrency": "USDC",
+    "amountToSendInFiatCurrency": "100.00",
+    "individualId": "individual_123",
+    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "chainId": 137
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Quote criada com sucesso
+- `400` - Dados inválidos ou individualId não encontrado
+- `500` - Erro interno do servidor
+
+### 4. Create Fiat Deposit Order
+**Endpoint:** `POST /fiat/deposit`
+
+```bash
+curl -X POST "$BASE_URL/fiat/deposit" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "quoteId": "quote_123",
+    "individualId": "individual_123",
+    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "chainId": 137
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Ordem de depósito criada
+- `400` - Quote inválida ou expirada
+- `500` - Erro interno do servidor
+
+### 5. Create Fiat Withdrawal Quote
+**Endpoint:** `POST /fiat/withdraw/quote`
+
+```bash
+curl -X POST "$BASE_URL/fiat/withdraw/quote" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "individualId": "individual_123",
+    "amountToSendInCryptoCurrency": "50.00",
+    "cryptoCurrencyToSend": "USDC",
+    "paymentMethodToReceiveDetails": {
+      "type": "PIX",
+      "pixKey": "user@example.com"
+    },
+    "chainId": 137
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Quote de saque criada
+- `400` - Dados inválidos ou saldo insuficiente
+- `500` - Erro interno do servidor
+
+### 6. Create Fiat Withdrawal Order
+**Endpoint:** `POST /fiat/withdraw`
+
+```bash
+curl -X POST "$BASE_URL/fiat/withdraw" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "quoteId": "quote_456",
+    "individualId": "individual_123",
+    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "chainId": 137
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Ordem de saque criada
+- `400` - Quote inválida ou saldo insuficiente
+- `500` - Erro interno do servidor
+
+---
+
+## 🆔 Know Your Customer (KYC)
+
+### 7. Create Standard Individual Verification Session
+**Endpoint:** `POST /kyc/individual-verification-sessions/standard`
+
+```bash
+curl -X POST "$BASE_URL/kyc/individual-verification-sessions/standard" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "firstName": "João",
+    "lastName": "Silva",
+    "birthDate": "1990-01-15",
+    "document": {
+      "type": "RG",
+      "category": "IDENTITY_CARD"
+    },
+    "country": "BR",
+    "livenessRequired": false
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Sessão KYC criada com URLs de upload
+- `400` - Dados inválidos
+- `500` - Erro interno do servidor
+
+### 8. Get Standard Individual Verification Session Result
+**Endpoint:** `GET /kyc/individual-verification-sessions/standard/{sessionId}`
+
+```bash
+curl -X GET "$BASE_URL/kyc/individual-verification-sessions/standard/session_123" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY"
+```
+
+**Status de Retorno:**
+- `200` - Status da verificação (PENDING, VERIFYING, COMPLETED, FAILED)
+- `400` - SessionId inválido
+- `500` - Erro interno do servidor
+
+### 9. Process Standard Individual Verification Session
+**Endpoint:** `POST /kyc/individual-verification-sessions/standard/{sessionId}/process`
+
+```bash
+curl -X POST "$BASE_URL/kyc/individual-verification-sessions/standard/session_123/process" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY"
+```
+
+**Status de Retorno:**
+- `200` - Processamento iniciado
+- `400` - Sessão inválida ou documentos não enviados
+- `500` - Erro interno do servidor
+
+---
+
+## 🏊 Liquidity Pools
+
+### 10. List Liquidity Pools
+**Endpoint:** `GET /liquidity/pools`
+
+```bash
+curl -X GET "$BASE_URL/liquidity/pools" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY"
+```
+
+**Status de Retorno:**
+- `200` - Lista de pools de liquidez
+- `400` - Parâmetros inválidos
+- `500` - Erro interno do servidor
+
+### 11. Get Liquidity Pool
+**Endpoint:** `GET /liquidity/pools/{poolId}`
+
+```bash
+curl -X GET "$BASE_URL/liquidity/pools/pool_123" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY"
+```
+
+**Status de Retorno:**
+- `200` - Detalhes do pool
+- `400` - PoolId inválido
+- `500` - Erro interno do servidor
+
+### 12. Create Liquidity
+**Endpoint:** `POST /liquidity/create`
+
+```bash
+curl -X POST "$BASE_URL/liquidity/create" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "token0": "0xA0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
+    "token1": "0xB0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
+    "amount0": "1000.00",
+    "amount1": "2000.00",
+    "chainId": 137
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Liquidez criada com sucesso
+- `400` - Dados inválidos ou saldo insuficiente
+- `500` - Erro interno do servidor
+
+### 13. Change Liquidity
+**Endpoint:** `POST /liquidity/change`
+
+```bash
+curl -X POST "$BASE_URL/liquidity/change" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "poolId": "pool_123",
+    "amount0": "500.00",
+    "amount1": "1000.00",
+    "chainId": 137
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Liquidez alterada com sucesso
+- `400` - Dados inválidos ou posição não encontrada
+- `500` - Erro interno do servidor
+
+### 14. Collect Fees from Liquidity
+**Endpoint:** `POST /liquidity/collect-fees`
+
+```bash
+curl -X POST "$BASE_URL/liquidity/collect-fees" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "poolId": "pool_123",
+    "chainId": 137
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Taxas coletadas com sucesso
+- `400` - Pool inválido ou sem taxas disponíveis
+- `500` - Erro interno do servidor
+
+### 15. Get Liquidity Amounts
+**Endpoint:** `GET /liquidity/amounts`
+
+```bash
+curl -X GET "$BASE_URL/liquidity/amounts?walletAddress=0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6&poolId=pool_123&chainId=137" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY"
+```
+
+**Status de Retorno:**
+- `200` - Valores de liquidez
+- `400` - Parâmetros inválidos
+- `500` - Erro interno do servidor
+
+### 16. Get Pool Historical Data
+**Endpoint:** `GET /liquidity/pools/{poolId}/historical-data`
+
+```bash
+curl -X GET "$BASE_URL/liquidity/pools/pool_123/historical-data?days=30" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY"
+```
+
+**Status de Retorno:**
+- `200` - Dados históricos do pool
+- `400` - PoolId inválido ou parâmetros incorretos
+- `500` - Erro interno do servidor
+
+---
+
+## 🔐 Smart Wallets
+
+### 17. Register Smart Wallet
+**Endpoint:** `POST /wallets/register`
+
+```bash
+curl -X POST "$BASE_URL/wallets/register" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "externallyOwnedAccount": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "factory": "0xe77f2c7d79b2743d39ad73dc47a8e9c6416ad3f3",
+    "salt": "0",
+    "metadata": {
+      "name": "My Smart Wallet",
+      "description": "Primary wallet for DeFi operations"
+    }
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Smart wallet registrada com sucesso
+- `400` - Wallet já registrada ou dados inválidos
+- `500` - Erro interno do servidor
+
+### 18. Get Smart Wallet
+**Endpoint:** `GET /wallets/address`
+
+```bash
+curl -X GET "$BASE_URL/wallets/address?externallyOwnedAccount=0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6&factory=0xe77f2c7d79b2743d39ad73dc47a8e9c6416ad3f3" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY"
+```
+
+**Status de Retorno:**
+- `200` - Detalhes da smart wallet
+- `400` - Parâmetros inválidos
+- `500` - Erro interno do servidor
+
+### 19. Get Smart Wallets by Project
+**Endpoint:** `GET /wallets`
+
+```bash
+curl -X GET "$BASE_URL/wallets" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY"
+```
+
+**Status de Retorno:**
+- `200` - Lista de smart wallets do projeto
+- `400` - Parâmetros inválidos
+- `500` - Erro interno do servidor
+
+### 20. Get Smart Wallet Portfolio
+**Endpoint:** `GET /wallets/{walletAddress}/portfolio`
+
+```bash
+curl -X GET "$BASE_URL/wallets/0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6/portfolio" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY"
+```
+
+**Status de Retorno:**
+- `200` - Portfolio da smart wallet
+- `400` - WalletAddress inválido
+- `500` - Erro interno do servidor
+
+### 21. Get Smart Wallet History
+**Endpoint:** `GET /wallets/{walletAddress}/history`
+
+```bash
+curl -X GET "$BASE_URL/wallets/0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6/history?take=20&type=TRANSFER" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY"
+```
+
+**Status de Retorno:**
+- `200` - Histórico de transações
+- `400` - Parâmetros inválidos
+- `500` - Erro interno do servidor
+
+### 22. Create Deposit Transaction
+**Endpoint:** `POST /wallets/{walletAddress}/deposit`
+
+```bash
+curl -X POST "$BASE_URL/wallets/0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6/deposit" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "amount": "100.00",
+    "chainId": 137,
+    "token": "0xA0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
+    "fromAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6"
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Transação de depósito criada
+- `400` - Dados inválidos ou saldo insuficiente
+- `500` - Erro interno do servidor
+
+### 23. Update Wallet Metadata
+**Endpoint:** `PATCH /wallets/{walletAddress}/metadata`
+
+```bash
+curl -X PATCH "$BASE_URL/wallets/0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6/metadata" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "name": "Updated Wallet Name",
+    "description": "Updated description"
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Metadados atualizados
+- `400` - Dados inválidos
+- `500` - Erro interno do servidor
+
+### 24. Update Transaction Metadata
+**Endpoint:** `PATCH /wallets/{walletAddress}/transactions/{transactionId}/metadata`
+
+```bash
+curl -X PATCH "$BASE_URL/wallets/0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6/transactions/tx_123/metadata" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "description": "Payment for services",
+    "category": "business"
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Metadados da transação atualizados
+- `400` - Dados inválidos
+- `500` - Erro interno do servidor
+
+---
+
+## 🔄 Swaps
+
+### 25. Create Swap
+**Endpoint:** `POST /swaps`
+
+```bash
+curl -X POST "$BASE_URL/swaps" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "tokenIn": "0xA0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
+    "tokenOut": "0xB0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
+    "amountIn": "100.00",
+    "chainId": 137,
+    "slippage": 0.5
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Swap criado com sucesso
+- `400` - Dados inválidos ou saldo insuficiente
+- `500` - Erro interno do servidor
+
+---
+
+## 💸 Transfers
+
+### 26. Create Transfer
+**Endpoint:** `POST /transfers`
+
+```bash
+curl -X POST "$BASE_URL/transfers" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "toAddress": "0x8B2d35Cc6634C0532925a3b8D4C9db96C4b4d8b7",
+    "token": "0xA0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
+    "amount": "50.00",
+    "chainId": 137
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Transfer criada com sucesso
+- `400` - Dados inválidos ou saldo insuficiente
+- `500` - Erro interno do servidor
+
+---
+
+## ⚙️ User Operations
+
+### 27. Create Batch Operation
+**Endpoint:** `POST /user-operations/batch`
+
+```bash
+curl -X POST "$BASE_URL/user-operations/batch" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "operations": [
+      {
+        "type": "TRANSFER",
+        "toAddress": "0x8B2d35Cc6634C0532925a3b8D4C9db96C4b4d8b7",
+        "token": "0xA0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
+        "amount": "25.00"
+      },
+      {
+        "type": "SWAP",
+        "tokenIn": "0xA0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
+        "tokenOut": "0xB0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
+        "amountIn": "25.00"
+      }
+    ],
+    "chainId": 137
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Operação em lote criada
+- `400` - Dados inválidos ou operações incompatíveis
+- `500` - Erro interno do servidor
+
+### 28. Create Custom User Operation
+**Endpoint:** `POST /user-operations/custom`
+
+```bash
+curl -X POST "$BASE_URL/user-operations/custom" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "target": "0x8B2d35Cc6634C0532925a3b8D4C9db96C4b4d8b7",
+    "data": "0x1234567890abcdef",
+    "value": "0",
+    "chainId": 137
+  }'
+```
+
+**Status de Retorno:**
+- `200` - Operação customizada criada
+- `400` - Dados inválidos
+- `500` - Erro interno do servidor
+
+### 29. Execute User Operation
+**Endpoint:** `POST /user-operations/execute`
+
+```bash
+curl -X POST "$BASE_URL/user-operations/execute" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY" \
+  -d '{
+    "userOperationHash": "0x1234567890abcdef1234567890abcdef12345678",
+    "signature": "0xabcdef1234567890abcdef1234567890abcdef12"
+  }'
+```
+
+**Status de Retorno:**
+- `200` - User operation executada
+- `400` - Hash ou assinatura inválidos
+- `500` - Erro interno do servidor
+
+### 30. Get User Operation
+**Endpoint:** `GET /user-operations/{userOpHash}`
+
+```bash
+curl -X GET "$BASE_URL/user-operations/0x1234567890abcdef1234567890abcdef12345678" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NOTUS_API_KEY"
+```
+
+**Status de Retorno:**
+- `200` - Detalhes da user operation
+- `400` - Hash inválido
+- `500` - Erro interno do servidor
+
+---
+
+## 🧪 Script de Teste Automatizado
+
+### Script Bash para Testar Todos os Endpoints
+
+```bash
+#!/bin/bash
+
+# Configuração
+export NOTUS_API_KEY="YOUR_API_KEY"
+export BASE_URL="https://api.notus.team/api/v1"
+
+# Função para testar endpoint
+test_endpoint() {
+    local method=$1
+    local endpoint=$2
+    local data=$3
+    local description=$4
+    
+    echo "Testing: $description"
+    echo "Endpoint: $method $endpoint"
+    
+    if [ -n "$data" ]; then
+        response=$(curl -s -w "\n%{http_code}" -X $method "$BASE_URL$endpoint" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $NOTUS_API_KEY" \
+            -d "$data")
+    else
+        response=$(curl -s -w "\n%{http_code}" -X $method "$BASE_URL$endpoint" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $NOTUS_API_KEY")
+    fi
+    
+    http_code=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | head -n -1)
+    
+    echo "Status: $http_code"
+    echo "Response: $body"
+    echo "---"
+}
+
+# Testes básicos (GET endpoints)
+test_endpoint "GET" "/blockchain/chains" "" "List Chains"
+test_endpoint "GET" "/blockchain/tokens" "" "List Tokens"
+test_endpoint "GET" "/wallets" "" "Get Smart Wallets by Project"
+
+echo "Testes básicos concluídos!"
+```
+
+---
+
+## 📝 Notas Importantes
+
+### Autenticação
+- Todas as requisições requerem header `x-api-key`
+- A chave da API deve ser obtida no dashboard da Notus
+
+### Rate Limiting
+- A API possui rate limiting
+- Implemente retry logic com backoff exponencial
+
+### Error Handling
+- Sempre verifique o status code da resposta
+- Implemente tratamento de erros específicos para cada endpoint
+
+### Testes
+- Use ambiente de teste antes de produção
+- Valide todos os parâmetros antes de enviar
+- Mantenha logs detalhados das requisições
+
+### Exemplos de Uso
+- Substitua valores de exemplo pelos dados reais
+- Valide endereços de wallet e tokens
+- Verifique saldos antes de operações que movimentam fundos
+
+Este documento fornece uma base sólida para testar todos os endpoints da API Notus e entender os comportamentos esperados de cada operação.
