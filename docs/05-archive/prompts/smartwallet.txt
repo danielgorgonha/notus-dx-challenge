@@ -1,0 +1,140 @@
+veja os links e retorna oque entendeuCreate Deposit Transaction: @https://docs.notus.team/docs/api-reference/smart-wallets/CreateEoaTransferOperationController_createTransferOperation_v1 Get Smart Wallet: @https://docs.notus.team/docs/api-reference/smart-wallets/GetAccountAbstractionAddressController_handle_v1 Get Smart Wallet Portfolio: @https://docs.notus.team/docs/api-reference/smart-wallets/GetPortfolioByAddressController_getPortfolioByAddress_v1 Get Smart Wallets by Project: @https://docs.notus.team/docs/api-reference/smart-wallets/GetWalletsByProjectController_handle_v1 Register Smart Wallet: @https://docs.notus.team/docs/api-reference/smart-wallets/RegisterWalletController_handle_v1 Get Smart Wallet History: @https://docs.notus.team/docs/api-reference/smart-wallets/TransactionsController_transactionsApi_v1 Update Transaction Metadata: @https://docs.notus.team/docs/api-reference/smart-wallets/updateTransactionMetadata Update Wallet Metadata: @https://docs.notus.team/docs/api-reference/smart-wallets/UpdateWalletMetadataController_handle_v1
+
+monte um resumo de todas as urls, isso e um api-reference, preciso de um detalhamento de rotas as rotas da smartwallet da notus
+
+favicon
+
+Buscado Documentation - Notus API
+notus.team
+
+
+Buscado Documentation - Notus API
+notus.team
+
+
+Buscado Documentation - Notus API
+notus.team
+
+Vou continuar buscando os outros endpoints para dar um resumo completo:
+
+favicon
+
+Buscado Documentation - Notus API
+notus.team
+
+
+Buscado Documentation - Notus API
+notus.team
+
+Notus API - Smart Wallets - Resumo Completo das Rotas
+Com base na análise das 8 rotas da API Notus para Smart Wallets, aqui está o detalhamento técnico:
+
+1. Create Deposit Transaction
+Método: POST /api/v1/wallets/{walletAddress}/deposit
+
+Propósito: Fornece uma transação para ser executada por uma EOA para depositar fundos em uma smart wallet. É um endpoint de conveniência para construir facilmente uma transferência executada pelo Metamask ou qualquer outra carteira EOA 
+Documentation - Notus API
+
+Parâmetros:
+
+walletAddress (path): Endereço da smart wallet recebendo a transferência
+amount: Valor a ser transferido (string decimal)
+chainId: Rede blockchain (Arbitrum, Avalanche, Base, BNB, Ethereum, etc.)
+token: Endereço do token (use 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee para tokens nativos)
+fromAddress: Endereço EOA iniciando a transferência
+Resposta: Retorna dados da transação incluindo from, to, value, data e estimateGasCost 
+Documentation - Notus API
+
+2. Get Smart Wallet
+Método: GET /api/v1/wallets/address
+
+Propósito: Recupera detalhes de uma smart wallet do usuário, incluindo a data de registro no projeto, ou null se ainda não estiver registrada 
+Documentation - Notus API
+
+Parâmetros:
+
+externallyOwnedAccount: Endereço público da EOA proprietária
+factory: Endereço do contrato factory
+salt: Número salt para gerar múltiplas wallets (opcional, padrão 0)
+eip7702: Usar padrão EIP7702 (opcional, padrão false)
+Resposta: Retorna dados completos da wallet incluindo walletAddress, accountAbstraction, factory, implementation, deployed chains, salt e registeredAt 
+Documentation - Notus API
+
+3. Get Smart Wallet Portfolio
+Método: GET /api/v1/wallets/{walletAddress}/portfolio
+
+Propósito: Obtém o portfólio de uma smart wallet pelo endereço de account abstraction. O portfólio é uma lista dos saldos do usuário em diferentes tokens 
+Documentation - Notus API
+
+Parâmetros:
+
+walletAddress (path): Endereço da smart wallet
+Resposta: Retorna tokens, nfts e portfolio com detalhes incluindo address, name, symbol, decimals, logo, chain, balance, balanceFormatted, balanceUsd e priceUsd 
+Documentation - Notus API
+
+4. Get Smart Wallets by Project
+Método: GET /api/v1/wallets (inferido)
+
+Propósito: Recupera todas as smart wallets associadas ao projeto atual
+
+5. Register Smart Wallet
+Método: POST /api/v1/wallets/register
+
+Propósito: Registra uma nova smart wallet para um usuário, vinculando essa wallet ao seu projeto. Você pode verificar se a wallet já foi registrada checando o valor registeredAt do endpoint Check Smart Wallet 
+Documentation - Notus API
+
+Parâmetros:
+
+externallyOwnedAccount: Endereço público da EOA
+factory: Endereço do contrato factory
+salt: Número salt (opcional)
+eip7702: Usar padrão EIP7702 (opcional)
+metadata: Metadados customizados (objeto chave-valor, máx 1KB)
+Resposta: Retorna dados completos da wallet registrada com todas as informações de configuração 
+Documentation - Notus API
+
+6. Get Smart Wallet History
+Método: GET /api/v1/wallets/{walletAddress}/history
+
+Propósito: Recupera uma lista histórica de transações de uma smart wallet específica com filtros. Também retorna transações ainda pendentes de execução na blockchain 
+Documentation - Notus API
+
+Parâmetros de filtro:
+
+take: Máximo de transações por página (1-100)
+lastId: Cursor para paginação
+type: Filtrar por tipo de transação
+status: Filtrar por status da transação
+userOperationHash: Hash específico da user operation
+transactionHash: Hash específico da transação
+chains: Filtrar por redes envolvidas
+createdAtLatest/createdAtOldest: Filtros por data
+metadataKey/metadataValue: Filtros por metadados
+Resposta: Lista de transações com detalhes completos incluindo id, createdAt, status, transactionHash, chain, type, userOperationHash, receivedBy, receivedAmount e metadata 
+Documentation - Notus API
+
+7. Update Transaction Metadata
+Método: PATCH /api/v1/wallets/{walletAddress}/transactions/{transactionId}/metadata
+
+Propósito: Atualizar metadados de uma transação associada a uma smart wallet
+
+8. Update Wallet Metadata
+Método: PATCH /api/v1/wallets/{walletAddress}/metadata
+
+Propósito: Atualizar metadados customizados de uma smart wallet
+
+Chains Suportadas
+Arbitrum One (42161)
+Avalanche (43114)
+Base (8453)
+BNB Smart Chain (56)
+Ethereum (1)
+Gnosis (100)
+OP Mainnet (10)
+Polygon (137)
+Erros Comuns
+403 UNAVAILABLE_COMPUTE_UNITS: Projeto sem compute units suficientes
+404 ACCOUNT_ABSTRACTION_ADDRESS_NOT_REGISTERED_WITH_PROJECT: Wallet não registrada
+400 WALLET_ALREADY_REGISTERED: Wallet já registrada
+400 NOT_AUTHORIZED_TOKENS: Token não suportado pela API
+Esta API fornece funcionalidade completa para gerenciar smart wallets, desde criação e registro até transações, histórico e metadados.

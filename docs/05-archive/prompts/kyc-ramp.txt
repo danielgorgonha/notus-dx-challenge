@@ -1,0 +1,168 @@
+analise e detalha por completo
+
+https://docs.notus.team/docs/guides/ramp-overview
+https://docs.notus.team/docs/guides/ramp-quickstart
+https://docs.notus.team/docs/guides/kyc-quickstart
+
+favicon
+
+Buscado Documentation - Notus API
+notus.team
+
+favicon
+
+Buscado Documentation - Notus API
+notus.team
+
+favicon
+
+Buscado Documentation - Notus API
+notus.team
+
+Notus API - Ramp & KYC - Análise Detalhada Completa
+Baseado na análise das três documentações, apresento um detalhamento técnico abrangente:
+
+1. RAMP OVERVIEW
+Conceito Principal
+O módulo Ramp permite que usuários depositem e saquem stablecoins usando moedas fiduciárias locais—totalmente incorporado na interface da aplicação. Abstrai a complexidade de lidar com KYC, liquidez e integrações bancárias fornecendo uma API unificada conectada a múltiplos provedores de ramp fiat on/off 
+Documentation - Notus API
+
+Funcionalidades Core
+Através de uma única integração, você poderá: habilitar depósitos e saques fiat via métodos de pagamento locais como transferências bancárias ou sistemas de pagamento instantâneo (PIX, SEPA, etc.); lidar com KYC/KYB para indivíduos e empresas, com rastreamento automático de status e suporte a webhook; receber liquidações de stablecoin diretamente na smart wallet do usuário; acessar trilha de auditoria completa de todas as transações relacionadas ao ramp via API e webhooks 
+Documentation - Notus API
+
+Status de Desenvolvimento
+O módulo Ramp está atualmente em desenvolvimento e estará disponível em produção no Q2 2025. O rollout inicial suportará mercados latino-americanos selecionados, com provedores e geografias adicionais planejados em fases futuras 
+Documentation - Notus API
+
+2. RAMP QUICKSTART - IMPLEMENTAÇÃO TÉCNICA
+Arquitetura de Operações
+On-Ramp (Depósito): Converte moeda fiat para criptomoedas: Input: BRL, USD, MXN, etc.; Output: USDC, BRZ; Destino: Carteira do usuário 
+Documentation - Notus API
+
+Off-Ramp (Saque): Converte criptomoedas para moeda fiat: Input: BRZ, USDC; Output: BRL, USD, ARS, etc.; Destino: Conta bancária do usuário 
+Documentation - Notus API
+
+Moedas e Redes Suportadas
+Fiat Currencies: BRL - Real Brasileiro, USD - Dólar Americano, MXN - Peso Mexicano, COP - Peso Colombiano, ARS - Peso Argentino 
+Documentation - Notus API
+
+Cryptocurrencies: USDC - USD Coin, BRZ - Brazilian Digital Token 
+Documentation - Notus API
+
+Redes Blockchain: POLYGON - Polygon Network, ARBITRUM - Arbitrum Network, BASE - Base Network 
+Documentation - Notus API
+
+Compatibilidade por Chain: USDC funciona em POLYGON, ARBITRUM e BASE; BRZ funciona apenas em POLYGON 
+Documentation - Notus API
+
+Fluxos Técnicos Detalhados
+ON-RAMP (Depósito)
+1. Create Quote:
+
+POST /fiat/deposit/quote
+Request inclui paymentMethodToSend, receiveCryptoCurrency, amountToSendInFiatCurrency, individualId, walletAddress e chainId. Response retorna quoteId, amountToSendInFiatCurrency, amountToReceiveInCryptoCurrency e expiresAt 
+Documentation - Notus API
+
+2. Create Order:
+
+POST /fiat/deposit
+Usando o quoteId, cria ordem de depósito que retorna orderId, expiresAt, e paymentMethodToSendDetails incluindo tipo PIX, chave PIX e QR code em base64 
+Documentation - Notus API
+
+OFF-RAMP (Saque)
+1. Create Quote:
+
+POST /fiat/withdraw/quote
+Request inclui individualId, amountToSendInCryptoCurrency, cryptoCurrencyToSend, paymentMethodToReceiveDetails e chainId. Response inclui estimatedGasFeeInCryptoCurrency, transactionFeeInCryptoCurrency e amountToReceiveInFiatCurrency 
+Documentation - Notus API
+
+2. Create Order:
+
+POST /fiat/withdraw
+Retorna userOperationHash, orderId, amountToSendInCryptoCurrency, amountToReceiveInFiatCurrency, transactionFeeAmountInCryptoCurrency, estimatedGasFeeAmountInCryptoCurrency 
+Documentation - Notus API
+
+3. Execute User Operation:
+
+POST /crypto/execute-user-op
+Para operações Off-Ramp, é obrigatório assinar o userOperationHash e executar a User Operation para que a transação seja processada na blockchain 
+Documentation - Notus API
+
+Sistema de Webhooks
+Estrutura do Webhook On-Ramp: Inclui chainId, event_type "ramp.deposit", orderId, receivedCryptoAmount, receivedCryptoCurrency, sendFiatAmount, sendFiatCurrency, status, transactionHash, type "ON_RAMP", walletAddress 
+Documentation - Notus API
+
+Estrutura do Webhook Off-Ramp: Inclui chainId, estimatedGasFeeAmount, event_type "ramp.withdraw", orderId, receivedFiatAmount, receivedFiatCurrency, sendCryptoAmount, sendCryptoCurrency, status, transactionFeeAmount, transactionHash, type "OFF_RAMP", userOpHash, walletAddress 
+Documentation - Notus API
+
+Status Disponíveis: Webhooks disponíveis: ramp.deposit e ramp.withdraw com status COMPLETED, FAILED, PROCESSING 
+Documentation - Notus API
+
+Limitações Importantes
+Limite mensal: $9,000 USD (após aprovação KYC). Para negociar BRZ, KYC deve ter sido completado com documento brasileiro (RG, CNH ou Passaporte Brasileiro) 
+Documentation - Notus API
+
+3. KYC QUICKSTART - PROCESSO DE VERIFICAÇÃO
+Propósito e Importância
+KYC (Know Your Customer) é um processo obrigatório de verificação de identidade que permite que sua aplicação conheça e valide a identidade dos usuários. Este processo é essencial para: conformidade regulatória, prevenção à fraude, segurança, e estabelecimento de confiança 
+Documentation - Notus API
+
+Documentos Aceitos
+Documentos Brasileiros: RG (Registro Geral): frente e verso; CNH (Carteira Nacional de Habilitação): frente e verso; Passaporte: página principal apenas com foto 
+Documentation - Notus API
+
+Documentos Internacionais: Passaporte: página principal apenas com foto; Carteira de Identidade Nacional: frente e verso (quando aplicável) 
+Documentation - Notus API
+
+Todos os documentos devem ser legíveis, válidos e não expirados. Documentos danificados, ilegíveis ou obscurecidos podem resultar em rejeição da verificação 
+Documentation - Notus API
+
+Fluxo Técnico de Verificação
+1. Create Verification Session
+POST kyc/individual-verification-sessions/standard
+Response retorna session com id, firstName, lastName, birthDate, document com id/type/category, status "PENDING", livenessRequired, createdAt, updatedAt; também inclui backDocumentUpload e frontDocumentUpload com URLs S3 pré-assinadas e fields para upload direto 
+Documentation - Notus API
+
+2. Upload Documents
+Use URLs fornecidas para upload: Front Document (frente) e Back Document (verso quando aplicável). Uploads devem ser fotos do documento original, não digitalizadas. O documento deve estar bem iluminado, legível e sem reflexos. URLs de upload expiram em 15 minutos 
+Documentation - Notus API
+
+3. Finalize Process
+POST /kyc/individual-verification-sessions/standard/:sessionId/process
+4. Check Status
+GET /kyc/individual-verification-sessions/standard/:sessionId
+Estados de Verificação
+PENDING: Sessão criada, aguardando upload de documentos; VERIFYING: Documentos sendo analisados pelo sistema; COMPLETED: Verificação aprovada com sucesso; FAILED: Verificação rejeitada ou erro durante processamento; EXPIRED: Sessão expirada 
+Documentation - Notus API
+
+Critérios de Aprovação/Rejeição
+COMPLETED (Aprovado): Documentos válidos e legíveis, informações consistentes, usuário aprovado para transações, retorna individualId necessário para operações de ramp fiat 
+Documentation - Notus API
+
+FAILED (Rejeitado): Documento ilegível ou danificado, informações inconsistentes, documento expirado, documento não aceito, foto de baixa qualidade ou com reflexos, cópia digitalizada ou escaneada (deve ser foto do original), erro técnico durante processamento, questão temporária do sistema, pode ser tentado novamente 
+Documentation - Notus API
+
+Individual ID e Integração
+Quando o status de verificação é COMPLETED, a resposta incluirá um individualId. Este individualId é necessário para todas as operações de ramp fiat (depósitos e saques) 
+Documentation - Notus API
+
+Limitações Pós-Aprovação
+Limite mensal: Após aprovação KYC, o usuário terá limite mensal de aproximadamente $9,000 USD para operações de ramp fiat. O processo KYC é obrigatório para todas as operações de ramp fiat. Sem aprovação KYC, usuários não poderão realizar depósitos ou saques 
+Documentation - Notus API
+
+IMPLICAÇÕES PARA O PROJETO NOTUS DX CHALLENGE
+Trilha A - Implementação
+Para testar completamente a Trilha A (Smart Wallet + KYC + Fiat), você precisará:
+
+KYC Flow: Implementar todo o processo de verificação de identidade
+Ramp Integration: Conectar com os endpoints de depósito/saque
+Webhook Handling: Sistema para processar notificações de status
+Error Handling: Tratamento para falhas de KYC e operações fiat
+Considerações Técnicas
+O módulo está em desenvolvimento para Q2 2025
+Foco inicial em mercados latino-americanos
+Necessita tratamento de arquivos (upload de documentos)
+Integração com múltiplas redes blockchain
+Gerenciamento de estados assíncronos (verificações pendentes)
+Esta análise mostra que a API da Notus oferece uma solução completa para bridge fiat-crypto, com KYC integrado e suporte a múltiplas redes e moedas.

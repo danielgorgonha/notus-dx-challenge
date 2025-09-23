@@ -1,0 +1,95 @@
+mais outros para cadastrar webhooks
+
+https://docs.notus.team/docs/guides/webhook-overview
+https://docs.notus.team/docs/guides/webhook-quickstart
+https://docs.notus.team/docs/guides/webhook-signature
+
+veja cada pagina completamente e retorne um resumo
+
+favicon
+
+Buscado Documentation - Notus API
+notus.team
+
+
+Buscado Documentation - Notus API
+notus.team
+
+
+Buscado Documentation - Notus API
+notus.team
+
+Notus Webhooks - Análise Completa das Imagens e Documentações
+Análise das Imagens do Dashboard
+Baseado nas três imagens fornecidas, o processo de configuração de webhook no dashboard da Notus segue estes passos:
+
+1. Acesso ao Dashboard
+
+Interface clean e organizada com navegação por tabs (Analytics, Wallets, Webhooks, Settings)
+Seção específica "Webhooks" com botão "Create Webhook" destacado
+2. Modal de Configuração
+
+Formulário simples com campos obrigatórios:
+Webhook URL (endpoint onde eventos serão enviados)
+Event Types (seleção múltipla de eventos para subscrição)
+Botão "Create" para finalizar
+3. Gerenciamento de Webhooks
+
+Lista de webhooks ativos com colunas: ID, Blockchains, Events, Webhook URL
+Funcionalidade de menu contextual (três pontos) com opções:
+Webhook dashboard
+Copy webhook secret
+Test webhook
+Edit webhook
+Delete webhook
+Resumo das Documentações
+1. WEBHOOK OVERVIEW
+Propósito e Benefícios: O monitoramento de atividade blockchain em tempo real é crucial para construir aplicações Web3 responsivas e automatizadas. Entretanto, fazer polling constante de dados blockchain é ineficiente, custoso e complexo. O módulo Webhooks da API Notus resolve isso habilitando notificações de eventos em tempo real e alertas customizáveis, permitindo que aplicações reajam instantaneamente a eventos blockchain sem overhead desnecessário 
+Documentation - Notus API
+
+Funcionalidades Core: Com Webhooks & Automation, desenvolvedores podem: receber notificações de eventos blockchain em tempo real – obter atualizações instantâneas sobre atividade de carteiras, interações com smart contracts e transferências de tokens; configurar alertas customizados – monitorar atividades onchain específicas, como transações grandes, execuções de contratos ou comportamento anômalo de carteiras 
+Documentation - Notus API
+
+Vantagens: Ao eliminar a necessidade de polling manual da blockchain, Webhooks & Automation ajuda fintechs, exchanges e plataformas Web3 a melhorar a experiência do usuário, otimizar performance e automatizar workflows-chave de forma eficiente 
+Documentation - Notus API
+
+2. WEBHOOK QUICKSTART
+Processo de Configuração:
+
+Fazer login no Dashboard Notus; 2. Navegar para a seção Webhooks; 3. Clicar em Create Webhook; 4. Preencher detalhes: Webhook URL (endpoint onde eventos serão enviados), Event Types (selecionar eventos para subscrição como transaction events, swaps); 5. Salvar o webhook que ficará ativo imediatamente e começará a enviar eventos quando disparado; 6. Testar e Simular Eventos (Opcional) - navegar para seção Events no dashboard para testar e simular eventos webhook 
+Documentation - Notus API
+Recursos de Desenvolvimento: Use o recurso de simulação de eventos para testar sua integração webhook sem aguardar transações reais ocorrerem. Na seção Events, você também pode visualizar as definições de tipo completas para todos os eventos webhook, incluindo schemas detalhados e payloads de exemplo para cada tipo de evento 
+Documentation - Notus API
+
+3. WEBHOOK SIGNATURE - SEGURANÇA E VERIFICAÇÃO
+Sistema de Assinatura: Svix usa HMAC com SHA-256 para assinar seus webhooks. Cada chamada webhook inclui três headers com informações adicionais usadas para verificação: svix-id (identificador único da mensagem), svix-timestamp (timestamp em segundos desde epoch), svix-signature (lista codificada em Base64 de assinaturas delimitadas por espaço) 
+Documentation - Notus API
+
+Processo de Verificação: O conteúdo a ser assinado é composto concatenando id, timestamp e payload, separados por ponto final. O código ficaria: const signedContent = ${svix_id}.${svix_timestamp}.${body}. A assinatura é sensível a qualquer mudança, então até pequena alteração no body causará assinatura completamente diferente 
+Documentation - Notus API
+
+Implementação em Node.js: Para calcular a assinatura esperada, deve-se fazer HMAC do signed_content usando a porção base64 do signing secret (parte após o prefixo whsec_) como chave. Exemplo de implementação usando crypto.createHmac com secretBytes decodificado em base64 
+Documentation - Notus API
+
+Segurança Adicional: O header svix-signature é composto de lista de assinaturas delimitadas por espaço com identificadores de versão correspondentes. Para comparar assinaturas, é recomendado usar método de comparação de string em tempo constante para prevenir ataques de timing. Deve-se verificar o timestamp contra o timestamp do sistema dentro da tolerância para prevenir ataques de timestamp 
+Documentation - Notus API
+
+Exemplo de Verificação: Exemplo fornecido: secret = "whsec_plJ3nmyCDGBKInavdOK15jsl", payload = '{"event_type":"ping","data":{"success":true}}', msg_id = "msg_loFOjxBNrRLzqYUf", timestamp = "1731705121", geraria signature = "v1,rAvfW3dJ/X/qxhsaXPOyyCGmRKsaKWcsNccKXlIktD0=" 
+Documentation - Notus API
+
+Implicações para o Notus DX Challenge
+Implementação Técnica
+Para seu projeto de teste da API Notus, os webhooks serão essenciais para:
+
+Monitoramento em Tempo Real: Receber notificações instantâneas de transações, swaps e atividades de liquidity pools
+Validação de Transações: Confirmar execução de user operations sem polling
+Experiência do Usuário: Atualizar interface imediatamente quando transações são confirmadas
+Auditoria: Registrar todos os eventos para o relatório final de DX
+Considerações de Implementação
+Endpoint Público: Precisará de URL pública para receber webhooks (ngrok para desenvolvimento)
+Verificação de Segurança: Implementar validação HMAC-SHA256 para autenticidade
+Tratamento de Eventos: Preparar handlers para diferentes tipos de eventos (ramp.deposit, ramp.withdraw, transaction events)
+Resiliência: Implementar retry logic e tratamento de falhas
+Logging: Documentar todos os webhooks recebidos para análise de DX
+O sistema de webhooks da Notus é bem estruturado e segue padrões industriais, facilitando a integração e garantindo confiabilidade na comunicação de eventos blockchain.
+
