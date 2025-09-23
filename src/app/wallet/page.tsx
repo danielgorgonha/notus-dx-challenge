@@ -82,7 +82,7 @@ export default function WalletPage() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    success('Copied!', 'Wallet address copied to clipboard');
+    success('Copiado!', 'Endereço da carteira copiado para a área de transferência');
   };
 
   const handleCreateDeposit = async () => {
@@ -91,23 +91,23 @@ export default function WalletPage() {
     try {
       await createDeposit(depositAmount, depositToken);
       setDepositAmount('');
-      success('Deposit Created!', `Created deposit of ${depositAmount} ${depositToken}`);
+      success('Depósito Criado!', `Depósito de ${depositAmount} ${depositToken} criado com sucesso`);
     } catch (error) {
       console.error('Failed to create deposit:', error);
-      showError('Deposit Failed', 'Failed to create deposit transaction');
+      showError('Falha no Depósito', 'Falha ao criar transação de depósito');
     }
   };
 
   const handleCreateWallet = async () => {
     try {
       await createWallet();
-      success('Wallet Created!', 'Embedded wallet created successfully');
+      success('Carteira Criada!', 'Carteira integrada criada com sucesso');
     } catch (error: any) {
       console.error('Failed to create wallet:', error);
       if (error.message?.includes('already has an embedded wallet')) {
-        showError('Wallet Already Exists', 'You already have an embedded wallet. Please refresh the page.');
+        showError('Carteira Já Existe', 'Você já possui uma carteira integrada. Por favor, atualize a página.');
       } else {
-        showError('Wallet Creation Failed', 'Failed to create embedded wallet');
+        showError('Falha na Criação da Carteira', 'Falha ao criar carteira integrada');
       }
     }
   };
@@ -177,8 +177,8 @@ export default function WalletPage() {
 
   return (
     <DashboardLayout 
-      title="Smart Wallet"
-      description="Manage your smart wallet and view wallet details"
+      title="Carteira Inteligente"
+      description="Gerencie sua carteira inteligente e visualize detalhes da carteira"
       onDepositClick={() => setShowDepositModal(true)}
     >
       <div className="space-y-8">
@@ -202,7 +202,7 @@ export default function WalletPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-400 text-sm">Total Balance</p>
+                    <p className="text-slate-400 text-sm">Saldo Total</p>
                     <p className="text-2xl font-bold text-white">
                       {portfolio ? `$${parseFloat(portfolio.totalBalanceUSD).toFixed(2)}` : '$0.00'}
                     </p>
@@ -219,9 +219,9 @@ export default function WalletPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-400 text-sm">Wallet Status</p>
+                    <p className="text-slate-400 text-sm">Status da Carteira</p>
                     <p className="text-lg font-semibold text-white">
-                      {isRegistered ? 'Active' : 'Pending'}
+                      {isRegistered ? 'Ativa' : 'Pendente'}
                     </p>
                   </div>
                   <div className="p-3 bg-emerald-500/20 rounded-full">
@@ -240,7 +240,7 @@ export default function WalletPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-400 text-sm">Transactions</p>
+                    <p className="text-slate-400 text-sm">Transações</p>
                     <p className="text-lg font-semibold text-white">
                       {history?.transactions?.length || 0}
                     </p>
@@ -262,7 +262,7 @@ export default function WalletPage() {
                 <div className="p-2 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg mr-3">
                   <Wallet className="h-6 w-6 text-white" />
                 </div>
-                Smart Wallet
+                Carteira Inteligente
                 </div>
                 {loading && <Loader2 className="h-5 w-5 animate-spin text-blue-400" />}
               </CardTitle>
@@ -275,7 +275,7 @@ export default function WalletPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center">
                       <QrCode className="h-5 w-5 text-slate-400 mr-2" />
-                      <span className="text-slate-400 text-sm">Wallet Address</span>
+                      <span className="text-slate-400 text-sm">Endereço da Carteira</span>
                     </div>
                     <div className="flex gap-2">
                     <Button
@@ -305,9 +305,9 @@ export default function WalletPage() {
                   <div className="p-4 bg-white/5 rounded-xl border border-white/10">
                     <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-sm text-slate-400">Notus API Status</div>
+                      <div className="text-sm text-slate-400">Status da API Notus</div>
                         <div className="text-white font-semibold">
-                        {isRegistered ? 'Registered' : 'Not Registered'}
+                        {isRegistered ? 'Registrada' : 'Não Registrada'}
                       </div>
                     </div>
                     <Badge 
@@ -317,12 +317,12 @@ export default function WalletPage() {
                       {isRegistered ? (
                         <>
                           <CheckCircle className="h-3 w-3 mr-1" />
-                          Active
+                          Ativa
                         </>
                       ) : (
                         <>
                           <AlertCircle className="h-3 w-3 mr-1" />
-                          Pending
+                          Pendente
                         </>
                       )}
                     </Badge>
@@ -332,7 +332,7 @@ export default function WalletPage() {
                   <div className="p-4 bg-white/5 rounded-xl border border-white/10">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-sm text-slate-400">Network</div>
+                        <div className="text-sm text-slate-400">Rede</div>
                         <div className="text-white font-semibold">
                           Ethereum
                         </div>
@@ -357,7 +357,7 @@ export default function WalletPage() {
                         ) : (
                         <Sparkles className="h-4 w-4 mr-2" />
                         )}
-                        Register with Notus API
+                        Registrar na API Notus
                       </Button>
                     </div>
                   )}
@@ -367,16 +367,16 @@ export default function WalletPage() {
                     <div className="p-4 bg-gradient-to-r from-blue-600/20 to-emerald-600/20 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
                       <Wallet className="h-10 w-10 text-blue-400" />
                     </div>
-                    <h3 className="text-xl font-semibold text-white mb-2">No Wallet Connected</h3>
+                    <h3 className="text-xl font-semibold text-white mb-2">Nenhuma Carteira Conectada</h3>
                     <p className="text-slate-300 mb-6 max-w-md mx-auto">
-                      Create an embedded wallet to access all Smart Wallet features including account abstraction and gasless transactions.
+                      Crie uma carteira integrada para acessar todos os recursos da Carteira Inteligente, incluindo abstração de conta e transações sem gas.
                     </p>
                       <Button 
                       className="btn-primary bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 transition-all duration-200"
                         onClick={handleCreateWallet}
                       >
                           <Plus className="h-4 w-4 mr-2" />
-                        Create Embedded Wallet
+                        Criar Carteira Integrada
                       </Button>
                     </div>
                   )}
@@ -386,16 +386,16 @@ export default function WalletPage() {
                 <div className="p-6 bg-gradient-to-r from-blue-600/20 to-emerald-600/20 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
                   <Wallet className="h-12 w-12 text-blue-400" />
                 </div>
-                <h3 className="text-2xl font-semibold text-white mb-3">Welcome to Smart Wallet</h3>
+                <h3 className="text-2xl font-semibold text-white mb-3">Bem-vindo à Carteira Inteligente</h3>
                 <p className="text-slate-300 mb-8 max-w-lg mx-auto">
-                  Create your first embedded wallet to start using account abstraction, gasless transactions, and advanced DeFi features.
+                  Crie sua primeira carteira integrada para começar a usar abstração de conta, transações sem gas e recursos avançados de DeFi.
                   </p>
                   <Button 
                   className="btn-primary bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-lg px-8 py-3 transition-all duration-200"
                     onClick={handleCreateWallet}
                   >
                   <Plus className="h-5 w-5 mr-2" />
-                  Create Your Wallet
+                  Criar Sua Carteira
                   </Button>
                 </div>
               )}
@@ -411,7 +411,7 @@ export default function WalletPage() {
                   <div className="p-2 bg-gradient-to-r from-emerald-600 to-blue-600 rounded-lg mr-3">
                     <TrendingUp className="h-6 w-6 text-white" />
                   </div>
-                  Portfolio Overview
+                  Visão Geral do Portfólio
                   </div>
                   <Button
                     variant="ghost"
@@ -433,16 +433,16 @@ export default function WalletPage() {
                       <div className="text-4xl font-bold text-white mb-2">
                         ${parseFloat(portfolio.totalBalanceUSD).toFixed(2)}
                       </div>
-                      <div className="text-slate-400 text-lg">Total Portfolio Value</div>
+                      <div className="text-slate-400 text-lg">Valor Total do Portfólio</div>
                       <div className="text-emerald-400 text-sm mt-2">
-                        {portfolio.tokens.length} token{portfolio.tokens.length !== 1 ? 's' : ''} in portfolio
+                        {portfolio.tokens.length} token{portfolio.tokens.length !== 1 ? 's' : ''} no portfólio
                       </div>
                     </div>
                     </div>
 
                   {/* Token List */}
                     <div className="space-y-3">
-                    <h4 className="text-lg font-semibold text-white mb-4">Token Holdings</h4>
+                    <h4 className="text-lg font-semibold text-white mb-4">Tokens em Posse</h4>
                       {portfolio.tokens.map((token, index) => (
                       <div key={index} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-slate-700/30 hover:border-slate-500/30 transition-all duration-200">
                           <div className="flex items-center">
@@ -471,9 +471,9 @@ export default function WalletPage() {
                   <div className="p-6 bg-gradient-to-r from-emerald-600/20 to-blue-600/20 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
                     <TrendingUp className="h-12 w-12 text-emerald-400" />
                   </div>
-                  <h3 className="text-2xl font-semibold text-white mb-3">Portfolio Ready</h3>
+                  <h3 className="text-2xl font-semibold text-white mb-3">Portfólio Pronto</h3>
                   <p className="text-slate-300 mb-8 max-w-md mx-auto">
-                    Your portfolio data will appear here once you load it. Track your token balances and portfolio performance.
+                    Os dados do seu portfólio aparecerão aqui assim que você carregá-los. Acompanhe seus saldos de tokens e o desempenho do portfólio.
                     </p>
                     <Button
                     className="btn-primary bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 transition-all duration-200"
@@ -485,7 +485,7 @@ export default function WalletPage() {
                       ) : (
                       <BarChart3 className="h-4 w-4 mr-2" />
                       )}
-                      Load Portfolio
+                      Carregar Portfólio
                     </Button>
                   </div>
                 )}
@@ -502,7 +502,7 @@ export default function WalletPage() {
                   <div className="p-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg mr-3">
                     <Activity className="h-6 w-6 text-white" />
                   </div>
-                  Transaction History
+                  Histórico de Transações
                   </div>
                   <Button
                     variant="ghost"
@@ -522,7 +522,7 @@ export default function WalletPage() {
                   <div className="p-4 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-xl border border-purple-500/30">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-slate-400 text-sm">Total Transactions</div>
+                        <div className="text-slate-400 text-sm">Total de Transações</div>
                         <div className="text-2xl font-bold text-white">{history.transactions.length}</div>
                       </div>
                       <div className="p-3 bg-purple-500/20 rounded-full">
@@ -571,9 +571,9 @@ export default function WalletPage() {
                   <div className="p-6 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
                     <Activity className="h-12 w-12 text-purple-400" />
                   </div>
-                  <h3 className="text-2xl font-semibold text-white mb-3">No Transactions Yet</h3>
+                  <h3 className="text-2xl font-semibold text-white mb-3">Nenhuma Transação Ainda</h3>
                   <p className="text-slate-300 mb-8 max-w-md mx-auto">
-                    Your transaction history will appear here once you start making transactions with your smart wallet.
+                    Seu histórico de transações aparecerá aqui assim que você começar a fazer transações com sua carteira inteligente.
                     </p>
                     <Button
                     className="btn-primary bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-200"
@@ -585,7 +585,7 @@ export default function WalletPage() {
                       ) : (
                       <Activity className="h-4 w-4 mr-2" />
                       )}
-                      Load History
+                      Carregar Histórico
                     </Button>
                   </div>
                 )}
@@ -602,7 +602,7 @@ export default function WalletPage() {
                 <div className="p-2 bg-gradient-to-r from-slate-600 to-slate-700 rounded-lg mr-3">
                   <Settings className="h-6 w-6 text-white" />
                 </div>
-                Wallet Settings
+                Configurações da Carteira
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -610,11 +610,11 @@ export default function WalletPage() {
                 <div className="p-4 bg-white/5 rounded-xl border border-white/10">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-white font-semibold">Network</div>
+                      <div className="text-white font-semibold">Rede</div>
                       <div className="text-slate-400 text-sm">Ethereum Mainnet</div>
                     </div>
                     <Badge variant="secondary" className="bg-blue-600/20 text-blue-400 border-blue-500/30">
-                      Active
+                      Ativa
                     </Badge>
                   </div>
                 </div>
@@ -622,11 +622,11 @@ export default function WalletPage() {
                 <div className="p-4 bg-white/5 rounded-xl border border-white/10">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-white font-semibold">Account Abstraction</div>
-                      <div className="text-slate-400 text-sm">ERC-4337 Smart Wallet</div>
+                      <div className="text-white font-semibold">Abstração de Conta</div>
+                      <div className="text-slate-400 text-sm">Carteira Inteligente ERC-4337</div>
                   </div>
                     <Badge variant="secondary" className="bg-emerald-600/20 text-emerald-400 border-emerald-500/30">
-                      Enabled
+                      Habilitada
                     </Badge>
                   </div>
                 </div>
@@ -636,7 +636,7 @@ export default function WalletPage() {
                   className="w-full border-slate-500/30 bg-slate-800/30 text-slate-200 hover:text-white hover:bg-slate-700/60 hover:border-slate-400/50 transition-all duration-200"
                 >
                   <Settings className="h-4 w-4 mr-2" />
-                  Advanced Settings
+                  Configurações Avançadas
                 </Button>
               </div>
             </CardContent>
@@ -651,7 +651,7 @@ export default function WalletPage() {
               <div className="p-2 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg mr-3">
                 <Zap className="h-6 w-6 text-white" />
               </div>
-              Smart Wallet Features
+              Recursos da Carteira Inteligente
             </CardTitle>
             </CardHeader>
             <CardContent>
@@ -661,9 +661,9 @@ export default function WalletPage() {
                   <div className="p-2 bg-emerald-500/20 rounded-lg mr-3">
                     <Shield className="h-5 w-5 text-emerald-400" />
                   </div>
-                  <span className="text-white font-semibold">Account Abstraction</span>
+                  <span className="text-white font-semibold">Abstração de Conta</span>
                 </div>
-                <p className="text-slate-300 text-sm">ERC-4337 smart wallet with gasless transactions and advanced security</p>
+                <p className="text-slate-300 text-sm">Carteira inteligente ERC-4337 com transações sem gas e segurança avançada</p>
               </div>
 
               <div className="p-4 bg-gradient-to-br from-blue-600/20 to-cyan-600/20 rounded-xl border border-blue-500/30">
@@ -671,9 +671,9 @@ export default function WalletPage() {
                   <div className="p-2 bg-blue-500/20 rounded-lg mr-3">
                     <TrendingUp className="h-5 w-5 text-blue-400" />
                   </div>
-                  <span className="text-white font-semibold">Portfolio Tracking</span>
+                  <span className="text-white font-semibold">Acompanhamento de Portfólio</span>
                 </div>
-                <p className="text-slate-300 text-sm">Real-time token balances, portfolio value, and performance analytics</p>
+                <p className="text-slate-300 text-sm">Saldos de tokens em tempo real, valor do portfólio e análises de desempenho</p>
                 </div>
 
               <div className="p-4 bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-xl border border-purple-500/30">
@@ -681,9 +681,9 @@ export default function WalletPage() {
                   <div className="p-2 bg-purple-500/20 rounded-lg mr-3">
                     <Activity className="h-5 w-5 text-purple-400" />
                   </div>
-                  <span className="text-white font-semibold">Transaction History</span>
+                  <span className="text-white font-semibold">Histórico de Transações</span>
                 </div>
-                <p className="text-slate-300 text-sm">Complete transaction history with detailed analytics and insights</p>
+                <p className="text-slate-300 text-sm">Histórico completo de transações com análises detalhadas e insights</p>
                 </div>
 
               <div className="p-4 bg-gradient-to-br from-orange-600/20 to-red-600/20 rounded-xl border border-orange-500/30">
@@ -691,7 +691,7 @@ export default function WalletPage() {
                   <div className="p-2 bg-orange-500/20 rounded-lg mr-3">
                     <Plus className="h-5 w-5 text-orange-400" />
                   </div>
-                  <span className="text-white font-semibold">On-Ramp Fiat</span>
+                  <span className="text-white font-semibold">Entrada de Fiat</span>
                 </div>
                 <p className="text-slate-300 text-sm">Depósitos fiat (BRL) para USDC via PIX e cartão de crédito com KYC integrado</p>
               </div>
@@ -701,7 +701,7 @@ export default function WalletPage() {
                   <div className="p-2 bg-green-500/20 rounded-lg mr-3">
                     <Smartphone className="h-5 w-5 text-green-400" />
                     </div>
-                  <span className="text-white font-semibold">Off-Ramp Fiat</span>
+                  <span className="text-white font-semibold">Saída de Fiat</span>
                 </div>
                 <p className="text-slate-300 text-sm">Saques USDC para fiat (BRL) com liquidação automática na conta bancária</p>
                 </div>
