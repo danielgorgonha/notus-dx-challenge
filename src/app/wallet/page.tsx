@@ -1,6 +1,6 @@
 "use client";
 
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { AppLayout } from "@/components/layout/app-layout";
 import { useAuth } from "@/contexts/auth-context";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
 import { useToast } from "@/hooks/use-toast";
@@ -9,15 +9,11 @@ import { usePrivy } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { 
   Wallet, 
   Copy, 
   ExternalLink, 
   Plus, 
-  Eye, 
-  EyeOff, 
   RefreshCw, 
   TrendingUp, 
   Activity,
@@ -26,45 +22,24 @@ import {
   Loader2,
   Zap,
   DollarSign,
-  ArrowUpRight,
-  ArrowDownLeft,
   Clock,
   Shield,
   Sparkles,
   BarChart3,
   Settings,
   QrCode,
-  Smartphone,
-  CreditCard,
-  Banknote,
-  ArrowDown,
-  User
+  Smartphone
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import QRCodeLib from 'qrcode';
-import { DepositModal } from "@/components/modals/deposit-modal";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function WalletPage() {
   const { user } = useAuth();
   const { createWallet } = usePrivy();
-  const [showPrivateKey, setShowPrivateKey] = useState(false);
-  const [depositAmount, setDepositAmount] = useState('');
-  const [depositToken, setDepositToken] = useState('USDC');
-  const [depositType, setDepositType] = useState<'crypto' | 'pix'>('crypto');
-  
-  // PIX States
-  const [pixDescription, setPixDescription] = useState('');
-  const [pixQrCode, setPixQrCode] = useState('');
-  const [pixKey, setPixKey] = useState('pix@notus.team');
-  const [showPixQr, setShowPixQr] = useState(false);
-  
-  // Deposit Modal States
-  const [showDepositModal, setShowDepositModal] = useState(false);
-  const [kycCompleted, setKycCompleted] = useState(false);
-  const [individualId, setIndividualId] = useState<string>('');
+  const router = useRouter();
   
   const {
-    wallet,
     portfolio,
     history,
     loading,
@@ -74,8 +49,6 @@ export default function WalletPage() {
     registerWallet,
     loadPortfolio,
     loadHistory,
-    createDeposit,
-    updateMetadata,
   } = useSmartWallet();
 
   const { toasts, removeToast, success, error: showError } = useToast();
@@ -85,18 +58,6 @@ export default function WalletPage() {
     success('Copiado!', 'Endereço da carteira copiado para a área de transferência');
   };
 
-  const handleCreateDeposit = async () => {
-    if (!depositAmount || !depositToken) return;
-    
-    try {
-      await createDeposit(depositAmount, depositToken);
-      setDepositAmount('');
-      success('Depósito Criado!', `Depósito de ${depositAmount} ${depositToken} criado com sucesso`);
-    } catch (error) {
-      console.error('Failed to create deposit:', error);
-      showError('Falha no Depósito', 'Falha ao criar transação de depósito');
-    }
-  };
 
   const handleCreateWallet = async () => {
     try {
@@ -112,63 +73,7 @@ export default function WalletPage() {
     }
   };
 
-  // PIX Functions
-  const generatePixQrCode = async () => {
-    if (!depositAmount) {
-      showError('Valor Obrigatório', 'Por favor, informe o valor do PIX');
-      return;
-    }
 
-    try {
-      // Simula geração de PIX (em produção, isso viria de uma API)
-      const pixData = {
-        pixKey: pixKey,
-        amount: parseFloat(depositAmount),
-        description: pixDescription || 'Depósito via PIX - Notus Wallet',
-        merchantName: 'Notus Wallet',
-        merchantCity: 'São Paulo',
-        txid: `PIX${Date.now()}${Math.random().toString(36).substr(2, 9)}`
-      };
-
-      // Gera QR Code PIX (formato simplificado para demo)
-      const qrData = `pix://${pixKey}?amount=${depositAmount}&description=${encodeURIComponent(pixData.description)}`;
-      
-      const qrCodeDataUrl = await QRCodeLib.toDataURL(qrData, {
-        width: 256,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        }
-      });
-
-      setPixQrCode(qrCodeDataUrl);
-      setShowPixQr(true);
-      success('PIX Gerado!', 'QR Code PIX gerado com sucesso');
-    } catch (error) {
-      console.error('Erro ao gerar PIX:', error);
-      showError('Erro PIX', 'Falha ao gerar QR Code PIX');
-    }
-  };
-
-  const copyPixKey = () => {
-    navigator.clipboard.writeText(pixKey);
-    success('Chave Copiada!', 'Chave PIX copiada para a área de transferência');
-  };
-
-  const resetPix = () => {
-    setDepositAmount('');
-    setPixDescription('');
-    setPixQrCode('');
-    setShowPixQr(false);
-  };
-
-  // KYC Functions
-  const handleKYCComplete = (id: string) => {
-    setIndividualId(id);
-    setKycCompleted(true);
-    success('KYC Aprovado!', 'Verificação de identidade concluída com sucesso');
-  };
 
   // Withdraw Functions
   const handleWithdrawComplete = (amount: string, method: string) => {
@@ -176,10 +81,10 @@ export default function WalletPage() {
   };
 
   return (
-    <DashboardLayout 
+    <AppLayout 
       title="Carteira Inteligente"
       description="Gerencie sua carteira inteligente e visualize detalhes da carteira"
-      onDepositClick={() => setShowDepositModal(true)}
+      onDepositClick={() => router.push('/wallet/deposit')}
     >
       <div className="space-y-8">
           {/* Error Display */}
@@ -493,6 +398,7 @@ export default function WalletPage() {
             </Card>
           )}
 
+
           {/* Transaction History */}
           {isRegistered && (
             <Card className="glass-card">
@@ -700,28 +606,18 @@ export default function WalletPage() {
                 <div className="flex items-center mb-3">
                   <div className="p-2 bg-green-500/20 rounded-lg mr-3">
                     <Smartphone className="h-5 w-5 text-green-400" />
-                    </div>
+                  </div>
                   <span className="text-white font-semibold">Saída de Fiat</span>
                 </div>
                 <p className="text-slate-300 text-sm">Saques USDC para fiat (BRL) com liquidação automática na conta bancária</p>
-                </div>
               </div>
+            </div>
             </CardContent>
           </Card>
       </div>
 
-      {/* Deposit Modal */}
-      <DepositModal
-        isOpen={showDepositModal}
-        onClose={() => setShowDepositModal(false)}
-        onKYCComplete={handleKYCComplete}
-        onWithdrawComplete={handleWithdrawComplete}
-        kycCompleted={kycCompleted}
-        individualId={individualId}
-      />
-
       {/* Toast Container */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
-    </DashboardLayout>
+    </AppLayout>
   );
 }

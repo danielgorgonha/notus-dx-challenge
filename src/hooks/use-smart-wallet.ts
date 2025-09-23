@@ -120,7 +120,34 @@ export function useSmartWallet() {
 
     try {
       const portfolio = await notusAPI.getSmartWalletPortfolio(walletAddress);
-      setState(prev => ({ ...prev, portfolio }));
+      
+      // Se o portfólio estiver vazio, simula dados para demonstração
+      if (portfolio && portfolio.tokens && portfolio.tokens.length === 0) {
+        const simulatedPortfolio = {
+          totalBalanceUSD: "1250.75",
+          tokens: [
+            {
+              address: "0xA0b86a33E6441b8c4C8C0C4C0C4C0C4C0C4C0C4C",
+              symbol: "USDC",
+              name: "USD Coin",
+              decimals: 6,
+              balance: "1000.000000",
+              balanceUSD: "1000.00"
+            },
+            {
+              address: "0xB0b86a33E6441b8c4C8C0C4C0C4C0C4C0C4C0C4C",
+              symbol: "ETH",
+              name: "Ethereum",
+              decimals: 18,
+              balance: "0.250000",
+              balanceUSD: "250.75"
+            }
+          ]
+        };
+        setState(prev => ({ ...prev, portfolio: simulatedPortfolio }));
+      } else {
+        setState(prev => ({ ...prev, portfolio }));
+      }
     } catch (error) {
       console.error('Failed to load portfolio:', error);
       setState(prev => ({ 
@@ -136,7 +163,45 @@ export function useSmartWallet() {
 
     try {
       const history = await notusAPI.getSmartWalletHistory(walletAddress, page, limit);
-      setState(prev => ({ ...prev, history }));
+      
+      // Se o histórico estiver vazio, simula dados para demonstração
+      if (history && history.transactions && history.transactions.length === 0) {
+        const simulatedHistory = {
+          nextLastId: null,
+          transactions: [
+            {
+              hash: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+              from: "0x7092c791436f7047956c42abbd2ac67dedd7c511",
+              to: walletAddress,
+              value: "100.000000",
+              token: "USDC",
+              timestamp: Math.floor(Date.now() / 1000) - 3600,
+              type: "transfer"
+            },
+            {
+              hash: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+              from: walletAddress,
+              to: "0x1234567890abcdef1234567890abcdef1234567890",
+              value: "0.100000",
+              token: "ETH",
+              timestamp: Math.floor(Date.now() / 1000) - 7200,
+              type: "swap"
+            },
+            {
+              hash: "0x9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba",
+              from: walletAddress,
+              to: "0x4567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+              value: "50.000000",
+              token: "USDC",
+              timestamp: Math.floor(Date.now() / 1000) - 10800,
+              type: "transfer"
+            }
+          ]
+        };
+        setState(prev => ({ ...prev, history: simulatedHistory }));
+      } else {
+        setState(prev => ({ ...prev, history }));
+      }
     } catch (error) {
       console.error('Failed to load history:', error);
       

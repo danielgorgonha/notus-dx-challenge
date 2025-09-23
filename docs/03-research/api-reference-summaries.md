@@ -60,10 +60,10 @@ Este documento centraliza todos os resumos da API Reference da Notus, organizado
 - **Filtros:** take, lastId, type, status, chains, createdAt
 
 #### 6. Update Transaction Metadata
-- **Método:** `PATCH /api/v1/wallets/{walletAddress}/transactions/{transactionId}/metadata`
+- **Método:** `PATCH /api/v1/wallets/transactions/{transactionId}/metadata`
 
 #### 7. Update Wallet Metadata
-- **Método:** `PATCH /api/v1/wallets/{walletAddress}/metadata`
+- **Método:** `PATCH /api/v1/wallets/{walletId}/metadata`
 
 #### Chains Suportadas
 - Arbitrum One (42161)
@@ -103,7 +103,7 @@ Este documento centraliza todos os resumos da API Reference da Notus, organizado
 - Inicializar conta wallet com chave privada
 
 ##### 2. Account Abstraction Setup
-- **Registro:** `POST /wallets/register`
+- **Registro:** `POST /crypto/wallets/register`
 - **Parâmetros:** externallyOwnedAccount, factory, salt
 - **Retorno:** smartWalletAddress (ainda não deployed onchain)
 
@@ -121,7 +121,7 @@ Este documento centraliza todos os resumos da API Reference da Notus, organizado
 
 ##### 4. Transaction Execution
 - **Assinatura:** `account.signMessage(data.quoteId)`
-- **Execução:** `POST /crypto/execute-user-op`
+- **Execução:** `POST /crypto/user-operations/execute`
 - **Parâmetros:** signature, quoteId
 - **Retorno:** userOpHash para tracking
 
@@ -181,7 +181,7 @@ Este documento centraliza todos os resumos da API Reference da Notus, organizado
 ##### OFF-RAMP (Saque)
 1. **Create Quote:** `POST /fiat/withdraw/quote`
 2. **Create Order:** `POST /fiat/withdraw`
-3. **Execute:** `POST /crypto/execute-user-op` (obrigatório)
+3. **Execute:** `POST /crypto/user-operations/execute` (obrigatório)
 
 #### KYC Process
 1. **Create Session:** `POST /kyc/individual-verification-sessions/standard`
@@ -341,8 +341,8 @@ export BASE_URL="https://api.notus.team/api/v1"
 #### Categorias de Endpoints
 
 ##### 🌐 Blockchain (2 endpoints)
-- **List Chains:** `GET /blockchain/chains`
-- **List Tokens:** `GET /blockchain/tokens`
+- **List Chains:** `GET /crypto/chains`
+- **List Tokens:** `GET /crypto/tokens`
 
 ##### 💰 Fiat Operations (4 endpoints)
 - **Create Fiat Deposit Quote:** `POST /fiat/deposit/quote`
@@ -357,34 +357,34 @@ export BASE_URL="https://api.notus.team/api/v1"
 
 ##### 🏊 Liquidity Pools (7 endpoints)
 - **List Pools:** `GET /liquidity/pools`
-- **Get Pool:** `GET /liquidity/pools/{poolId}`
+- **Get Pool:** `GET /liquidity/pools/{id}`
 - **Create Liquidity:** `POST /liquidity/create`
 - **Change Liquidity:** `POST /liquidity/change`
-- **Collect Fees:** `POST /liquidity/collect-fees`
+- **Collect Fees:** `POST /liquidity/collect`
 - **Get Amounts:** `GET /liquidity/amounts`
-- **Get Historical Data:** `GET /liquidity/pools/{poolId}/historical-data`
+- **Get Historical Data:** `GET /crypto/liquidity/pools/{poolId}/historical-data`
 
 ##### 🔐 Smart Wallets (8 endpoints)
-- **Register Wallet:** `POST /wallets/register`
-- **Get Wallet:** `GET /wallets/address`
-- **Get Wallets by Project:** `GET /wallets`
-- **Get Portfolio:** `GET /wallets/{walletAddress}/portfolio`
-- **Get History:** `GET /wallets/{walletAddress}/history`
-- **Create Deposit:** `POST /wallets/{walletAddress}/deposit`
-- **Update Wallet Metadata:** `PATCH /wallets/{walletAddress}/metadata`
-- **Update Transaction Metadata:** `PATCH /wallets/{walletAddress}/transactions/{transactionId}/metadata`
+- **Register Wallet:** `POST /crypto/wallets/register`
+- **Get Wallet:** `GET /crypto/wallets/address`
+- **Get Wallets by Project:** `GET /crypto/wallets`
+- **Get Portfolio:** `GET /crypto/wallets/{walletAddress}/portfolio`
+- **Get History:** `GET /crypto/wallets/{walletAddress}/history`
+- **Create Deposit:** `POST /crypto/wallets/{walletAddress}/deposit`
+- **Update Wallet Metadata:** `PATCH /crypto/wallets/{walletAddress}/metadata`
+- **Update Transaction Metadata:** `PATCH /crypto/wallets/{walletAddress}/transactions/{transactionId}/metadata`
 
 ##### 🔄 Swaps (1 endpoint)
-- **Create Swap:** `POST /swaps`
+- **Create Swap:** `POST /crypto/swap`
 
 ##### 💸 Transfers (1 endpoint)
-- **Create Transfer:** `POST /transfers`
+- **Create Transfer:** `POST /crypto/transfer`
 
 ##### ⚙️ User Operations (4 endpoints)
-- **Create Batch Operation:** `POST /user-operations/batch`
-- **Create Custom Operation:** `POST /user-operations/custom`
-- **Execute User Operation:** `POST /user-operations/execute`
-- **Get User Operation:** `GET /user-operations/{userOpHash}`
+- **Create Batch Operation:** `POST /crypto/batch-operations`
+- **Create Custom Operation:** `POST /crypto/custom-user-operation`
+- **Execute User Operation:** `POST /crypto/execute-user-op`
+- **Get User Operation:** `GET /crypto/user-operation/{userOperationHash}`
 
 #### Status de Retorno Padrão
 - **200** - Sucesso
@@ -416,8 +416,8 @@ export BASE_URL="https://api.notus.team/api/v1"
 - Execução de User Operations
 
 **Endpoints Identificados:**
-- `POST /api/v1/wallets/{walletAddress}/deposit`
-- `POST /crypto/execute-user-op`
+- `POST /api/v1/crypto/wallets/{walletAddress}/deposit`
+- `POST /crypto/user-operations/execute`
 
 **Observações:**
 - Necessário implementar interface de usuário

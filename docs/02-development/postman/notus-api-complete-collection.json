@@ -1,0 +1,1120 @@
+{
+  "info": {
+    "name": "Notus API - Complete Collection",
+    "description": "Coleção completa da API Notus para testes de todas as funcionalidades: Smart Wallets, KYC, Fiat Operations, Swaps, Transfers, Liquidity Pools e User Operations.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://api.notus.team/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "YOUR_API_KEY_HERE",
+      "type": "string"
+    },
+    {
+      "key": "wallet_address",
+      "value": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+      "type": "string"
+    },
+    {
+      "key": "individual_id",
+      "value": "individual_123",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "session_123",
+      "type": "string"
+    },
+    {
+      "key": "pool_id",
+      "value": "pool_123",
+      "type": "string"
+    },
+    {
+      "key": "transaction_id",
+      "value": "tx_123",
+      "type": "string"
+    },
+    {
+      "key": "user_op_hash",
+      "value": "0x1234567890abcdef1234567890abcdef12345678",
+      "type": "string"
+    },
+    {
+      "key": "factory_address",
+      "value": "0x7a1dbab750f12a90eb1b60d2ae3ad17d4d81effe",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "x-api-key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{api_key}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🌐 Blockchain",
+      "description": "Endpoints para consultar chains e tokens suportados",
+      "item": [
+        {
+          "name": "List Chains",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/crypto/chains?page=1&perPage=20",
+              "host": ["{{base_url}}"],
+              "path": ["crypto", "chains"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page to return"
+                },
+                {
+                  "key": "perPage",
+                  "value": "20",
+                  "description": "Amount of chains returned per page"
+                }
+              ]
+            },
+            "description": "Lista todas as chains blockchain suportadas pela Notus"
+          },
+          "response": []
+        },
+        {
+          "name": "List Tokens",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/crypto/tokens?orderBy=marketCap&orderDir=asc&search=WBTC&filterByChainId=42161&filterWhitelist=true&page=1&perPage=25&projectId={{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["crypto", "tokens"],
+              "query": [
+                {
+                  "key": "orderBy",
+                  "value": "marketCap",
+                  "description": "How to order the tokens (marketCap | chainId)"
+                },
+                {
+                  "key": "orderDir",
+                  "value": "asc",
+                  "description": "Direction of the ordering (asc | desc)"
+                },
+                {
+                  "key": "search",
+                  "value": "WBTC",
+                  "description": "Search a token by its address, name or symbol"
+                },
+                {
+                  "key": "filterByChainId",
+                  "value": "42161",
+                  "description": "Only show tokens from a certain chain"
+                },
+                {
+                  "key": "filterWhitelist",
+                  "value": "true",
+                  "description": "Filter results by the project whitelist"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page to return"
+                },
+                {
+                  "key": "perPage",
+                  "value": "25",
+                  "description": "Amount of tokens returned per page"
+                },
+                {
+                  "key": "projectId",
+                  "value": "{{project_id}}",
+                  "description": "The projectId you want to know the whitelist"
+                }
+              ]
+            },
+            "description": "Lista todos os tokens whitelist suportados com filtros avançados"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔐 Smart Wallets",
+      "description": "Gerenciamento de smart wallets e account abstraction",
+      "item": [
+        {
+          "name": "Register Smart Wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"externallyOwnedAccount\": \"0x133700000000000000000000000000000000c0de\",\n  \"factory\": \"0x0000000000400cdfef5e2714e63d8040b700bc24\",\n  \"salt\": \"12345\",\n  \"eip7702\": false,\n  \"metadata\": {\n    \"name\": \"My Smart Wallet\",\n    \"description\": \"Primary wallet for DeFi operations\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallets/register",
+              "host": ["{{base_url}}"],
+              "path": ["wallets", "register"]
+            },
+            "description": "Este endpoint registra uma nova smart wallet para um usuário, vinculando esta wallet ao seu projeto. Você pode verificar se a wallet já foi registrada verificando o valor _registeredAt_ do endpoint _Check Smart Wallet_."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Smart Wallet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wallets/address?externallyOwnedAccount=0x133700000000000000000000000000000000c0de&factory=0x0000000000400cdfef5e2714e63d8040b700bc24&salt=12345&eip7702=false",
+              "host": ["{{base_url}}"],
+              "path": ["wallets", "address"],
+              "query": [
+                {
+                  "key": "externallyOwnedAccount",
+                  "value": "0x133700000000000000000000000000000000c0de",
+                  "description": "Endereço público da EOA que assinará as transações, o proprietário da wallet de abstração de conta"
+                },
+                {
+                  "key": "factory",
+                  "value": "0x0000000000400cdfef5e2714e63d8040b700bc24",
+                  "description": "Endereço do contrato factory que cria o contrato da wallet de abstração de conta"
+                },
+                {
+                  "key": "salt",
+                  "value": "12345",
+                  "description": "Número salt usado para gerar esta wallet. Se nenhum for fornecido, o padrão é zero. Cada salt gera uma nova smart wallet para o mesmo usuário"
+                },
+                {
+                  "key": "eip7702",
+                  "value": "false",
+                  "description": "Se você quer fazer deploy usando o padrão EIP7702, que permite que a EOA defina um contrato como seu próprio código de contrato. O valor padrão é False"
+                }
+              ]
+            },
+            "description": "Este endpoint recupera os detalhes da smart wallet de um usuário, incluindo a data em que a wallet foi registrada com este projeto, ou _null_ se ainda não foi registrada."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Smart Wallets by Project",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wallets",
+              "host": ["{{base_url}}"],
+              "path": ["wallets"]
+            },
+            "description": "Este endpoint lista todas as smart wallets do projeto."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Smart Wallet Portfolio",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wallets/0x6e397ddf51d9f15dbe0414538e7529f51f2e5464/portfolio",
+              "host": ["{{base_url}}"],
+              "path": ["wallets", "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464", "portfolio"]
+            },
+            "description": "Obtém o portfolio de uma smart wallet pelo seu endereço de abstração de conta. O portfolio é uma lista dos saldos do usuário em diferentes tokens."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Smart Wallet History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wallets/0xa2acc967a9fc4fd5d18351d06deb9b8718c18333/history?take=50&lastId=834ce153-ea11-4e8b-8644-f42814ad1787&type=SWAP&type=CROSS_SWAP&status=COMPLETED&status=FAILED&userOperationHash=0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1&transactionHash=0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1&chains=42161&chains=43114&chainInId=42161&chainOutId=43114&createdAtLatest=2025-02-04T20%3A24%3A47.022Z&createdAtOldest=2024-11-02T21%3A35%3A45.969Z&metadataKey=custom_field&metadataValue=custom_value",
+              "host": ["{{base_url}}"],
+              "path": ["wallets", "0xa2acc967a9fc4fd5d18351d06deb9b8718c18333", "history"],
+              "query": [
+                {
+                  "key": "take",
+                  "value": "50",
+                  "description": "Máximo de transações por página (1-100, padrão: 100)"
+                },
+                {
+                  "key": "lastId",
+                  "value": "834ce153-ea11-4e8b-8644-f42814ad1787",
+                  "description": "Cursor para paginação. ID da última transação da página anterior"
+                },
+                {
+                  "key": "type",
+                  "value": "SWAP",
+                  "description": "Filtrar por tipo de transação"
+                },
+                {
+                  "key": "type",
+                  "value": "CROSS_SWAP",
+                  "description": "Filtrar por tipo de transação"
+                },
+                {
+                  "key": "status",
+                  "value": "COMPLETED",
+                  "description": "Filtrar por status da transação"
+                },
+                {
+                  "key": "status",
+                  "value": "FAILED",
+                  "description": "Filtrar por status da transação"
+                },
+                {
+                  "key": "userOperationHash",
+                  "value": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+                  "description": "Filtrar por hash específico de operação de usuário"
+                },
+                {
+                  "key": "transactionHash",
+                  "value": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+                  "description": "Filtrar por hash específico de transação"
+                },
+                {
+                  "key": "chains",
+                  "value": "42161",
+                  "description": "Filtrar por chains envolvidas na transação (Arbitrum One: 42161, Avalanche: 43114, Base: 8453, BNB Smart Chain: 56, Ethereum: 1, Gnosis: 100, OP Mainnet: 10, Polygon: 137)"
+                },
+                {
+                  "key": "chains",
+                  "value": "43114",
+                  "description": "Filtrar por chains envolvidas na transação"
+                },
+                {
+                  "key": "chainInId",
+                  "value": "42161",
+                  "description": "DEPRECATED: Use chains ao invés. Filtrar pela chain onde a transação começou"
+                },
+                {
+                  "key": "chainOutId",
+                  "value": "43114",
+                  "description": "DEPRECATED: Use chains ao invés. Filtrar pela chain onde a transação terminou quando for cross-chain"
+                },
+                {
+                  "key": "createdAtLatest",
+                  "value": "2025-02-04T20:24:47.022Z",
+                  "description": "Data mais recente para filtrar transações"
+                },
+                {
+                  "key": "createdAtOldest",
+                  "value": "2024-11-02T21:35:45.969Z",
+                  "description": "Data mais antiga para filtrar transações"
+                },
+                {
+                  "key": "metadataKey",
+                  "value": "custom_field",
+                  "description": "Chave de metadados para filtrar. Deve ser usada junto com metadataValue"
+                },
+                {
+                  "key": "metadataValue",
+                  "value": "custom_value",
+                  "description": "Valor de metadados para filtrar. Deve ser usada junto com metadataKey"
+                }
+              ]
+            },
+            "description": "Este endpoint recupera uma lista histórica de transações de uma smart wallet específica com filtros. Também retorna transações ainda pendentes de execução na blockchain."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Deposit Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": \"101.25\",\n  \"chainId\": 42161,\n  \"token\": \"0x2791bca1f2de4661ed88a30c99a7a9449aa84174\",\n  \"fromAddress\": \"0x6648e365a1b072797ee871d45691aead31b9d016\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallets/0xa2acc967a9fc4fd5d18351d06deb9b8718c18333/deposit",
+              "host": ["{{base_url}}"],
+              "path": ["wallets", "0xa2acc967a9fc4fd5d18351d06deb9b8718c18333", "deposit"]
+            },
+            "description": "Este endpoint fornece uma transação para ser executada por um EOA para depositar fundos em uma smart wallet. Este é um endpoint de conveniência para facilmente construir uma transferência para ser executada pelo Metamask ou qualquer outra wallet EOA."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Wallet Metadata",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"metadata\": {\n    \"property1\": \"string\",\n    \"property2\": \"string\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallets/0x6e397ddf51d9f15dbe0414538e7529f51f2e5464/metadata",
+              "host": ["{{base_url}}"],
+              "path": ["wallets", "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464", "metadata"]
+            },
+            "description": "Este endpoint atualiza os metadados para uma wallet específica. Os metadados são mesclados com os metadados existentes se presentes."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Transaction Metadata",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"metadata\": {\n    \"key1\": \"value1\",\n    \"key2\": \"value2\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallets/transactions/f1d61925-d4ae-450a-9f74-ab55f5e6647b/metadata",
+              "host": ["{{base_url}}"],
+              "path": ["wallets", "transactions", "f1d61925-d4ae-450a-9f74-ab55f5e6647b", "metadata"]
+            },
+            "description": "Atualiza os metadados de uma transação associada a uma smart wallet."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🆔 KYC (Know Your Customer)",
+      "description": "Verificação de identidade e compliance",
+      "item": [
+        {
+          "name": "Create Standard Individual Session (Level 1)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"João\",\n  \"lastName\": \"Silva\",\n  \"birthDate\": \"1990-01-15\",\n  \"document\": {\n    \"id\": \"12345678901\",\n    \"type\": \"RG\",\n    \"category\": \"IDENTITY_CARD\"\n  },\n  \"country\": \"BR\",\n  \"livenessRequired\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/kyc/individual-verification-sessions/standard",
+              "host": ["{{base_url}}"],
+              "path": ["kyc", "individual-verification-sessions", "standard"]
+            },
+            "description": "Cria sessão KYC Nível 1 (apenas dados pessoais, sem liveness)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Standard Individual Session (Level 2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"João\",\n  \"lastName\": \"Silva\",\n  \"birthDate\": \"1990-01-01\",\n  \"documentCategory\": \"PASSPORT\",\n  \"documentCountry\": \"BRAZIL\",\n  \"documentId\": \"12345678901\",\n  \"nationality\": \"BRAZILIAN\",\n  \"livenessRequired\": true,\n  \"email\": \"joao@example.com\",\n  \"address\": \"Rua das Flores, 123\",\n  \"city\": \"São Paulo\",\n  \"state\": \"SP\",\n  \"postalCode\": \"01234-567\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/kyc/individual-verification-sessions/standard",
+              "host": ["{{base_url}}"],
+              "path": ["kyc", "individual-verification-sessions", "standard"]
+            },
+            "description": "Cria uma nova sessão de verificação KYC para um indivíduo. Inicia o processo de verificação de identidade coletando informações pessoais e detalhes do documento. A sessão gerará URLs de upload para imagens de documentos e pode opcionalmente exigir verificação de liveness."
+          },
+          "response": []
+        },
+        {
+          "name": "Get KYC Session Result",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/kyc/individual-verification-sessions/standard/{{session_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["kyc", "individual-verification-sessions", "standard", "{{session_id}}"]
+            },
+            "description": "Recupera o status atual e resultados de uma sessão de verificação individual padrão. Este endpoint permite verificar o progresso e resultado de um processo de verificação KYC."
+          },
+          "response": []
+        },
+        {
+          "name": "Process KYC Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/kyc/individual-verification-sessions/standard/{{session_id}}/process",
+              "host": ["{{base_url}}"],
+              "path": ["kyc", "individual-verification-sessions", "standard", "{{session_id}}", "process"]
+            },
+            "description": "Processa uma sessão de verificação individual padrão após o upload dos documentos. Este endpoint aciona o processo de verificação real usando as imagens de documentos carregadas e as informações pessoais fornecidas durante a criação da sessão."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "💰 Fiat Operations",
+      "description": "Operações de depósito e saque em moeda fiat",
+      "item": [
+        {
+          "name": "Create Fiat Deposit Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethodToSend\": \"PIX\",\n  \"amountToSendInFiatCurrency\": 100,\n  \"receiveCryptoCurrency\": \"USDC\",\n  \"individualId\": \"{{individual_id}}\",\n  \"chainId\": 137,\n  \"walletAddress\": \"{{wallet_address}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/fiat/deposit/quote",
+              "host": ["{{base_url}}"],
+              "path": ["fiat", "deposit", "quote"]
+            },
+            "description": "Cria uma cotação para depósito fiat (onramp)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Fiat Deposit Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quoteId\": \"{{quote_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/fiat/deposit",
+              "host": ["{{base_url}}"],
+              "path": ["fiat", "deposit"]
+            },
+            "description": "Cria uma ordem de depósito fiat para um quote ID específico"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Fiat Withdrawal Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"individualId\": \"{{individual_id}}\",\n  \"chainId\": 137,\n  \"paymentMethodToReceiveDetails\": {\n    \"type\": \"PIX\",\n    \"pixKey\": \"{{pix_key}}\"\n  },\n  \"amountToSendInCryptoCurrency\": \"100\",\n  \"cryptoCurrencyToSend\": \"USDC\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/fiat/withdraw/quote",
+              "host": ["{{base_url}}"],
+              "path": ["fiat", "withdraw", "quote"]
+            },
+            "description": "Cria uma cotação para saque fiat (offramp)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Fiat Withdrawal Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quoteId\": \"{{quote_id}}\",\n  \"walletAddress\": \"{{wallet_address}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/fiat/withdraw",
+              "host": ["{{base_url}}"],
+              "path": ["fiat", "withdraw"]
+            },
+            "description": "Cria uma ordem de saque fiat para um quote ID específico"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔄 Swaps",
+      "description": "Operações de troca de tokens",
+      "item": [
+        {
+          "name": "Create Swap",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amountIn\": \"1.2\",\n  \"chainIdIn\": 42161,\n  \"chainIdOut\": 43114,\n  \"routeProfile\": \"QUICKEST_QUOTE\",\n  \"gasFeePaymentMethod\": \"ADD_TO_AMOUNT\",\n  \"payGasFeeToken\": \"0xc2132d05d31c914a87c6611c10748aeb04b58e8f\",\n  \"tokenIn\": \"0x2791bca1f2de4661ed88a30c99a7a9449aa84174\",\n  \"tokenOut\": \"0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6\",\n  \"walletAddress\": \"0x6e397ddf51d9f15dbe0414538e7529f51f2e5464\",\n  \"toAddress\": \"0x6e397ddf51d9f15dbe0414538e7529f51f2e5464\",\n  \"transactionFeePercent\": 0.5,\n  \"slippage\": 0.5,\n  \"metadata\": {\n    \"key\": \"value\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/crypto/swap",
+              "host": ["{{base_url}}"],
+              "path": ["crypto", "swap"]
+            },
+            "description": "Este endpoint fornece uma cotação em tempo real para um swap de tokens, detalhando o valor estimado do token de destino, taxas e outros parâmetros relevantes."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "💸 Transfers",
+      "description": "Transferências de tokens entre endereços",
+      "item": [
+        {
+          "name": "Create Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": \"101.25\",\n  \"chainId\": 42161,\n  \"gasFeePaymentMethod\": \"ADD_TO_AMOUNT\",\n  \"payGasFeeToken\": \"0x82af49447d8a07e3bd95bd0d56f35241523fbab1\",\n  \"token\": \"0xaf88d065e77c8cc2239327c5edb3a432268e5831\",\n  \"walletAddress\": \"0x6e397ddf51d9f15dbe0414538e7529f51f2e5464\",\n  \"toAddress\": \"0xa7a9dcfcb65ed67e05d9c7eb49d2d74ce1f5f4f1\",\n  \"transactionFeePercent\": 0.5,\n  \"metadata\": {\n    \"key\": \"value\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/crypto/transfer",
+              "host": ["{{base_url}}"],
+              "path": ["crypto", "transfer"]
+            },
+            "description": "Este endpoint fornece uma cotação em tempo real para uma transferência de tokens, incluindo o valor estimado do token, taxas e outros detalhes relevantes."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🏊 Liquidity Pools",
+      "description": "Operações com pools de liquidez",
+      "item": [
+        {
+          "name": "List Liquidity Pools",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/liquidity/pools?take=10&offset=0&chainIds=42161&tokensAddresses=0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f&filterWhitelist=true&rangeInDays=30",
+              "host": ["{{base_url}}"],
+              "path": ["liquidity", "pools"],
+              "query": [
+                {
+                  "key": "take",
+                  "value": "10",
+                  "description": "Máximo de pools por página (1-50, padrão: 10)"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Número de pools para pular (usado para paginação)"
+                },
+                {
+                  "key": "chainIds",
+                  "value": "42161",
+                  "description": "Filtrar por chains (Arbitrum One: 42161, Avalanche: 43114, Base: 8453, BNB Smart Chain: 56, Ethereum: 1, Gnosis: 100, OP Mainnet: 10, Polygon: 137)"
+                },
+                {
+                  "key": "tokensAddresses",
+                  "value": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+                  "description": "Filtrar por endereços de tokens"
+                },
+                {
+                  "key": "filterWhitelist",
+                  "value": "true",
+                  "description": "Filtrar por whitelist do projeto (true | false, padrão: true)"
+                },
+                {
+                  "key": "rangeInDays",
+                  "value": "30",
+                  "description": "Número de dias para agregar estatísticas (1-365, padrão: 30)"
+                }
+              ]
+            },
+            "description": "Lista pools de liquidez que existem na blockchain. O pool pode estar em estado quebrado, como tendo quase nenhuma liquidez. Use os dados retornados por este endpoint para avaliar se o pool vale a pena investir. Escolha o intervalo de agregação para controlar tanto granularidade quanto intervalo de tempo: DAILY (últimos 30 dias), WEEKLY (últimas 12 semanas), MONTHLY (últimos 12 meses)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Liquidity Pool",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/liquidity/pools/{{pool_id}}?rangeInDays=30",
+              "host": ["{{base_url}}"],
+              "path": ["liquidity", "pools", "{{pool_id}}"],
+              "query": [
+                {
+                  "key": "rangeInDays",
+                  "value": "30",
+                  "description": "Número de dias para agregar estatísticas do pool (1-365, padrão: 30)"
+                }
+              ]
+            },
+            "description": "Obtém um pool de liquidez por ID com estatísticas agregadas. Retorna informações detalhadas sobre o pool, incluindo tokens, TVL, taxas e estatísticas de volume e transações."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Liquidity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"liquidityProvider\": \"UNISWAP_V3\",\n  \"walletAddress\": \"0x6e397ddf51d9f15dbe0414538e7529f51f2e5464\",\n  \"toAddress\": \"0x1337133713371337133713371337133713371337\",\n  \"chainId\": 42161,\n  \"transactionFeePercent\": 5,\n  \"payGasFeeToken\": \"0x82af49447d8a07e3bd95bd0d56f35241523fbab1\",\n  \"gasFeePaymentMethod\": \"ADD_TO_AMOUNT\",\n  \"token0\": \"0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f\",\n  \"token1\": \"0xaf88d065e77c8cc2239327c5edb3a432268e5831\",\n  \"poolFeePercent\": 1,\n  \"token0Amount\": \"26.2345\",\n  \"token1Amount\": \"1823.2\",\n  \"minPrice\": 83475.12,\n  \"maxPrice\": 102300.5,\n  \"slippage\": 0.5,\n  \"metadata\": {\n    \"key\": \"value\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/liquidity/create",
+              "host": ["{{base_url}}"],
+              "path": ["liquidity", "create"]
+            },
+            "description": "Este endpoint cria liquidez para um pool de liquidez. Permite fornecer liquidez a um pool existente ou criar um novo pool com tokens específicos, definindo faixas de preço e taxas de pool."
+          },
+          "response": []
+        },
+        {
+          "name": "Change Liquidity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"liquidityProvider\": \"UNISWAP_V3\",\n  \"walletAddress\": \"0x6e397ddf51d9f15dbe0414538e7529f51f2e5464\",\n  \"chainId\": 42161,\n  \"payGasFeeToken\": \"0x82af49447d8a07e3bd95bd0d56f35241523fbab1\",\n  \"gasFeePaymentMethod\": \"ADD_TO_AMOUNT\",\n  \"transactionFeePercent\": 5,\n  \"tokenId\": \"2375619234\",\n  \"change\": {\n    \"token0\": \"0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f\",\n    \"token1\": \"0xaf88d065e77c8cc2239327c5edb3a432268e5831\",\n    \"token0Amount\": \"26.2345\",\n    \"token1Amount\": \"1823.2\",\n    \"slippage\": 0.5\n  },\n  \"metadata\": {\n    \"key\": \"value\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/liquidity/change",
+              "host": ["{{base_url}}"],
+              "path": ["liquidity", "change"]
+            },
+            "description": "Altera a quantidade de liquidez fornecida em um pool de liquidez. Permite adicionar ou remover liquidez de um pool existente usando o tokenId do NFT que representa a liquidez."
+          },
+          "response": []
+        },
+        {
+          "name": "Collect Fees from Liquidity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"liquidityProvider\": \"UNISWAP_V3\",\n  \"chainId\": 42161,\n  \"nftId\": \"2375619234\",\n  \"walletAddress\": \"0x6e397ddf51d9f15dbe0414538e7529f51f2e5464\",\n  \"payGasFeeToken\": \"0x82af49447d8a07e3bd95bd0d56f35241523fbab1\",\n  \"metadata\": {\n    \"key\": \"value\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/liquidity/collect",
+              "host": ["{{base_url}}"],
+              "path": ["liquidity", "collect"]
+            },
+            "description": "Coleta as taxas recebidas pelo NFT de liquidez. Isso criará uma operação de usuário para ser executada e mostrará quanto será coletado, para que você possa escolher se realmente quer coletar ou não. Sempre coleta o valor total."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Liquidity Amounts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/liquidity/amounts?liquidityProvider=UNISWAP_V3&chainId=42161&token0=0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f&token1=0xaf88d065e77c8cc2239327c5edb3a432268e5831&poolFeePercent=1&token0MaxAmount=100&token1MaxAmount=100&minPrice=83475.12&maxPrice=102300.5&payGasFeeToken=0x82af49447d8a07e3bd95bd0d56f35241523fbab1&gasFeePaymentMethod=ADD_TO_AMOUNT",
+              "host": ["{{base_url}}"],
+              "path": ["liquidity", "amounts"],
+              "query": [
+                {
+                  "key": "liquidityProvider",
+                  "value": "UNISWAP_V3",
+                  "description": "Provedor de liquidez (UNISWAP_V3)"
+                },
+                {
+                  "key": "chainId",
+                  "value": "42161",
+                  "description": "ID da blockchain"
+                },
+                {
+                  "key": "token0",
+                  "value": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+                  "description": "Endereço do token0"
+                },
+                {
+                  "key": "token1",
+                  "value": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+                  "description": "Endereço do token1"
+                },
+                {
+                  "key": "poolFeePercent",
+                  "value": "1",
+                  "description": "Taxa do pool (0.01-100)"
+                },
+                {
+                  "key": "token0MaxAmount",
+                  "value": "100",
+                  "description": "Quantidade máxima de token0"
+                },
+                {
+                  "key": "token1MaxAmount",
+                  "value": "100",
+                  "description": "Quantidade máxima de token1"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "83475.12",
+                  "description": "Preço mínimo para liquidez ativa"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "102300.5",
+                  "description": "Preço máximo para liquidez ativa"
+                },
+                {
+                  "key": "payGasFeeToken",
+                  "value": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+                  "description": "Token para pagar taxa de gas"
+                },
+                {
+                  "key": "gasFeePaymentMethod",
+                  "value": "ADD_TO_AMOUNT",
+                  "description": "Método de pagamento da taxa"
+                }
+              ]
+            },
+            "description": "Obtém as quantidades de tokens necessárias para fornecer liquidez a um pool baseado no máximo que você quer gastar em um token. Você pode passar o valor máximo para ambos os tokens e receber cotações para os dois cenários possíveis, assim você pode verificar em uma única chamada qual opção funciona baseado nas quantidades que seu usuário tem."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pool Historical Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/crypto/liquidity/pools/{{pool_id}}/historical-data?days=30",
+              "host": ["{{base_url}}"],
+              "path": ["liquidity", "pools", "{{pool_id}}", "historical-data"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30"
+                }
+              ]
+            },
+            "description": "Obtém dados históricos de um pool"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "⚙️ User Operations",
+      "description": "Operações de usuário e execução de transações",
+      "item": [
+        {
+          "name": "Create Batch Operation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletAddress\": \"0xa2acc967a9fc4fd5d18351d06deb9b8718c18333\",\n  \"chainId\": 42161,\n  \"operations\": [\n    {\n      \"type\": \"transfer\",\n      \"params\": {\n        \"amount\": \"101.25\",\n        \"gasFeePaymentMethod\": \"ADD_TO_AMOUNT\",\n        \"payGasFeeToken\": \"0x82af49447d8a07e3bd95bd0d56f35241523fbab1\",\n        \"token\": \"0xaf88d065e77c8cc2239327c5edb3a432268e5831\",\n        \"toAddress\": \"0xa7a9dcfcb65ed67e05d9c7eb49d2d74ce1f5f4f1\",\n        \"transactionFeePercent\": 0.5,\n        \"metadata\": {\n          \"key\": \"value\"\n        }\n      }\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/crypto/batch-operations",
+              "host": ["{{base_url}}"],
+              "path": ["crypto", "batch-operations"]
+            },
+            "description": "Uma operação que pode unir transferências e swaps em uma única operação."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Custom User Operation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chainId\": 42161,\n  \"operations\": [\n    {\n      \"address\": \"0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6\",\n      \"methodSignature\": \"transfer(address,uint256)\",\n      \"arguments\": [\"0xa7a9dcfcb65ed67e05d9c7eb49d2d74ce1f5f4f1\", \"10000000000000000000\"],\n      \"value\": \"0\",\n      \"metadata\": {\n        \"key\": \"value\"\n      }\n    }\n  ],\n  \"payGasFeeToken\": \"0x82af49447d8a07e3bd95bd0d56f35241523fbab1\",\n  \"payGasFeeTokenAddress\": \"0x82af49447d8a07e3bd95bd0d56f35241523fbab1\",\n  \"walletAddress\": \"0x6e397ddf51d9f15dbe0414538e7529f51f2e5464\",\n  \"metadata\": {\n    \"key\": \"value\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/crypto/custom-user-operation",
+              "host": ["{{base_url}}"],
+              "path": ["crypto", "custom-user-operation"]
+            },
+            "description": "Permite criar operações de usuário customizadas com controle total sobre os parâmetros da transação. User Operations são o formato de transação usado em Account Abstraction, são transações blockchain executadas através de smart wallets. Este endpoint permite executar qualquer função de smart contract, transferir tokens nativos ou realizar operações complexas definindo suas próprias assinaturas de método, dados de chamada e mais."
+          },
+          "response": []
+        },
+        {
+          "name": "Execute User Operation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userOperationHash\": \"0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1\",\n  \"quoteId\": \"0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1\",\n  \"signature\": \"0xeecdd469465113db97d2d57949c581a080a4e7d7c528187ffc80e4f55ca68e083dcda2338666db182417608b971f5237c5807d67c7515e52f9ffe045e775ec791b\",\n  \"authorization\": \"0xeecdd469465113db97d2d57949c581a080a4e7d7c528187ffc80e4f55ca68e083dcda2338666db182417608b971f5237c5807d67c7515e52f9ffe045e775ec791b\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/crypto/execute-user-op",
+              "host": ["{{base_url}}"],
+              "path": ["crypto", "execute-user-op"]
+            },
+            "description": "Este endpoint enfileira para execução uma operação de usuário na blockchain, como uma cotação de swap ou uma transferência. A execução ocorre de forma assíncrona conforme aguarda ser incluída em um bloco. Você pode verificar o status usando o hash retornado no endpoint de histórico ou com nossos webhooks."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Operation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/crypto/user-operation/0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+              "host": ["{{base_url}}"],
+              "path": ["crypto", "user-operation", "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1"]
+            },
+            "description": "Obter uma operação de usuário pelo seu hash"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Log da requisição para debug",
+          "console.log('Making request to:', pm.request.url.toString());",
+          "console.log('Method:', pm.request.method);",
+          "console.log('Headers:', pm.request.headers);",
+          "",
+          "// Validação básica de variáveis",
+          "if (!pm.variables.get('api_key') || pm.variables.get('api_key') === 'YOUR_API_KEY_HERE') {",
+          "    console.warn('⚠️ API Key não configurada! Configure a variável api_key na collection.');",
+          "}",
+          "",
+          "if (!pm.variables.get('wallet_address') || pm.variables.get('wallet_address') === '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6') {",
+          "    console.warn('⚠️ Wallet Address usando valor de exemplo. Configure com seu endereço real.');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Testes básicos para todas as requisições",
+          "pm.test('Status code is valid', function () {",
+          "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 401, 403, 404, 500]);",
+          "});",
+          "",
+          "pm.test('Response time is acceptable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(10000);",
+          "});",
+          "",
+          "pm.test('Response has content-type header', function () {",
+          "    pm.expect(pm.response.headers.get('Content-Type')).to.exist;",
+          "});",
+          "",
+          "// Log da resposta para debug",
+          "console.log('Response Status:', pm.response.status);",
+          "console.log('Response Time:', pm.response.responseTime + 'ms');",
+          "console.log('Response Body:', pm.response.text());",
+          "",
+          "// Testes específicos para diferentes tipos de resposta",
+          "if (pm.response.code === 200 || pm.response.code === 201) {",
+          "    pm.test('Successful response has valid JSON', function () {",
+          "        pm.response.to.be.json;",
+          "    });",
+          "}",
+          "",
+          "if (pm.response.code === 400) {",
+          "    pm.test('Bad request response has error details', function () {",
+          "        const responseJson = pm.response.json();",
+          "        pm.expect(responseJson).to.have.property('message');",
+          "    });",
+          "}",
+          "",
+          "if (pm.response.code === 401) {",
+          "    pm.test('Unauthorized - check API key', function () {",
+          "        console.error('❌ API Key inválida ou não configurada');",
+          "    });",
+          "}",
+          "",
+          "if (pm.response.code === 500) {",
+          "    pm.test('Server error occurred', function () {",
+          "        console.error('❌ Erro interno do servidor');",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ]
+}

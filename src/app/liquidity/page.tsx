@@ -1,14 +1,15 @@
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Zap, TrendingUp, Activity } from "lucide-react";
 
 export default function LiquidityPage() {
   return (
-    <DashboardLayout 
+    <AppLayout 
       title="Liquidity Pools"
       description="Add liquidity to pools and earn rewards"
     >
+      <div className="space-y-8">
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Available Pools */}
         <Card className="glass-card">
@@ -112,6 +113,7 @@ export default function LiquidityPage() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+      </div>
+    </AppLayout>
   );
 }

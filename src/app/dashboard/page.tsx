@@ -1,13 +1,14 @@
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Activity, Zap, ArrowRightLeft, Wallet, Droplets, Shield } from "lucide-react";
 
 export default function DashboardPage() {
   return (
-    <DashboardLayout 
+    <AppLayout 
       title="Dashboard"
       description="Testing Notus API - Authentication, Transfers, Swaps, and Liquidity Pools"
     >
+      <div className="space-y-8">
       {/* Stats Overview */}
       <div className="grid md:grid-cols-3 gap-6 mb-8">
         <div className="glass-card text-center">
@@ -158,6 +159,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+      </div>
+    </AppLayout>
   );
 }

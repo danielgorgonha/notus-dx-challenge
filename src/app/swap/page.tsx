@@ -1,4 +1,4 @@
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,10 +6,11 @@ import { ArrowRightLeft, ArrowDown } from "lucide-react";
 
 export default function SwapPage() {
   return (
-    <DashboardLayout 
+    <AppLayout 
       title="Swap & Transfer"
       description="Exchange tokens and transfer assets"
     >
+      <div className="space-y-8">
       <div className="max-w-2xl mx-auto">
         <Card className="glass-card">
           <CardHeader>
@@ -84,6 +85,7 @@ export default function SwapPage() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+      </div>
+    </AppLayout>
   );
 }

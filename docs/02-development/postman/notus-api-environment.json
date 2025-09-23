@@ -1,0 +1,265 @@
+{
+  "id": "notus-api-environment",
+  "name": "Notus API - Environment",
+  "values": [
+    {
+      "key": "base_url",
+      "value": "https://api.notus.team/api/v1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "page",
+      "value": "1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "per_page",
+      "value": "20",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "project_id",
+      "value": "9c0f200f-27b1-4a30-8127-d5e74f136957",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "order_by",
+      "value": "marketCap",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "order_dir",
+      "value": "asc",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "search_token",
+      "value": "WBTC",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "filter_chain_id",
+      "value": "42161",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "filter_whitelist",
+      "value": "true",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "api_key",
+      "value": "YOUR_API_KEY_HERE",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "wallet_address",
+      "value": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "individual_id",
+      "value": "individual_123",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "session_id",
+      "value": "session_123",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "pool_id",
+      "value": "pool_123",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "transaction_id",
+      "value": "tx_123",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "user_op_hash",
+      "value": "0x1234567890abcdef1234567890abcdef12345678",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "factory_address",
+      "value": "0x7a1dbab750f12a90eb1b60d2ae3ad17d4d81effe",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "chain_id",
+      "value": "137",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "token_usdc",
+      "value": "0xA0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "token_brz",
+      "value": "0xB0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "quote_id",
+      "value": "quote_123",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "order_id",
+      "value": "order_123",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "pix_key",
+      "value": "user@example.com",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "cpf",
+      "value": "12345678901",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "first_name",
+      "value": "João",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "last_name",
+      "value": "Silva",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "birth_date",
+      "value": "1990-01-15",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "country",
+      "value": "BR",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "amount_100",
+      "value": "100.00",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "amount_50",
+      "value": "50.00",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "amount_1000",
+      "value": "1000.00",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "amount_2000",
+      "value": "2000.00",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "slippage",
+      "value": "0.5",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "days_30",
+      "value": "30",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "take_20",
+      "value": "20",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "salt",
+      "value": "0",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "signature",
+      "value": "0xabcdef1234567890abcdef1234567890abcdef12",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "target_address",
+      "value": "0x8B2d35Cc6634C0532925a3b8D4C9db96C4b4d8b7",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "custom_data",
+      "value": "0x1234567890abcdef",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "wallet_name",
+      "value": "My Smart Wallet",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "wallet_description",
+      "value": "Primary wallet for DeFi operations",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "transaction_description",
+      "value": "Payment for services",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "transaction_category",
+      "value": "business",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

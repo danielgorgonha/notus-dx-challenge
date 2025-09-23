@@ -57,7 +57,7 @@ export async function auth() {
   }
   
   // 3. Verificar/registrar Smart Wallet na Notus
-  const { wallet } = await notusAPI.get("wallets/address", {
+  const { wallet } = await notusAPI.get("crypto/wallets/address", {
     searchParams: {
       externallyOwnedAccount: user.wallet?.address,
       factory: FACTORY_ADDRESS,
@@ -66,7 +66,7 @@ export async function auth() {
   
   // 4. Registrar se não existir
   if (!wallet.registeredAt) {
-    await notusAPI.post("wallets/register", {
+    await notusAPI.post("crypto/wallets/register", {
       json: {
         externallyOwnedAccount: user.wallet?.address,
         factory: FACTORY_ADDRESS,
@@ -108,8 +108,19 @@ export async function createStandardIndividualSession(data) {
         "x-api-key": process.env.NOTUS_API_KEY,
       },
       body: JSON.stringify({
-        ...data,
-        livenessRequired: false,
+        firstName: "João",
+        lastName: "Silva",
+        birthDate: "1990-01-01",
+        documentCategory: "PASSPORT",
+        documentCountry: "BRAZIL",
+        documentId: "12345678901",
+        nationality: "BRAZILIAN",
+        livenessRequired: true,
+        email: "joao@example.com",
+        address: "Rua das Flores, 123",
+        city: "São Paulo",
+        state: "SP",
+        postalCode: "01234-567"
       }),
     }
   );
@@ -129,6 +140,509 @@ export async function uploadFile({ file, url, fields }) {
     method: "POST",
     body: formData,
   });
+}
+
+// 3. Obter resultado da sessão KYC
+export async function getKYCResult(sessionId) {
+  const response = await fetch(
+    `https://api.notus.team/api/v1/kyc/individual-verification-sessions/standard/${sessionId}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+    }
+  );
+  
+  return await response.json();
+}
+
+// 4. Processar sessão KYC
+export async function processKYCSession(sessionId) {
+  const response = await fetch(
+    `https://api.notus.team/api/v1/kyc/individual-verification-sessions/standard/${sessionId}/process`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+    }
+  );
+  
+  // Retorna 204 No Content em caso de sucesso
+  return response.status === 204;
+}
+```
+
+#### Fluxo de Liquidity Pools
+```typescript
+// 1. Criar liquidez em um pool
+export async function createLiquidity(data) {
+  const response = await fetch(
+    "https://api.notus.team/api/v1/liquidity/create",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+      body: JSON.stringify({
+        liquidityProvider: "UNISWAP_V3",
+        walletAddress: "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+        toAddress: "0x1337133713371337133713371337133713371337",
+        chainId: 42161,
+        transactionFeePercent: 5,
+        payGasFeeToken: "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        gasFeePaymentMethod: "ADD_TO_AMOUNT",
+        token0: "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+        token1: "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        poolFeePercent: 1,
+        token0Amount: "26.2345",
+        token1Amount: "1823.2",
+        minPrice: 83475.12,
+        maxPrice: 102300.5,
+        slippage: 0.5,
+        metadata: {
+          key: "value"
+        }
+      }),
+    }
+  );
+  
+  return await response.json();
+}
+
+// 2. Alterar liquidez em um pool
+export async function changeLiquidity(data) {
+  const response = await fetch(
+    "https://api.notus.team/api/v1/liquidity/change",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+      body: JSON.stringify({
+        liquidityProvider: "UNISWAP_V3",
+        walletAddress: "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+        chainId: 42161,
+        payGasFeeToken: "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        gasFeePaymentMethod: "ADD_TO_AMOUNT",
+        transactionFeePercent: 5,
+        tokenId: "2375619234",
+        change: {
+          token0: "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+          token1: "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+          token0Amount: "26.2345",
+          token1Amount: "1823.2",
+          slippage: 0.5
+        },
+        metadata: {
+          key: "value"
+        }
+      }),
+    }
+  );
+  
+  return await response.json();
+}
+
+// 2. Coletar taxas de liquidez
+export async function collectLiquidityFees(data) {
+  const response = await fetch(
+    "https://api.notus.team/api/v1/liquidity/collect",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+      body: JSON.stringify({
+        liquidityProvider: "UNISWAP_V3",
+        chainId: 42161,
+        nftId: "2375619234",
+        walletAddress: "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+        payGasFeeToken: "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+        metadata: {
+          key: "value"
+        }
+      }),
+    }
+  );
+  
+  return await response.json();
+}
+
+// 3. Obter quantidades necessárias para liquidez
+export async function getLiquidityAmounts(params) {
+  const queryParams = new URLSearchParams({
+    liquidityProvider: "UNISWAP_V3",
+    chainId: "42161",
+    token0: "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+    token1: "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+    poolFeePercent: "1",
+    token0MaxAmount: "100",
+    token1MaxAmount: "100",
+    minPrice: "83475.12",
+    maxPrice: "102300.5",
+    payGasFeeToken: "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+    gasFeePaymentMethod: "ADD_TO_AMOUNT",
+    ...params
+  });
+
+  const response = await fetch(
+    `https://api.notus.team/api/v1/liquidity/amounts?${queryParams}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+    }
+  );
+  
+  return await response.json();
+}
+
+// 4. Obter detalhes de um pool de liquidez
+export async function getLiquidityPool(poolId, rangeInDays = 30) {
+  const response = await fetch(
+    `https://api.notus.team/api/v1/liquidity/pools/${poolId}?rangeInDays=${rangeInDays}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+    }
+  );
+  
+  return await response.json();
+}
+
+// 5. Listar pools de liquidez
+export async function listLiquidityPools(params = {}) {
+  const queryParams = new URLSearchParams({
+    take: "10",
+    offset: "0",
+    chainIds: "42161",
+    tokensAddresses: "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+    filterWhitelist: "true",
+    rangeInDays: "30",
+    ...params
+  });
+
+  const response = await fetch(
+    `https://api.notus.team/api/v1/liquidity/pools?${queryParams}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+    }
+  );
+  
+  return await response.json();
+}
+
+// 6. Criar transação de depósito para smart wallet
+export async function createDepositTransaction(walletAddress, amount, chainId, token, fromAddress) {
+  const response = await fetch(
+    `https://api.notus.team/api/v1/wallets/${walletAddress}/deposit`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+      body: JSON.stringify({
+        amount,
+        chainId,
+        token,
+        fromAddress
+      })
+    }
+  );
+  
+  return await response.json();
+}
+
+// 7. Obter detalhes de uma smart wallet
+export async function getSmartWallet(externallyOwnedAccount, factory, salt = null, eip7702 = false) {
+  const queryParams = new URLSearchParams({
+    externallyOwnedAccount,
+    factory
+  });
+  
+  if (salt !== null) {
+    queryParams.append('salt', salt);
+  }
+  
+  if (eip7702) {
+    queryParams.append('eip7702', 'true');
+  }
+
+  const response = await fetch(
+    `https://api.notus.team/api/v1/wallets/address?${queryParams}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+    }
+  );
+  
+  return await response.json();
+}
+
+// 8. Obter portfolio de uma smart wallet
+export async function getSmartWalletPortfolio(walletAddress) {
+  const response = await fetch(
+    `https://api.notus.team/api/v1/wallets/${walletAddress}/portfolio`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+    }
+  );
+  
+  return await response.json();
+}
+
+// 9. Listar todas as smart wallets do projeto
+export async function getSmartWalletsByProject() {
+  const response = await fetch(
+    `https://api.notus.team/api/v1/wallets`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+    }
+  );
+  
+  return await response.json();
+}
+
+// 10. Registrar uma nova smart wallet
+export async function registerSmartWallet(externallyOwnedAccount, factory, salt = null, eip7702 = false, metadata = {}) {
+  const body = {
+    externallyOwnedAccount,
+    factory
+  };
+  
+  if (salt !== null) {
+    body.salt = salt;
+  }
+  
+  if (eip7702) {
+    body.eip7702 = true;
+  }
+  
+  if (Object.keys(metadata).length > 0) {
+    body.metadata = metadata;
+  }
+
+  const response = await fetch(
+    `https://api.notus.team/api/v1/wallets/register`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+      body: JSON.stringify(body)
+    }
+  );
+  
+  return await response.json();
+}
+
+// 11. Obter histórico de transações de uma smart wallet
+export async function getSmartWalletHistory(walletAddress, params = {}) {
+  const queryParams = new URLSearchParams();
+  
+  // Parâmetros opcionais
+  if (params.take) queryParams.append('take', params.take);
+  if (params.lastId) queryParams.append('lastId', params.lastId);
+  if (params.userOperationHash) queryParams.append('userOperationHash', params.userOperationHash);
+  if (params.transactionHash) queryParams.append('transactionHash', params.transactionHash);
+  if (params.chainInId) queryParams.append('chainInId', params.chainInId);
+  if (params.chainOutId) queryParams.append('chainOutId', params.chainOutId);
+  if (params.createdAtLatest) queryParams.append('createdAtLatest', params.createdAtLatest);
+  if (params.createdAtOldest) queryParams.append('createdAtOldest', params.createdAtOldest);
+  if (params.metadataKey) queryParams.append('metadataKey', params.metadataKey);
+  if (params.metadataValue) queryParams.append('metadataValue', params.metadataValue);
+  
+  // Arrays
+  if (params.type && Array.isArray(params.type)) {
+    params.type.forEach(type => queryParams.append('type', type));
+  }
+  if (params.status && Array.isArray(params.status)) {
+    params.status.forEach(status => queryParams.append('status', status));
+  }
+  if (params.chains && Array.isArray(params.chains)) {
+    params.chains.forEach(chain => queryParams.append('chains', chain));
+  }
+
+  const response = await fetch(
+    `https://api.notus.team/api/v1/wallets/${walletAddress}/history?${queryParams}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+    }
+  );
+  
+  return await response.json();
+}
+
+// 12. Atualizar metadados de uma transação
+export async function updateTransactionMetadata(transactionId, metadata) {
+  const response = await fetch(
+    `https://api.notus.team/api/v1/wallets/transactions/${transactionId}/metadata`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+      body: JSON.stringify({
+        metadata
+      })
+    }
+  );
+  
+  return await response.json();
+}
+
+// 13. Atualizar metadados de uma wallet
+export async function updateWalletMetadata(walletId, metadata) {
+  const response = await fetch(
+    `https://api.notus.team/api/v1/wallets/${walletId}/metadata`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+      body: JSON.stringify({
+        metadata
+      })
+    }
+  );
+  
+  return await response.json();
+}
+
+// 14. Criar cotação de swap
+export async function createSwap(swapData) {
+  const response = await fetch(
+    `https://api.notus.team/api/v1/crypto/swap`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+      body: JSON.stringify(swapData)
+    }
+  );
+  
+  return await response.json();
+}
+
+// 15. Criar cotação de transferência
+export async function createTransfer(transferData) {
+  const response = await fetch(
+    `https://api.notus.team/api/v1/crypto/transfer`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+      body: JSON.stringify(transferData)
+    }
+  );
+  
+  return await response.json();
+}
+
+// 16. Criar operação em lote
+export async function createBatchOperation(batchData) {
+  const response = await fetch(
+    `https://api.notus.team/api/v1/crypto/batch-operations`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+      body: JSON.stringify(batchData)
+    }
+  );
+  
+  return await response.json();
+}
+
+// 17. Criar operação de usuário customizada
+export async function createCustomUserOperation(customOperationData) {
+  const response = await fetch(
+    `https://api.notus.team/api/v1/crypto/custom-user-operation`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+      body: JSON.stringify(customOperationData)
+    }
+  );
+  
+  return await response.json();
+}
+
+// 18. Executar operação de usuário
+export async function executeUserOperation(executeData) {
+  const response = await fetch(
+    `https://api.notus.team/api/v1/crypto/execute-user-op`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      },
+      body: JSON.stringify(executeData)
+    }
+  );
+  
+  return await response.json();
+}
+
+// 19. Obter operação de usuário
+export async function getUserOperation(userOperationHash) {
+  const response = await fetch(
+    `https://api.notus.team/api/v1/crypto/user-operation/${userOperationHash}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NOTUS_API_KEY,
+      }
+    }
+  );
+  
+  return await response.json();
 }
 ```
 

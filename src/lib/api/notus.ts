@@ -86,6 +86,106 @@ export interface NotusWalletHistory {
   limit: number;
 }
 
+// Fiat Operations Types
+export interface FiatDepositQuote {
+  quoteId: string;
+  amountToSendInFiatCurrency: string;
+  amountToReceiveInCryptoCurrency: string;
+  expiresAt: string;
+  paymentMethodToSend: string;
+  receiveCryptoCurrency: string;
+}
+
+export interface FiatDepositOrder {
+  orderId: string;
+  expiresAt: string;
+  paymentMethodToSendDetails: {
+    type: string;
+    pixKey: string;
+    qrCode: string; // base64
+  };
+}
+
+export interface FiatWithdrawQuote {
+  quoteId: string;
+  amountToSendInCryptoCurrency: string;
+  amountToReceiveInFiatCurrency: string;
+  estimatedGasFeeInCryptoCurrency: string;
+  transactionFeeInCryptoCurrency: string;
+  expiresAt: string;
+}
+
+export interface FiatWithdrawOrder {
+  userOperationHash: string;
+  orderId: string;
+  amountToSendInCryptoCurrency: string;
+  amountToReceiveInFiatCurrency: string;
+  transactionFeeAmountInCryptoCurrency: string;
+  estimatedGasFeeAmountInCryptoCurrency: string;
+}
+
+// KYC Types
+export interface DocumentUpload {
+  url: string;
+  fields: {
+    bucket: string;
+    "X-Amz-Algorithm": string;
+    "X-Amz-Credential": string;
+    "X-Amz-Date": string;
+    key: string;
+    Policy: string;
+    "X-Amz-Signature": string;
+  };
+}
+
+export interface CreateStandardIndividualSessionRequest {
+  firstName: string;
+  lastName: string;
+  birthDate: string; // Format: "DD/MM/YYYY"
+  documentId: string; // CPF/CNPJ (only digits)
+  documentCategory: "IDENTITY_CARD" | "PASSPORT" | "DRIVERS_LICENSE";
+  documentCountry: "US" | "BRAZIL";
+  livenessRequired?: boolean;
+}
+
+export interface CreateStandardIndividualSessionResponse {
+  session: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    birthDate: string;
+    document: {
+      id: string;
+      type: string | null;
+      category: string;
+    };
+    status: "PENDING" | "VERIFYING" | "COMPLETED" | "FAILED" | "EXPIRED";
+    livenessRequired: boolean;
+    createdAt: string;
+    updatedAt: string | null;
+    individualId?: string; // Present when status is COMPLETED
+  };
+  frontDocumentUpload: DocumentUpload;
+  backDocumentUpload: DocumentUpload | null;
+}
+
+export interface KYCVerificationSession {
+  id: string;
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  document: {
+    id: string;
+    type: string | null;
+    category: string;
+  };
+  status: "PENDING" | "VERIFYING" | "COMPLETED" | "FAILED" | "EXPIRED";
+  livenessRequired: boolean;
+  createdAt: string;
+  updatedAt: string | null;
+  individualId?: string; // Present when status is COMPLETED
+}
+
 // Notus API Client
 class NotusAPI {
   private baseURL: string
@@ -133,7 +233,31 @@ class NotusAPI {
     if (!response.ok) {
       const errorText = await response.text()
       console.error('❌ Notus API Error:', errorText)
-      throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`)
+      
+      // Parse error response para extrair informações específicas
+      let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+      let errorId = null;
+      
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.message || errorMessage;
+        errorId = errorData.id || null;
+        
+        // Log específico para erros conhecidos
+        if (errorId === 'INDIVIDUAL_NOT_FOUND') {
+          console.warn('🔍 Individual não encontrado - será criado automaticamente');
+        }
+      } catch (parseError) {
+        // Se não conseguir fazer parse, usa o texto original
+        errorMessage += ` - ${errorText}`;
+      }
+      
+      const error = new Error(errorMessage);
+      (error as any).status = response.status;
+      (error as any).errorId = errorId;
+      (error as any).originalResponse = errorText;
+      
+      throw error;
     }
 
     return response.json()
@@ -307,7 +431,117 @@ class NotusAPI {
     })
   }
 
-  // KYC (if available)
+  // Fiat Operations - ON-RAMP (Depósito)
+  async createFiatDepositQuote(params: {
+    paymentMethodToSend: string; // "PIX"
+    receiveCryptoCurrency: string; // "USDC" ou "BRZ"
+    amountToSendInFiatCurrency: string; // "100.00"
+    individualId: string;
+    walletAddress: string;
+    chainId: number;
+  }): Promise<FiatDepositQuote> {
+    return this.request<FiatDepositQuote>('/fiat/deposit/quote', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
+
+  async createFiatDepositOrder(params: {
+    quoteId: string;
+    individualId: string;
+    walletAddress: string;
+    chainId: number;
+  }): Promise<FiatDepositOrder> {
+    return this.request<FiatDepositOrder>('/fiat/deposit', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
+
+  // Fiat Operations - OFF-RAMP (Saque)
+  async createFiatWithdrawQuote(params: {
+    individualId: string;
+    amountToSendInCryptoCurrency: string;
+    cryptoCurrencyToSend: string; // "USDC" ou "BRZ"
+    paymentMethodToReceiveDetails: {
+      type: string; // "PIX"
+      pixKey: string;
+    };
+    chainId: number;
+  }): Promise<FiatWithdrawQuote> {
+    return this.request<FiatWithdrawQuote>('/fiat/withdraw/quote', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
+
+  async createFiatWithdrawOrder(params: {
+    quoteId: string;
+    individualId: string;
+    walletAddress: string;
+    chainId: number;
+  }): Promise<FiatWithdrawOrder> {
+    return this.request<FiatWithdrawOrder>('/fiat/withdraw', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
+
+  // Execute User Operation (obrigatório para OFF-RAMP)
+  async executeUserOperation(params: {
+    userOperationHash: string;
+    signature: string;
+  }): Promise<{ hash: string }> {
+    return this.request<{ hash: string }>('/crypto/execute-user-op', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
+
+  // KYC Operations - API Real da Notus
+  async createStandardIndividualSession(params: CreateStandardIndividualSessionRequest): Promise<CreateStandardIndividualSessionResponse> {
+    return this.request<CreateStandardIndividualSessionResponse>('/kyc/individual-verification-sessions/standard', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...params,
+        livenessRequired: false, // Por padrão, não requer liveness
+      }),
+    });
+  }
+
+  async getKYCVerificationSession(sessionId: string): Promise<{ session: KYCVerificationSession }> {
+    return this.request<{ session: KYCVerificationSession }>(`/kyc/individual-verification-sessions/standard/${sessionId}`);
+  }
+
+  async processKYCVerificationSession(sessionId: string): Promise<{ status: string }> {
+    return this.request<{ status: string }>(`/kyc/individual-verification-sessions/standard/${sessionId}/process`, {
+      method: 'POST',
+    });
+  }
+
+  // Upload de documento para S3
+  async uploadDocumentToS3(uploadData: DocumentUpload, file: File): Promise<void> {
+    const formData = new FormData();
+    
+    // Adicionar campos obrigatórios do S3
+    Object.entries(uploadData.fields).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
+    
+    // Adicionar o arquivo
+    formData.append('file', file);
+    
+    const response = await fetch(uploadData.url, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Erro ao fazer upload do documento: ${response.statusText}`);
+    }
+  }
+
+  // Legacy KYC methods (mantidos para compatibilidade)
   async submitKYC(params: {
     walletAddress: string
     personalInfo: any

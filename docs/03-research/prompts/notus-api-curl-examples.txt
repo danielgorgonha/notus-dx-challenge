@@ -20,10 +20,10 @@ export BASE_URL="https://api.notus.team/api/v1"
 ## 🌐 Blockchain
 
 ### 1. List Chains
-**Endpoint:** `GET /blockchain/chains`
+**Endpoint:** `GET /crypto/chains`
 
 ```bash
-curl -X GET "$BASE_URL/blockchain/chains" \
+curl -X GET "$BASE_URL/crypto/chains?page=1&perPage=20" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY"
 ```
@@ -34,13 +34,23 @@ curl -X GET "$BASE_URL/blockchain/chains" \
 - `500` - Erro interno do servidor
 
 ### 2. List Tokens
-**Endpoint:** `GET /blockchain/tokens`
+**Endpoint:** `GET /crypto/tokens`
 
 ```bash
-curl -X GET "$BASE_URL/blockchain/tokens" \
+curl -X GET "$BASE_URL/crypto/tokens?orderBy=marketCap&orderDir=asc&search=WBTC&filterByChainId=42161&filterWhitelist=true&page=1&perPage=25&projectId=9c0f200f-27b1-4a30-8127-d5e74f136957" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY"
 ```
+
+**Query Parameters:**
+- `orderBy` - How to order the tokens (marketCap | chainId)
+- `orderDir` - Direction of the ordering (asc | desc)
+- `search` - Search a token by its address, name or symbol
+- `filterByChainId` - Only show tokens from a certain chain
+- `filterWhitelist` - Filter results by the project whitelist (true | false)
+- `page` - Page to return (default: 1)
+- `perPage` - Amount of tokens returned per page (default: 10, max: 100)
+- `projectId` - The projectId you want to know the whitelist
 
 **Status de Retorno:**
 - `200` - Lista de tokens whitelist
@@ -60,18 +70,72 @@ curl -X POST "$BASE_URL/fiat/deposit/quote" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
     "paymentMethodToSend": "PIX",
+    "amountToSendInFiatCurrency": 100,
     "receiveCryptoCurrency": "USDC",
-    "amountToSendInFiatCurrency": "100.00",
     "individualId": "individual_123",
-    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-    "chainId": 137
+    "chainId": 137,
+    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6"
   }'
 ```
 
+**Request Body:**
+- `paymentMethodToSend` (string, required) - Método de pagamento (ACH | PIX | WIRE | SPEI)
+- `amountToSendInFiatCurrency` (number, required) - Valor em moeda fiat (min: 0.01)
+- `receiveCryptoCurrency` (string, required) - Criptomoeda a receber (USDC | BRZ)
+- `individualId` (string, required) - ID do individual
+- `chainId` (number, required) - Chain onde o token será enviado
+- `walletAddress` (string, required) - Endereço da wallet (formato: 0x[a-fA-F0-9]{40})
+
+**Supported Chains by Cryptocurrency:**
+- **USDC:** [1, 137, 8453, 42161] (Ethereum, Polygon, Base, Arbitrum)
+- **BRZ:** [137] (Polygon)
+
+**Response Examples:**
+
+**Success (201):**
+```json
+{
+  "depositQuote": {
+    "quoteId": "123e4567-e89b-12d3-a456-426614174000",
+    "expiresAt": "2023-12-31T23:59:59.999Z",
+    "amountToSendInFiatCurrency": 100,
+    "receiveCryptoCurrency": "USDC",
+    "amountToReceiveInCryptoCurrency": 95.5,
+    "exchangeRate": 0.955,
+    "fees": {
+      "total": 4.5,
+      "breakdown": {
+        "processing": 2.0,
+        "network": 1.5,
+        "service": 1.0
+      }
+    }
+  }
+}
+```
+
+**Error (400) - Token Not Supported:**
+```json
+{
+  "statusCode": 400,
+  "id": "CRYPTO_TOKEN_NOT_SUPPORTED_ON_CHAIN_WITH_ALTERNATIVES",
+  "message": "The token 'undefined' is not supported on any fiat chains"
+}
+```
+
+**Error (500) - Failed to Get Quote:**
+```json
+{
+  "statusCode": 500,
+  "id": "FAILED_TO_GET_FIAT_QUOTE",
+  "message": "string"
+}
+```
+
 **Status de Retorno:**
-- `200` - Quote criada com sucesso
-- `400` - Dados inválidos ou individualId não encontrado
-- `500` - Erro interno do servidor
+- `201` - Quote criada com sucesso
+- `400` - Token não suportado na chain (CRYPTO_TOKEN_NOT_SUPPORTED_ON_CHAIN_WITH_ALTERNATIVES)
+- `500` - Erro interno do servidor (FAILED_TO_GET_FIAT_QUOTE)
 
 ### 4. Create Fiat Deposit Order
 **Endpoint:** `POST /fiat/deposit`
@@ -81,17 +145,54 @@ curl -X POST "$BASE_URL/fiat/deposit" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "quoteId": "quote_123",
-    "individualId": "individual_123",
-    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-    "chainId": 137
+    "quoteId": "123e4567-e89b-12d3-a456-426614174000"
   }'
 ```
 
+**Request Body:**
+- `quoteId` (string, required) - ID da cotação de depósito
+
+**Response Examples:**
+
+**Success (201):**
+```json
+{
+  "depositOrder": {
+    "expiresAt": "2023-12-31T23:59:59.999Z",
+    "orderId": "123e4567-e89b-12d3-a456-426614174000",
+    "paymentMethodToSendDetails": {
+      "type": "PIX",
+      "pixKey": "00020101021226990014br.gov.bcb.pix2577pix.bancogenial.com/qrs1/v2/01snLCV5RHN6V3HVjx5abuLYzECFx4hFwmPZgzIRuAbagzHbvA52040000530398654041.005802BR59213rz Servicos Digitais6014Rio de Janeiro62070503***63048B38",
+      "base64QrCode": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII="
+    }
+  }
+}
+```
+
+**Error (400) - Quote Expired:**
+```json
+{
+  "statusCode": 400,
+  "id": "FIAT_QUOTE_EXPIRED",
+  "message": "The quote with id '03dbe93b-b259-480b-9fb6-3684ad5b28ba' has expired"
+}
+```
+
+**Error (404) - Quote Not Found:**
+```json
+{
+  "statusCode": 404,
+  "id": "FIAT_QUOTE_NOT_FOUND",
+  "message": "The quote with id '03dbe93b-b259-480b-9fb6-3684ad5b28ba' was not found"
+}
+```
+
 **Status de Retorno:**
-- `200` - Ordem de depósito criada
-- `400` - Quote inválida ou expirada
-- `500` - Erro interno do servidor
+- `201` - Ordem de depósito criada com sucesso
+- `400` - Quote expirada (FIAT_QUOTE_EXPIRED)
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `404` - Quote não encontrada (FIAT_QUOTE_NOT_FOUND)
+- `500` - Erro interno do servidor (FAILED_TO_CREATE_FIAT_DEPOSIT)
 
 ### 5. Create Fiat Withdrawal Quote
 **Endpoint:** `POST /fiat/withdraw/quote`
@@ -101,21 +202,71 @@ curl -X POST "$BASE_URL/fiat/withdraw/quote" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "individualId": "individual_123",
-    "amountToSendInCryptoCurrency": "50.00",
-    "cryptoCurrencyToSend": "USDC",
+    "individualId": "12345678901",
+    "chainId": 137,
     "paymentMethodToReceiveDetails": {
       "type": "PIX",
-      "pixKey": "user@example.com"
+      "pixKey": "my@email.com"
     },
-    "chainId": 137
+    "amountToSendInCryptoCurrency": "100",
+    "cryptoCurrencyToSend": "USDC"
   }'
 ```
 
+**Request Body:**
+- `individualId` (string, required) - ID usado para KYC e verificação de propriedade do sistema de moeda fiat
+- `chainId` (number, required) - Chain de onde o token será enviado
+- `paymentMethodToReceiveDetails` (object, required) - Método para receber a moeda fiat
+  - `type` (string) - Tipo de método (PIX)
+  - `pixKey` (string) - Chave PIX que receberá a moeda fiat
+- `amountToSendInCryptoCurrency` (string, required) - Quantidade de criptomoeda a enviar
+- `cryptoCurrencyToSend` (string, required) - Criptomoeda a enviar (USDC | BRZ)
+- `transactionFeePercent` (number, optional) - Percentual de taxa (0 a 99%)
+
+**Supported Chains by Cryptocurrency:**
+- **USDC:** [1, 137, 8453, 42161] (Ethereum, Polygon, Base, Arbitrum)
+- **BRZ:** [137] (Polygon)
+
+**Response Examples:**
+
+**Success (201):**
+```json
+{
+  "withdrawQuote": {
+    "quoteId": "123e4567-e89b-12d3-a456-426614174000",
+    "cryptoCurrencyToSend": "USDC",
+    "fiatCurrencyToReceive": "BRL",
+    "amountToSendInCryptoCurrency": "100",
+    "amountToReceiveInFiatCurrency": "100",
+    "transactionFeeInCryptoCurrency": "10",
+    "estimatedGasFeeInCryptoCurrency": "10",
+    "expiresAt": "2021-01-01T00:00:00.000Z"
+  }
+}
+```
+
+**Error (400) - Token Not Supported:**
+```json
+{
+  "statusCode": 400,
+  "id": "CRYPTO_TOKEN_NOT_SUPPORTED_ON_CHAIN_WITH_ALTERNATIVES",
+  "message": "The token 'undefined' is not supported on any fiat chains"
+}
+```
+
+**Error (500) - Failed to Get Quote:**
+```json
+{
+  "statusCode": 500,
+  "id": "FAILED_TO_GET_FIAT_QUOTE",
+  "message": "string"
+}
+```
+
 **Status de Retorno:**
-- `200` - Quote de saque criada
-- `400` - Dados inválidos ou saldo insuficiente
-- `500` - Erro interno do servidor
+- `201` - Quote de saque criada com sucesso
+- `400` - Token não suportado na chain (CRYPTO_TOKEN_NOT_SUPPORTED_ON_CHAIN_WITH_ALTERNATIVES)
+- `500` - Erro interno do servidor (FAILED_TO_GET_FIAT_QUOTE)
 
 ### 6. Create Fiat Withdrawal Order
 **Endpoint:** `POST /fiat/withdraw`
@@ -125,17 +276,76 @@ curl -X POST "$BASE_URL/fiat/withdraw" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "quoteId": "quote_456",
-    "individualId": "individual_123",
-    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-    "chainId": 137
+    "quoteId": "12345678-1234-1234-1234-123456789012",
+    "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464"
   }'
 ```
 
+**Request Body:**
+- `quoteId` (string, required) - ID da cotação gerada pelo endpoint Withdrawal Quote
+- `walletAddress` (string, required) - Wallet que enviará os tokens para saque (formato: 0x[a-fA-F0-9]{40})
+
+**Response Examples:**
+
+**Success (201):**
+```json
+{
+  "withdrawOrder": {
+    "expiresAt": "2023-12-31T23:59:59.999Z",
+    "userOperationHash": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+    "userOpHash": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+    "authorization": {},
+    "orderId": "123e4567-e89b-12d3-a456-426614174000",
+    "amountToSendInCryptoCurrency": "100",
+    "amountToReceiveInFiatCurrency": "100",
+    "transactionFeeAmountInCryptoCurrency": "100",
+    "estimatedGasFeeAmountInCryptoCurrency": "100"
+  }
+}
+```
+
+**Error (400) - Quote Expired:**
+```json
+{
+  "statusCode": 400,
+  "id": "FIAT_QUOTE_EXPIRED",
+  "message": "The quote with id '03dbe93b-b259-480b-9fb6-3684ad5b28ba' has expired"
+}
+```
+
+**Error (401) - Unauthorized:**
+```json
+{
+  "statusCode": 401,
+  "id": "UNAUTHORIZED_EXCEPTION",
+  "message": "Unauthorized"
+}
+```
+
+**Error (404) - Quote Not Found:**
+```json
+{
+  "statusCode": 404,
+  "id": "FIAT_QUOTE_NOT_FOUND",
+  "message": "The quote with id '03dbe93b-b259-480b-9fb6-3684ad5b28ba' was not found"
+}
+```
+
+**Error (500) - Failed to Create:**
+```json
+{
+  "statusCode": 500,
+  "id": "FAILED_TO_CREATE_FIAT_DEPOSIT",
+  "message": "Failed to create fiat deposit for quote"
+}
+```
+
 **Status de Retorno:**
-- `200` - Ordem de saque criada
-- `400` - Quote inválida ou saldo insuficiente
-- `500` - Erro interno do servidor
+- `201` - Ordem de saque criada com sucesso
+- `400` - Quote expirada (FIAT_QUOTE_EXPIRED)
+- `401` - Não autorizado (UNAUTHORIZED_EXCEPTION)
+- `404` - Quote não encontrada (FIAT_QUOTE_NOT_FOUND)
+- `500` - Erro interno do servidor (FAILED_TO_CREATE_FIAT_DEPOSIT)
 
 ---
 
@@ -144,6 +354,8 @@ curl -X POST "$BASE_URL/fiat/withdraw" \
 ### 7. Create Standard Individual Verification Session
 **Endpoint:** `POST /kyc/individual-verification-sessions/standard`
 
+Cria uma nova sessão de verificação KYC para um indivíduo. Inicia o processo de verificação de identidade coletando informações pessoais e detalhes do documento. A sessão gerará URLs de upload para imagens de documentos e pode opcionalmente exigir verificação de liveness.
+
 ```bash
 curl -X POST "$BASE_URL/kyc/individual-verification-sessions/standard" \
   -H "Content-Type: application/json" \
@@ -151,15 +363,82 @@ curl -X POST "$BASE_URL/kyc/individual-verification-sessions/standard" \
   -d '{
     "firstName": "João",
     "lastName": "Silva",
-    "birthDate": "1990-01-15",
-    "document": {
-      "type": "RG",
-      "category": "IDENTITY_CARD"
-    },
-    "country": "BR",
-    "livenessRequired": false
+    "birthDate": "1990-01-01",
+    "documentCategory": "PASSPORT",
+    "documentCountry": "BRAZIL",
+    "documentId": "12345678901",
+    "nationality": "BRAZILIAN",
+    "livenessRequired": true,
+    "email": "joao@example.com",
+    "address": "Rua das Flores, 123",
+    "city": "São Paulo",
+    "state": "SP",
+    "postalCode": "01234-567"
   }'
 ```
+
+**Response (200 OK):**
+```json
+{
+  "session": {
+    "id": "string",
+    "individualId": "string",
+    "status": "PENDING",
+    "livenessRequired": true,
+    "firstName": "string",
+    "lastName": "string",
+    "birthDate": "string",
+    "document": {
+      "id": "string",
+      "type": "string",
+      "category": "string"
+    },
+    "createdAt": "string",
+    "updatedAt": "string"
+  },
+  "backDocument": {
+    "url": "string",
+    "fields": {
+      "bucket": "string",
+      "X-Amz-Algorithm": "string",
+      "X-Amz-Credential": "string",
+      "X-Amz-Date": "string",
+      "key": "string",
+      "Policy": "string",
+      "X-Amz-Signature": "string"
+    }
+  },
+  "frontDocument": {
+    "url": "string",
+    "fields": {
+      "bucket": "string",
+      "X-Amz-Algorithm": "string",
+      "X-Amz-Credential": "string",
+      "X-Amz-Date": "string",
+      "key": "string",
+      "Policy": "string",
+      "X-Amz-Signature": "string"
+    }
+  }
+}
+```
+
+**Campos obrigatórios:**
+- `firstName` (string): Nome do indivíduo
+- `lastName` (string): Sobrenome do indivíduo
+- `birthDate` (string): Data de nascimento
+- `documentCategory` (string): Categoria do documento (PASSPORT | DRIVERS_LICENSE | IDENTITY_CARD)
+- `documentCountry` (string): País do documento (BRAZIL | AFGHANISTAN | ALBANIA | ...)
+- `documentId` (string): ID do documento (apenas números)
+- `livenessRequired` (boolean): Se é necessário verificação de liveness
+- `email` (string): Email do indivíduo
+- `address` (string): Endereço do indivíduo
+- `city` (string): Cidade do indivíduo
+- `state` (string): Estado do indivíduo
+- `postalCode` (string): Código postal do indivíduo
+
+**Campos opcionais:**
+- `nationality` (string): Nacionalidade (AFGHAN | ALBANIAN | ALGERIAN | ...)
 
 **Status de Retorno:**
 - `200` - Sessão KYC criada com URLs de upload
@@ -169,11 +448,38 @@ curl -X POST "$BASE_URL/kyc/individual-verification-sessions/standard" \
 ### 8. Get Standard Individual Verification Session Result
 **Endpoint:** `GET /kyc/individual-verification-sessions/standard/{sessionId}`
 
+Recupera o status atual e resultados de uma sessão de verificação individual padrão. Este endpoint permite verificar o progresso e resultado de um processo de verificação KYC.
+
 ```bash
 curl -X GET "$BASE_URL/kyc/individual-verification-sessions/standard/session_123" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY"
 ```
+
+**Response (200 OK):**
+```json
+{
+  "session": {
+    "id": "string",
+    "individualId": "string",
+    "status": "PENDING",
+    "livenessRequired": true,
+    "firstName": "string",
+    "lastName": "string",
+    "birthDate": "string",
+    "document": {
+      "id": "string",
+      "type": "string",
+      "category": "string"
+    },
+    "createdAt": "string",
+    "updatedAt": "string"
+  }
+}
+```
+
+**Path Parameters:**
+- `sessionId` (string, required): ID da sessão de verificação
 
 **Status de Retorno:**
 - `200` - Status da verificação (PENDING, VERIFYING, COMPLETED, FAILED)
@@ -183,15 +489,25 @@ curl -X GET "$BASE_URL/kyc/individual-verification-sessions/standard/session_123
 ### 9. Process Standard Individual Verification Session
 **Endpoint:** `POST /kyc/individual-verification-sessions/standard/{sessionId}/process`
 
+Processa uma sessão de verificação individual padrão após o upload dos documentos. Este endpoint aciona o processo de verificação real usando as imagens de documentos carregadas e as informações pessoais fornecidas durante a criação da sessão.
+
 ```bash
 curl -X POST "$BASE_URL/kyc/individual-verification-sessions/standard/session_123/process" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY"
 ```
 
+**Response (204 No Content):**
+```
+Empty response body
+```
+
+**Path Parameters:**
+- `sessionId` (string, required): ID da sessão de verificação
+
 **Status de Retorno:**
-- `200` - Processamento iniciado
-- `400` - Sessão inválida ou documentos não enviados
+- `204` - Sessão processada com sucesso (No Content)
+- `400` - SessionId inválido ou documentos não encontrados
 - `500` - Erro interno do servidor
 
 ---
@@ -201,112 +517,458 @@ curl -X POST "$BASE_URL/kyc/individual-verification-sessions/standard/session_12
 ### 10. List Liquidity Pools
 **Endpoint:** `GET /liquidity/pools`
 
+Lista pools de liquidez que existem na blockchain. O pool pode estar em estado quebrado, como tendo quase nenhuma liquidez. Use os dados retornados por este endpoint para avaliar se o pool vale a pena investir. Escolha o intervalo de agregação para controlar tanto granularidade quanto intervalo de tempo: DAILY (últimos 30 dias), WEEKLY (últimas 12 semanas), MONTHLY (últimos 12 meses).
+
 ```bash
-curl -X GET "$BASE_URL/liquidity/pools" \
+curl -X GET "$BASE_URL/liquidity/pools?take=10&offset=0&chainIds=42161&tokensAddresses=0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f&filterWhitelist=true&rangeInDays=30" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY"
 ```
+
+**Response (200 OK):**
+```json
+{
+  "pools": [
+    {
+      "provider": {
+        "name": "XY",
+        "logoUrl": "https://assets.notus.team/Lifi.png",
+        "explorerURL": "https://explorer.li.fi"
+      },
+      "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+      "chain": {
+        "id": 137,
+        "name": "POLYGON",
+        "logo": "https://logopolygon.com"
+      },
+      "fee": 0.05,
+      "totalValueLockedUSD": "10000.453",
+      "tokens": [
+        {
+          "name": "Wrapped Bitcoin",
+          "symbol": "WBTC",
+          "decimals": 18,
+          "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+          "poolShareInPercentage": 50.5,
+          "poolShare": 1000.25,
+          "logo": "https://assets.notus.team/wbtc.png"
+        }
+      ],
+      "stats": {
+        "rangeInDays": 30,
+        "feesInUSD": "1500.75",
+        "volumeInUSD": "50000.25",
+        "transactionsCount": 1250
+      }
+    }
+  ]
+}
+```
+
+**Query Parameters:**
+- `take` (integer, optional): Máximo de pools por página (1-50, padrão: 10)
+- `offset` (integer, optional): Número de pools para pular (usado para paginação)
+- `chainIds` (array<number>, optional): Filtrar por chains (Arbitrum One: 42161, Avalanche: 43114, Base: 8453, BNB Smart Chain: 56, Ethereum: 1, Gnosis: 100, OP Mainnet: 10, Polygon: 137)
+- `tokensAddresses` (array<string>, optional): Filtrar por endereços de tokens
+- `filterWhitelist` (string, optional): Filtrar por whitelist do projeto (true | false, padrão: true)
+- `rangeInDays` (integer, optional): Número de dias para agregar estatísticas (1-365, padrão: 30)
+- `ids` (array<string>, optional): Filtrar por IDs de pools
 
 **Status de Retorno:**
 - `200` - Lista de pools de liquidez
-- `400` - Parâmetros inválidos
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
 - `500` - Erro interno do servidor
 
 ### 11. Get Liquidity Pool
-**Endpoint:** `GET /liquidity/pools/{poolId}`
+**Endpoint:** `GET /liquidity/pools/{id}`
+
+Obtém um pool de liquidez por ID com estatísticas agregadas. Retorna informações detalhadas sobre o pool, incluindo tokens, TVL, taxas e estatísticas de volume e transações.
 
 ```bash
-curl -X GET "$BASE_URL/liquidity/pools/pool_123" \
+curl -X GET "$BASE_URL/liquidity/pools/pool_123?rangeInDays=30" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY"
 ```
 
+**Response (200 OK):**
+```json
+{
+  "pool": {
+    "provider": {
+      "name": "XY",
+      "logoUrl": "https://assets.notus.team/Lifi.png",
+      "explorerURL": "https://explorer.li.fi"
+    },
+    "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+    "chain": {
+      "id": 137,
+      "name": "POLYGON",
+      "logo": "https://logopolygon.com"
+    },
+    "fee": 0.05,
+    "totalValueLockedUSD": "10000.453",
+    "tokens": [
+      {
+        "name": "Wrapped Bitcoin",
+        "symbol": "WBTC",
+        "decimals": 18,
+        "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+        "poolShareInPercentage": 50.5,
+        "poolShare": 1000.25,
+        "logo": "https://assets.notus.team/wbtc.png"
+      }
+    ],
+    "stats": {
+      "rangeInDays": 30,
+      "feesInUSD": "1500.75",
+      "volumeInUSD": "50000.25",
+      "transactionsCount": 1250
+    }
+  }
+}
+```
+
+**Path Parameters:**
+- `id` (string, required): Identificador único do pool (1 <= length)
+
+**Query Parameters:**
+- `rangeInDays` (integer, optional): Número de dias para agregar estatísticas (1-365, padrão: 30)
+
 **Status de Retorno:**
-- `200` - Detalhes do pool
-- `400` - PoolId inválido
-- `500` - Erro interno do servidor
+- `200` - Pool com estatísticas agregadas
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
 
 ### 12. Create Liquidity
 **Endpoint:** `POST /liquidity/create`
+
+Este endpoint cria liquidez para um pool de liquidez. Permite fornecer liquidez a um pool existente ou criar um novo pool com tokens específicos, definindo faixas de preço e taxas de pool.
 
 ```bash
 curl -X POST "$BASE_URL/liquidity/create" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-    "token0": "0xA0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
-    "token1": "0xB0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
-    "amount0": "1000.00",
-    "amount1": "2000.00",
-    "chainId": 137
+    "liquidityProvider": "UNISWAP_V3",
+    "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "toAddress": "0x1337133713371337133713371337133713371337",
+    "chainId": 42161,
+    "transactionFeePercent": 5,
+    "payGasFeeToken": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+    "gasFeePaymentMethod": "ADD_TO_AMOUNT",
+    "token0": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+    "token1": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+    "poolFeePercent": 1,
+    "token0Amount": "26.2345",
+    "token1Amount": "1823.2",
+    "minPrice": 83475.12,
+    "maxPrice": 102300.5,
+    "slippage": 0.5,
+    "metadata": {
+      "key": "value"
+    }
   }'
 ```
 
+**Response (200 OK):**
+```json
+{
+  "operation": {
+    "metadata": {
+      "key": "value"
+    },
+    "userOperationHash": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+    "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "expiresAt": "2025-10-26T13:27:49.542Z",
+    "amounts": [
+      {
+        "token": {
+          "name": "Wrapped Bitcoin",
+          "symbol": "WBTC",
+          "decimals": 18,
+          "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+          "logoURL": "https://assets.notus.team/wbtc.png"
+        },
+        "amount": "26.2345",
+        "amountIn": {
+          "btc": "1234.98765",
+          "eth": "1234.98765",
+          "usd": "1234.98765"
+        }
+      }
+    ],
+    "collectedFees": [],
+    "chain": {
+      "id": 42161,
+      "name": "ARBITRUM_ONE",
+      "logo": "https://assets.notus.team/arbitrum.png"
+    },
+    "liquidityProvider": "UNISWAP_V3",
+    "nftAddress": "0xc36442b4a4522e871399cd717abdd847ab11fe88"
+  }
+}
+```
+
+**Campos obrigatórios:**
+- `walletAddress` (string): Endereço da wallet que fornecerá liquidez (formato hexadecimal)
+- `toAddress` (string): Endereço que receberá o token NFT representando a liquidez (formato hexadecimal)
+- `chainId` (number): ID da blockchain (Arbitrum One: 42161, Avalanche: 43114, Base: 8453, BNB Smart Chain: 56, Ethereum: 1, Gnosis: 100, OP Mainnet: 10, Polygon: 137)
+- `payGasFeeToken` (string): Endereço do token para pagar taxa (formato hexadecimal)
+- `gasFeePaymentMethod` (string): Método de pagamento da taxa (ADD_TO_AMOUNT | DEDUCT_FROM_AMOUNT)
+- `token0` (string): Endereço de um dos tokens do pool (formato hexadecimal)
+- `token1` (string): Endereço do outro token do pool (formato hexadecimal)
+- `poolFeePercent` (number): Taxa do pool (0.01-100)
+- `token0Amount` (string): Quantidade de token0 a adicionar
+- `token1Amount` (string): Quantidade de token1 a adicionar
+- `minPrice` (number): Preço mínimo para liquidez ativa
+- `maxPrice` (number): Preço máximo para liquidez ativa
+
+**Campos opcionais:**
+- `liquidityProvider` (string): Provedor de liquidez (UNISWAP_V3)
+- `transactionFeePercent` (number): Percentual de taxa (0-99.99)
+- `slippage` (number): Slippage máximo (0.5-99, padrão: 0.5)
+- `metadata` (object): Metadados customizados (máximo 1KB)
+
 **Status de Retorno:**
 - `200` - Liquidez criada com sucesso
-- `400` - Dados inválidos ou saldo insuficiente
-- `500` - Erro interno do servidor
+- `400` - Tokens não autorizados (NOT_AUTHORIZED_TOKENS)
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `404` - Wallet não registrada (ACCOUNT_ABSTRACTION_ADDRESS_NOT_REGISTERED_WITH_PROJECT)
 
 ### 13. Change Liquidity
 **Endpoint:** `POST /liquidity/change`
+
+Altera a quantidade de liquidez fornecida em um pool de liquidez. Permite adicionar ou remover liquidez de um pool existente usando o tokenId do NFT que representa a liquidez.
 
 ```bash
 curl -X POST "$BASE_URL/liquidity/change" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-    "poolId": "pool_123",
-    "amount0": "500.00",
-    "amount1": "1000.00",
-    "chainId": 137
+    "liquidityProvider": "UNISWAP_V3",
+    "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "chainId": 42161,
+    "payGasFeeToken": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+    "gasFeePaymentMethod": "ADD_TO_AMOUNT",
+    "transactionFeePercent": 5,
+    "tokenId": "2375619234",
+    "change": {
+      "token0": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+      "token1": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+      "token0Amount": "26.2345",
+      "token1Amount": "1823.2",
+      "slippage": 0.5
+    },
+    "metadata": {
+      "key": "value"
+    }
   }'
 ```
+
+**Response (200 OK):**
+```json
+{
+  "operation": {
+    "metadata": {
+      "key": "value"
+    },
+    "userOperationHash": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+    "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "expiresAt": "2025-10-26T13:27:49.542Z",
+    "amounts": "7239.2",
+    "collectedFees": [
+      {
+        "token": {
+          "name": "Wrapped Bitcoin",
+          "symbol": "WBTC",
+          "decimals": 18,
+          "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+          "logoURL": "https://assets.notus.team/wbtc.png"
+        },
+        "cryptoCurrency": {
+          "name": "Wrapped Bitcoin",
+          "symbol": "WBTC",
+          "decimals": 18,
+          "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+          "logoURL": "https://assets.notus.team/wbtc.png"
+        },
+        "amount": "3342.7389263",
+        "amountIn": {
+          "btc": "1234.98765",
+          "eth": "1234.98765",
+          "usd": "1234.98765"
+        }
+      }
+    ],
+    "chain": 42161,
+    "liquidityProvider": "UNISWAP_V3",
+    "nftAddress": "0xc36442b4a4522e871399cd717abdd847ab11fe88"
+  }
+}
+```
+
+**Campos obrigatórios:**
+- `walletAddress` (string): Endereço da wallet (formato hexadecimal)
+- `chainId` (number): ID da blockchain (Arbitrum One: 42161, Avalanche: 43114, Base: 8453, BNB Smart Chain: 56, Ethereum: 1, Gnosis: 100, OP Mainnet: 10, Polygon: 137)
+- `payGasFeeToken` (string): Endereço do token para pagar taxa (formato hexadecimal)
+- `gasFeePaymentMethod` (string): Método de pagamento da taxa (ADD_TO_AMOUNT | DEDUCT_FROM_AMOUNT)
+- `tokenId` (string): ID do NFT que representa a liquidez
+- `change` (object): Objeto com detalhes da mudança
+  - `token0` (string): Endereço de um dos tokens do pool
+  - `token1` (string): Endereço do outro token do pool
+  - `token0Amount` (string): Quantidade de token0 (valores negativos permitidos)
+  - `token1Amount` (string): Quantidade de token1 (valores negativos permitidos)
+
+**Campos opcionais:**
+- `liquidityProvider` (string): Provedor de liquidez (UNISWAP_V3)
+- `transactionFeePercent` (number): Percentual de taxa (0-99.99)
+- `change.slippage` (number): Slippage máximo (0.5-99, padrão: 0.5)
+- `metadata` (object): Metadados customizados (máximo 1KB)
 
 **Status de Retorno:**
 - `200` - Liquidez alterada com sucesso
-- `400` - Dados inválidos ou posição não encontrada
-- `500` - Erro interno do servidor
+- `400` - Tokens não autorizados (NOT_AUTHORIZED_TOKENS)
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `404` - Wallet não registrada (ACCOUNT_ABSTRACTION_ADDRESS_NOT_REGISTERED_WITH_PROJECT)
+- `500` - Erro na blockchain (BLOCKCHAIN_ERROR)
 
 ### 14. Collect Fees from Liquidity
-**Endpoint:** `POST /liquidity/collect-fees`
+**Endpoint:** `POST /liquidity/collect`
+
+Coleta as taxas recebidas pelo NFT de liquidez. Isso criará uma operação de usuário para ser executada e mostrará quanto será coletado, para que você possa escolher se realmente quer coletar ou não. Sempre coleta o valor total.
 
 ```bash
-curl -X POST "$BASE_URL/liquidity/collect-fees" \
+curl -X POST "$BASE_URL/liquidity/collect" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-    "poolId": "pool_123",
-    "chainId": 137
+    "liquidityProvider": "UNISWAP_V3",
+    "chainId": 42161,
+    "nftId": "2375619234",
+    "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "payGasFeeToken": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+    "metadata": {
+      "key": "value"
+    }
   }'
 ```
 
+**Response (200 OK):**
+```json
+{
+  "operation": {
+    "metadata": {
+      "key": "value"
+    },
+    "userOperationHash": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+    "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "expiresAt": "2025-10-26T13:27:49.542Z",
+    "amounts": "7239.2",
+    "collectedFees": [
+      {
+        "token": {
+          "name": "Wrapped Bitcoin",
+          "symbol": "WBTC",
+          "decimals": 18,
+          "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+          "logoURL": "https://assets.notus.team/wbtc.png"
+        },
+        "cryptoCurrency": {
+          "name": "Wrapped Bitcoin",
+          "symbol": "WBTC",
+          "decimals": 18,
+          "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+          "logoURL": "https://assets.notus.team/wbtc.png"
+        },
+        "amount": "3342.7389263",
+        "amountIn": {
+          "btc": "1234.98765",
+          "eth": "1234.98765",
+          "usd": "1234.98765"
+        }
+      }
+    ],
+    "chain": 42161,
+    "liquidityProvider": "UNISWAP_V3",
+    "nftAddress": "0xc36442b4a4522e871399cd717abdd847ab11fe88"
+  }
+}
+```
+
+**Campos obrigatórios:**
+- `chainId` (number): ID da blockchain (Arbitrum One: 42161, Avalanche: 43114, Base: 8453, BNB Smart Chain: 56, Ethereum: 1, Gnosis: 100, OP Mainnet: 10, Polygon: 137)
+- `nftId` (string): ID do NFT que representa a liquidez
+- `walletAddress` (string): Endereço da wallet (formato hexadecimal)
+- `payGasFeeToken` (string): Endereço do token para pagar taxa (formato hexadecimal)
+
+**Campos opcionais:**
+- `liquidityProvider` (string): Provedor de liquidez (UNISWAP_V3)
+- `metadata` (object): Metadados customizados (máximo 1KB)
+
 **Status de Retorno:**
 - `200` - Taxas coletadas com sucesso
-- `400` - Pool inválido ou sem taxas disponíveis
-- `500` - Erro interno do servidor
+- `400` - Tokens não autorizados (NOT_AUTHORIZED_TOKENS)
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `500` - Erro na blockchain (BLOCKCHAIN_ERROR)
 
 ### 15. Get Liquidity Amounts
 **Endpoint:** `GET /liquidity/amounts`
 
+Obtém as quantidades de tokens necessárias para fornecer liquidez a um pool baseado no máximo que você quer gastar em um token. Você pode passar o valor máximo para ambos os tokens e receber cotações para os dois cenários possíveis, assim você pode verificar em uma única chamada qual opção funciona baseado nas quantidades que seu usuário tem.
+
 ```bash
-curl -X GET "$BASE_URL/liquidity/amounts?walletAddress=0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6&poolId=pool_123&chainId=137" \
+curl -X GET "$BASE_URL/liquidity/amounts?liquidityProvider=UNISWAP_V3&chainId=42161&token0=0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f&token1=0xaf88d065e77c8cc2239327c5edb3a432268e5831&poolFeePercent=1&token0MaxAmount=100&token1MaxAmount=100&minPrice=83475.12&maxPrice=102300.5&payGasFeeToken=0x82af49447d8a07e3bd95bd0d56f35241523fbab1&gasFeePaymentMethod=ADD_TO_AMOUNT" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY"
 ```
 
+**Response (200 OK):**
+```json
+{
+  "poolPrice": "18342.234512",
+  "amounts": {
+    "token0MaxAmount": {
+      "token0Amount": "2345.91",
+      "token1Amount": "723.123"
+    },
+    "token1MaxAmount": {
+      "token0Amount": "2345.91",
+      "token1Amount": "723.123"
+    }
+  }
+}
+```
+
+**Query Parameters obrigatórios:**
+- `chainId` (number): ID da blockchain (Arbitrum One: 42161, Avalanche: 43114, Base: 8453, BNB Smart Chain: 56, Ethereum: 1, Gnosis: 100, OP Mainnet: 10, Polygon: 137)
+- `token0` (string): Endereço de um dos tokens do pool (formato hexadecimal)
+- `token1` (string): Endereço do outro token do pool (formato hexadecimal)
+- `poolFeePercent` (number): Taxa do pool (0.01-100)
+- `token0MaxAmount` (string): Quantidade máxima de token0 (padrão: "1")
+- `token1MaxAmount` (string): Quantidade máxima de token1 (padrão: "1")
+- `minPrice` (number): Preço mínimo para liquidez ativa
+- `maxPrice` (number): Preço máximo para liquidez ativa
+- `payGasFeeToken` (string): Endereço do token para pagar taxa (formato hexadecimal)
+- `gasFeePaymentMethod` (string): Método de pagamento da taxa (ADD_TO_AMOUNT | DEDUCT_FROM_AMOUNT)
+
+**Query Parameters opcionais:**
+- `liquidityProvider` (string): Provedor de liquidez (UNISWAP_V3)
+
+**Exemplo de uso:**
+Seu usuário quer fornecer liquidez ao pool ETH-USDC e tem 100 USDC e 100 ETH na wallet. Passando ambos como valores máximos em `tokenXMaxAmount`, você receberá duas cotações: uma dizendo quanto ETH você precisa fornecer se enviar 100 USDC e outra dizendo quanto USDC você precisa fornecer dado 100 ETH. Então você pode escolher qual opção realmente se encaixa na liquidez que seu usuário tem.
+
+**Nota:** Se apenas um deles for retornado, significa que a faixa de preço está fora do preço atual, então apenas um token pode ser fornecido para criar liquidez, o outro sempre será zero.
+
 **Status de Retorno:**
-- `200` - Valores de liquidez
-- `400` - Parâmetros inválidos
-- `500` - Erro interno do servidor
+- `200` - Quantidades de tokens necessárias
+- `400` - Tokens não autorizados (NOT_AUTHORIZED_TOKENS)
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `500` - Erro na blockchain (BLOCKCHAIN_ERROR)
 
 ### 16. Get Pool Historical Data
-**Endpoint:** `GET /liquidity/pools/{poolId}/historical-data`
+**Endpoint:** `GET /crypto/liquidity/pools/{poolId}/historical-data`
 
 ```bash
-curl -X GET "$BASE_URL/liquidity/pools/pool_123/historical-data?days=30" \
+curl -X GET "$BASE_URL/crypto/liquidity/pools/pool_123/historical-data?days=30" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY"
 ```
@@ -323,14 +985,17 @@ curl -X GET "$BASE_URL/liquidity/pools/pool_123/historical-data?days=30" \
 ### 17. Register Smart Wallet
 **Endpoint:** `POST /wallets/register`
 
+Este endpoint registra uma nova smart wallet para um usuário, vinculando esta wallet ao seu projeto. Você pode verificar se a wallet já foi registrada verificando o valor _registeredAt_ do endpoint _Check Smart Wallet_.
+
 ```bash
 curl -X POST "$BASE_URL/wallets/register" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "externallyOwnedAccount": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-    "factory": "0xe77f2c7d79b2743d39ad73dc47a8e9c6416ad3f3",
-    "salt": "0",
+    "externallyOwnedAccount": "0x133700000000000000000000000000000000c0de",
+    "factory": "0x0000000000400cdfef5e2714e63d8040b700bc24",
+    "salt": "12345",
+    "eip7702": false,
     "metadata": {
       "name": "My Smart Wallet",
       "description": "Primary wallet for DeFi operations"
@@ -338,27 +1003,129 @@ curl -X POST "$BASE_URL/wallets/register" \
   }'
 ```
 
+**Response (200 OK):**
+```json
+{
+  "wallet": {
+    "metadata": {
+      "key": "value"
+    },
+    "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "accountAbstraction": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "externallyOwnedAccount": "0x133700000000000000000000000000000000c0de",
+    "factory": "0x0000000000400cdfef5e2714e63d8040b700bc24",
+    "implementation": "0x8e8e658e22b12ada97b402ff0b044d6a325013c7",
+    "eip7702": false,
+    "deployed": [
+      {
+        "chain": {
+          "id": 137,
+          "name": "POLYGON",
+          "logo": "https://logopolygon.com"
+        },
+        "deployed": true
+      }
+    ],
+    "salt": 12345,
+    "registeredAt": "2025-08-06T16:57:09.249Z"
+  }
+}
+```
+
+**Request Body:**
+- `externallyOwnedAccount` (string, required): Endereço público da EOA que assinará as transações, o proprietário da wallet de abstração de conta
+- `factory` (string, required): Endereço do contrato factory que cria o contrato da wallet de abstração de conta
+- `salt` (string, optional): Número salt usado para gerar esta wallet. Se nenhum for fornecido, o padrão é zero. Cada salt gera uma nova smart wallet para o mesmo usuário
+- `eip7702` (boolean, optional): Se você quer fazer deploy usando o padrão EIP7702, que permite que a EOA defina um contrato como seu próprio código de contrato. O valor padrão é False
+- `metadata` (object, optional): Metadados personalizados para a entidade. Pares chave-valor com valores string. Tamanho máximo 1KB
+
+**Response Fields:**
+- `wallet.metadata` (object): Objeto de metadados definido para esta transação, null se nenhum
+- `wallet.walletAddress` (string): Endereço da smart wallet em formato hexadecimal
+- `wallet.accountAbstraction` (string): DEPRECATED - Use walletAddress ao invés
+- `wallet.externallyOwnedAccount` (string): Endereço do proprietário da wallet que assina as operações de usuário
+- `wallet.factory` (string): Endereço do contrato factory que criará o contrato de abstração de conta
+- `wallet.implementation` (string): Endereço do contrato de implementação, este contrato é o contrato efetivo da smart wallet
+- `wallet.eip7702` (boolean): Se esta wallet está usando EIP7702
+- `wallet.deployed` (array): Estado de deploy do contrato da wallet em cada blockchain
+- `wallet.salt` (string): Número salt usado para gerar esta wallet. Null para wallets EIP-7702
+- `wallet.registeredAt` (string): Data em que a wallet foi registrada com este projeto, null se não registrada
+
 **Status de Retorno:**
 - `200` - Smart wallet registrada com sucesso
-- `400` - Wallet já registrada ou dados inválidos
-- `500` - Erro interno do servidor
+- `400` - Wallet já registrada (WALLET_ALREADY_REGISTERED)
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `404` - Projeto não encontrado (PROJECT_NOT_FOUND)
+- `500` - Falha no registro de tracking da wallet (REGISTER_WALLET_TRACKING_FAILED)
 
 ### 18. Get Smart Wallet
 **Endpoint:** `GET /wallets/address`
 
+Este endpoint recupera os detalhes da smart wallet de um usuário, incluindo a data em que a wallet foi registrada com este projeto, ou _null_ se ainda não foi registrada.
+
 ```bash
-curl -X GET "$BASE_URL/wallets/address?externallyOwnedAccount=0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6&factory=0xe77f2c7d79b2743d39ad73dc47a8e9c6416ad3f3" \
+curl -X GET "$BASE_URL/wallets/address?externallyOwnedAccount=0x133700000000000000000000000000000000c0de&factory=0x0000000000400cdfef5e2714e63d8040b700bc24&salt=12345&eip7702=false" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY"
 ```
 
+**Response (200 OK):**
+```json
+{
+  "wallet": {
+    "metadata": {
+      "key": "value"
+    },
+    "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "accountAbstraction": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "externallyOwnedAccount": "0x133700000000000000000000000000000000c0de",
+    "factory": "0x0000000000400cdfef5e2714e63d8040b700bc24",
+    "implementation": "0x8e8e658e22b12ada97b402ff0b044d6a325013c7",
+    "eip7702": false,
+    "deployed": [
+      {
+        "chain": {
+          "id": 137,
+          "name": "POLYGON",
+          "logo": "https://logopolygon.com"
+        },
+        "deployed": true
+      }
+    ],
+    "salt": 12345,
+    "registeredAt": "2025-08-06T16:57:09.249Z"
+  }
+}
+```
+
+**Query Parameters:**
+- `externallyOwnedAccount` (string, required): Endereço público da EOA que assinará as transações, o proprietário da wallet de abstração de conta
+- `factory` (string, required): Endereço do contrato factory que cria o contrato da wallet de abstração de conta
+- `salt` (string, optional): Número salt usado para gerar esta wallet. Se nenhum for fornecido, o padrão é zero. Cada salt gera uma nova smart wallet para o mesmo usuário
+- `eip7702` (boolean, optional): Se você quer fazer deploy usando o padrão EIP7702, que permite que a EOA defina um contrato como seu próprio código de contrato. O valor padrão é False
+
+**Response Fields:**
+- `wallet.metadata` (object): Metadados definidos para esta transação, null se nenhum
+- `wallet.walletAddress` (string): Endereço da smart wallet em formato hexadecimal
+- `wallet.accountAbstraction` (string): DEPRECATED - Use walletAddress ao invés
+- `wallet.externallyOwnedAccount` (string): Endereço do proprietário da wallet que assina as operações de usuário
+- `wallet.factory` (string): Endereço do contrato factory que criará o contrato de abstração de conta
+- `wallet.implementation` (string): Endereço do contrato de implementação, este contrato é o contrato efetivo da smart wallet
+- `wallet.eip7702` (boolean): Se esta wallet está usando EIP7702
+- `wallet.deployed` (array): Estado de deploy do contrato da wallet em cada blockchain
+- `wallet.salt` (string): Número salt usado para gerar esta wallet. Null para wallets EIP-7702
+- `wallet.registeredAt` (string): Data em que a wallet foi registrada com este projeto, null se não registrada
+
 **Status de Retorno:**
 - `200` - Detalhes da smart wallet
-- `400` - Parâmetros inválidos
-- `500` - Erro interno do servidor
+- `400` - Factory não suportada (FACTORY_NOT_SUPPORTED)
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `404` - Projeto não encontrado (PROJECT_NOT_FOUND)
 
 ### 19. Get Smart Wallets by Project
 **Endpoint:** `GET /wallets`
+
+Este endpoint lista todas as smart wallets do projeto.
 
 ```bash
 curl -X GET "$BASE_URL/wallets" \
@@ -366,234 +1133,1165 @@ curl -X GET "$BASE_URL/wallets" \
   -H "x-api-key: $NOTUS_API_KEY"
 ```
 
+**Response (200 OK):**
+```json
+{
+  "wallets": [
+    {
+      "metadata": {
+        "key": "value"
+      },
+      "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+      "accountAbstraction": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+      "externallyOwnedAccount": "0x133700000000000000000000000000000000c0de",
+      "factory": "0x0000000000400cdfef5e2714e63d8040b700bc24",
+      "implementation": "0x8e8e658e22b12ada97b402ff0b044d6a325013c7",
+      "eip7702": false,
+      "deployed": [
+        {
+          "chain": {
+            "id": 137,
+            "name": "POLYGON",
+            "logo": "https://logopolygon.com"
+          },
+          "deployed": true
+        }
+      ],
+      "salt": 12345,
+      "registeredAt": "2025-08-06T16:57:09.249Z"
+    }
+  ]
+}
+```
+
+**Response Fields:**
+- `wallets` (array): Lista de todas as wallets
+  - `metadata` (object): Objeto de metadados definido para esta transação, null se nenhum
+  - `walletAddress` (string): Endereço da smart wallet em formato hexadecimal
+  - `accountAbstraction` (string): DEPRECATED - Use walletAddress ao invés
+  - `externallyOwnedAccount` (string): Endereço do proprietário da wallet que assina as operações de usuário
+  - `factory` (string): Endereço do contrato factory que criará o contrato de abstração de conta
+  - `implementation` (string): Endereço do contrato de implementação, este contrato é o contrato efetivo da smart wallet
+  - `eip7702` (boolean): Se esta wallet está usando EIP7702
+  - `deployed` (array): Estado de deploy do contrato da wallet em cada blockchain
+  - `salt` (string): Número salt usado para gerar esta wallet. Null para wallets EIP-7702
+  - `registeredAt` (string): Data em que a wallet foi registrada com este projeto, null se não registrada
+
 **Status de Retorno:**
 - `200` - Lista de smart wallets do projeto
-- `400` - Parâmetros inválidos
-- `500` - Erro interno do servidor
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
 
 ### 20. Get Smart Wallet Portfolio
 **Endpoint:** `GET /wallets/{walletAddress}/portfolio`
 
+Obtém o portfolio de uma smart wallet pelo seu endereço de abstração de conta. O portfolio é uma lista dos saldos do usuário em diferentes tokens.
+
 ```bash
-curl -X GET "$BASE_URL/wallets/0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6/portfolio" \
+curl -X GET "$BASE_URL/wallets/0x6e397ddf51d9f15dbe0414538e7529f51f2e5464/portfolio" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY"
 ```
 
+**Response (200 OK):**
+```json
+{
+  "tokens": [
+    {
+      "address": "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
+      "name": "Wrapped Bitcoin",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logo": "https://wbtclogo.com",
+      "chain": {
+        "id": 137,
+        "name": "POLYGON",
+        "logo": "https://logopolygon.com"
+      },
+      "balance": "100000000",
+      "balanceFormatted": "1",
+      "balanceUsd": "2.1522",
+      "priceUsd": "1.0"
+    }
+  ],
+  "nfts": [
+    {
+      "address": "0xc36442b4a4522e871399cd717abdd847ab11fe88",
+      "collection": {
+        "name": "Uniswap V3 Positions NFT-V1",
+        "symbol": "UNI-V3-POS",
+        "logo": "https://univ3nft.com"
+      },
+      "tokenId": "2472425",
+      "name": "Uniswap - 0.05% - USDT/WETH - 1517.8<>2550.4",
+      "description": "This NFT represents a liquidity position in a Uniswap V3 USDT-WETH pool.",
+      "image": "https://remilio.org/remilio/2830.png",
+      "amount": "2450",
+      "chain": {
+        "id": 137,
+        "name": "POLYGON",
+        "logo": "https://logopolygon.com"
+      }
+    }
+  ],
+  "portfolio": [
+    {
+      "address": "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
+      "name": "Wrapped Bitcoin",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logo": "https://wbtclogo.com",
+      "chain": {
+        "id": 137,
+        "name": "POLYGON",
+        "logo": "https://logopolygon.com"
+      },
+      "balance": "100000000",
+      "balanceFormatted": "1",
+      "balanceUsd": "2.1522",
+      "priceUsd": "1.0"
+    }
+  ]
+}
+```
+
+**Path Parameters:**
+- `walletAddress` (string, required): Endereço da smart wallet (formato hexadecimal)
+
+**Response Fields:**
+- `tokens` (array): Lista de tokens possuídos por esta wallet e seus saldos
+  - `address` (string): Endereço do contrato para este token
+  - `name` (string): Nome deste token
+  - `symbol` (string): Símbolo para este token
+  - `decimals` (number): Máximo de dígitos decimais que este token pode ter
+  - `logo` (string): URL para um logo deste token
+  - `chain` (object): Detalhes sobre a chain onde o usuário possui este token
+  - `balance` (string): Saldo do token em formato raw como salvo na blockchain
+  - `balanceFormatted` (string): Saldo do token formatado com a quantidade de decimais
+  - `balanceUsd` (string): Saldo do token em USD
+  - `priceUsd` (string): Preço em USD deste token
+- `nfts` (array): Lista de NFTs possuídos por esta wallet
+  - `address` (string): Endereço do contrato do NFT
+  - `collection` (object): Detalhes sobre a coleção do NFT
+  - `tokenId` (string): ID do NFT possuído pelo usuário
+  - `name` (string): Nome deste NFT
+  - `description` (string): Descrição do NFT dada em seus metadados
+  - `image` (string): URI válida para a imagem do NFT
+  - `amount` (string): Quantidade deste NFT (EIP-1155)
+  - `chain` (object): Informações sobre a chain onde o NFT existe
+- `portfolio` (array, DEPRECATED): Use tokens ao invés
+
 **Status de Retorno:**
 - `200` - Portfolio da smart wallet
-- `400` - WalletAddress inválido
-- `500` - Erro interno do servidor
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `500` - Erro ao decodificar metadados do NFT (NFT_METADATA_DECODE_FAILED)
 
 ### 21. Get Smart Wallet History
 **Endpoint:** `GET /wallets/{walletAddress}/history`
 
+Este endpoint recupera uma lista histórica de transações de uma smart wallet específica com filtros. Também retorna transações ainda pendentes de execução na blockchain.
+
 ```bash
-curl -X GET "$BASE_URL/wallets/0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6/history?take=20&type=TRANSFER" \
+curl -X GET "$BASE_URL/wallets/0xa2acc967a9fc4fd5d18351d06deb9b8718c18333/history?take=50&lastId=834ce153-ea11-4e8b-8644-f42814ad1787&type=SWAP&type=CROSS_SWAP&status=COMPLETED&status=FAILED&userOperationHash=0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1&transactionHash=0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1&chains=42161&chains=43114&chainInId=42161&chainOutId=43114&createdAtLatest=2025-02-04T20%3A24%3A47.022Z&createdAtOldest=2024-11-02T21%3A35%3A45.969Z&metadataKey=custom_field&metadataValue=custom_value" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY"
 ```
 
+**Response (200 OK):**
+```json
+{
+  "nextLastId": "f1d61925-d4ae-450a-9f74-ab55f5e6647b",
+  "transactions": [
+    {
+      "metadata": {
+        "key": "value"
+      },
+      "id": "f1d61925-d4ae-450a-9f74-ab55f5e6647b",
+      "createdAt": "2025-08-20T19:32:23.581Z",
+      "updatedAt": "2025-08-20T20:45:12.385Z",
+      "executedAt": "2025-08-20T20:45:12.385Z",
+      "status": "COMPLETED",
+      "transactionHash": {
+        "hash": "0x68232841f033cf0d9420b0197d667058ab463ed5a524b544f9d016576ca8e2fb",
+        "explorerURL": "https://polygonscan.com/tx/0x68232841f033cf0d9420b0197d667058ab463ed5a524b544f9d016576ca8e2fb",
+        "explorer": "PolygonScan"
+      },
+      "chain": {
+        "id": 137,
+        "name": "POLYGON",
+        "logo": "https://logopolygon.com"
+      },
+      "type": "CRYPTO_DEPOSIT",
+      "userOperationHash": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+      "receivedBy": "0xa2acc967a9fc4fd5d18351d06deb9b8718c18333",
+      "receivedFromAddress": "0xeca5dd1bfbdd52fb9d94438d2ea4d27acae33b72",
+      "receivedCryptoCurrency": {
+        "name": "Wrapped Bitcoin",
+        "symbol": "WBTC",
+        "decimals": 18,
+        "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+        "logoURL": "https://assets.notus.team/wbtc.png"
+      },
+      "receivedAmount": {
+        "token": {
+          "name": "Wrapped Bitcoin",
+          "symbol": "WBTC",
+          "decimals": 18,
+          "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+          "logoURL": "https://assets.notus.team/wbtc.png"
+        },
+        "cryptoCurrency": {
+          "name": "Wrapped Bitcoin",
+          "symbol": "WBTC",
+          "decimals": 18,
+          "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+          "logoURL": "https://assets.notus.team/wbtc.png"
+        },
+        "amount": "3342.7389263",
+        "amountIn": {
+          "btc": "1234.98765",
+          "eth": "1234.98765",
+          "usd": "1234.98765",
+          "eur": "1234.98765",
+          "brl": "1234.98765"
+        }
+      }
+    }
+  ]
+}
+```
+
+**Path Parameters:**
+- `walletAddress` (string, required): Endereço da smart wallet para recuperar o histórico
+
+**Query Parameters:**
+- `take` (integer, optional): Máximo de transações por página (1-100, padrão: 100)
+- `lastId` (string, optional): Cursor para paginação. ID da última transação da página anterior
+- `type` (array<string>, optional): Filtrar por tipo de transação
+- `status` (array<string>, optional): Filtrar por status da transação
+- `userOperationHash` (string, optional): Filtrar por hash específico de operação de usuário
+- `transactionHash` (string, optional): Filtrar por hash específico de transação
+- `chains` (array<number>, optional): Filtrar por chains envolvidas na transação (Arbitrum One: 42161, Avalanche: 43114, Base: 8453, BNB Smart Chain: 56, Ethereum: 1, Gnosis: 100, OP Mainnet: 10, Polygon: 137)
+- `chainInId` (number, optional, DEPRECATED): Use chains ao invés. Filtrar pela chain onde a transação começou
+- `chainOutId` (number, optional, DEPRECATED): Use chains ao invés. Filtrar pela chain onde a transação terminou quando for cross-chain
+- `createdAtLatest` (string, optional): Data mais recente para filtrar transações
+- `createdAtOldest` (string, optional): Data mais antiga para filtrar transações
+- `metadataKey` (string, optional): Chave de metadados para filtrar. Deve ser usada junto com metadataValue
+- `metadataValue` (string, optional): Valor de metadados para filtrar. Deve ser usada junto com metadataKey
+
+**Response Fields:**
+- `nextLastId` (string): Próximo ID de transação para paginação
+- `transactions` (array): Lista de transações, pendentes ou executadas
+  - `metadata` (object): Objeto de metadados definido para esta transação, null se nenhum
+  - `id` (string): ID da transação, use para paginação
+  - `createdAt` (string): Tempo em que a transação foi criada na API
+  - `updatedAt` (string): Última vez que os detalhes da transação foram atualizados
+  - `executedAt` (string): Tempo em que a transação foi executada na blockchain
+  - `status` (string): Status atual da operação
+  - `transactionHash` (object): Hash da transação que executou esta operação de usuário
+  - `chain` (object): Chain onde a operação de usuário foi executada
+  - `type` (string): Tipo de transação
+  - `userOperationHash` (string): Hash único desta operação de usuário específica
+  - `receivedBy` (string): Wallet que recebeu o ativo
+  - `receivedFromAddress` (string): Endereço que enviou o ativo para o usuário
+  - `receivedCryptoCurrency` (object, DEPRECATED): Use receivedAmount.cryptoCurrency ao invés
+  - `receivedAmount` (object): Quantia da moeda crypto que o usuário recebeu
+
 **Status de Retorno:**
 - `200` - Histórico de transações
-- `400` - Parâmetros inválidos
-- `500` - Erro interno do servidor
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `404` - Wallet não registrada com o projeto (ACCOUNT_ABSTRACTION_ADDRESS_NOT_REGISTERED_WITH_PROJECT)
 
 ### 22. Create Deposit Transaction
 **Endpoint:** `POST /wallets/{walletAddress}/deposit`
 
+Este endpoint fornece uma transação para ser executada por um EOA para depositar fundos em uma smart wallet. Este é um endpoint de conveniência para facilmente construir uma transferência para ser executada pelo Metamask ou qualquer outra wallet EOA.
+
 ```bash
-curl -X POST "$BASE_URL/wallets/0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6/deposit" \
+curl -X POST "$BASE_URL/wallets/0xa2acc967a9fc4fd5d18351d06deb9b8718c18333/deposit" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "amount": "100.00",
-    "chainId": 137,
-    "token": "0xA0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
-    "fromAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6"
+    "amount": "101.25",
+    "chainId": 42161,
+    "token": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+    "fromAddress": "0x6648e365a1b072797ee871d45691aead31b9d016"
   }'
 ```
 
+**Response (200 OK):**
+```json
+{
+  "transfer": {
+    "from": "0x6648e365a1b072797ee871d45691aead31b9d016",
+    "to": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+    "value": "101250000000000000000",
+    "data": "0xa9059cbb000000000000000000000000a2acc967a9fc4fd5d18351d06deb9b8718c183330000000000000000000000000000000000000000000000000E0D1F62B3154000",
+    "estimateGasCost": "0.452"
+  }
+}
+```
+
+**Request Body:**
+- `amount` (string, required): Quantia a ser transferida, expressa como string decimal
+- `chainId` (number, required): Rede blockchain onde a transferência executa (Arbitrum One: 42161, Avalanche: 43114, Base: 8453, BNB Smart Chain: 56, Ethereum: 1, Gnosis: 100, OP Mainnet: 10, Polygon: 137)
+- `token` (string, required): Endereço do token sendo transferido. Para tokens nativos, use `0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee`
+- `fromAddress` (string, required): Endereço da wallet iniciando a transferência
+
+**Path Parameters:**
+- `walletAddress` (string, required): Endereço da smart wallet recebendo a transferência
+
+**Response Fields:**
+- `transfer.from` (string): Endereço da wallet iniciando a transferência
+- `transfer.to` (string): Destinatário da transação (endereço do token para ERC-20, endereço da wallet para tokens nativos)
+- `transfer.value` (string): Quantia a ser transferida como BigNumber string (0 para ERC-20, quantia para tokens nativos)
+- `transfer.data` (string): Calldata da transação
+- `transfer.estimateGasCost` (string): Custo estimado de gas da transação em moeda nativa
+
 **Status de Retorno:**
-- `200` - Transação de depósito criada
-- `400` - Dados inválidos ou saldo insuficiente
-- `500` - Erro interno do servidor
+- `200` - Transação de depósito criada com sucesso
+- `400` - Tokens não autorizados (NOT_AUTHORIZED_TOKENS)
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `404` - Wallet não registrada com o projeto (ACCOUNT_ABSTRACTION_ADDRESS_NOT_REGISTERED_WITH_PROJECT)
+- `500` - Falha ao estimar transferência (FAILED_TO_ESTIMATE_TRANSFER)
 
 ### 23. Update Wallet Metadata
-**Endpoint:** `PATCH /wallets/{walletAddress}/metadata`
+**Endpoint:** `PATCH /wallets/{walletId}/metadata`
+
+Este endpoint atualiza os metadados para uma wallet específica. Os metadados são mesclados com os metadados existentes se presentes.
 
 ```bash
-curl -X PATCH "$BASE_URL/wallets/0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6/metadata" \
+curl -X PATCH "$BASE_URL/wallets/0x6e397ddf51d9f15dbe0414538e7529f51f2e5464/metadata" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "name": "Updated Wallet Name",
-    "description": "Updated description"
+    "metadata": {
+      "property1": "string",
+      "property2": "string"
+    }
   }'
 ```
+
+**Response (200 OK):**
+```json
+{
+  "wallet": {
+    "metadata": {
+      "key": "value"
+    },
+    "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "accountAbstraction": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "externallyOwnedAccount": "0x133700000000000000000000000000000000c0de",
+    "factory": "0x0000000000400cdfef5e2714e63d8040b700bc24",
+    "implementation": "0x8e8e658e22b12ada97b402ff0b044d6a325013c7",
+    "eip7702": false,
+    "deployed": [
+      {
+        "chain": {
+          "id": 137,
+          "name": "POLYGON",
+          "logo": "https://logopolygon.com"
+        },
+        "deployed": true
+      }
+    ],
+    "salt": 12345,
+    "registeredAt": "2025-08-06T16:57:09.249Z"
+  }
+}
+```
+
+**Path Parameters:**
+- `walletId` (string, required): Endereço da wallet (em formato hexadecimal)
+
+**Request Body:**
+- `metadata` (object, required): Metadados personalizados para a entidade. Pares chave-valor com valores string. Tamanho máximo 1KB.
+
+**Response Fields:**
+- `wallet` (object): Detalhes da wallet
+  - `metadata` (object): Objeto de metadados definido para esta transação, null se nenhum
+  - `walletAddress` (string): Endereço da smart wallet (em formato hexadecimal)
+  - `accountAbstraction` (string, DEPRECATED): Use walletAddress ao invés
+  - `externallyOwnedAccount` (string): Endereço do proprietário da wallet, que assina as operações de usuário
+  - `factory` (string): Endereço do contrato factory, que fará deploy do contrato de abstração de conta
+  - `implementation` (string): Endereço do contrato de implementação, este contrato é o contrato efetivo da smart wallet
+  - `eip7702` (boolean): Se esta wallet está usando EIP7702
+  - `deployed` (array): Estado de deployment do contrato da wallet em cada blockchain
+    - `chain` (object): Blockchain sobre o qual este estado de deployment se refere
+    - `deployed` (boolean): Se esta wallet já foi deployada na blockchain
+  - `salt` (string): Número salt usado para gerar esta wallet. Null para wallets EIP-7702
+  - `registeredAt` (string): Data em que a wallet foi registrada com este projeto, null se não registrada
 
 **Status de Retorno:**
-- `200` - Metadados atualizados
-- `400` - Dados inválidos
-- `500` - Erro interno do servidor
+- `200` - Detalhes da wallet atualizados
+- `403` - Não permitido (NOT_ALLOWED)
+- `404` - Wallet não encontrada (WALLET_NOT_FOUND)
 
 ### 24. Update Transaction Metadata
-**Endpoint:** `PATCH /wallets/{walletAddress}/transactions/{transactionId}/metadata`
+**Endpoint:** `PATCH /wallets/transactions/{transactionId}/metadata`
+
+Atualiza os metadados de uma transação associada a uma smart wallet.
 
 ```bash
-curl -X PATCH "$BASE_URL/wallets/0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6/transactions/tx_123/metadata" \
+curl -X PATCH "$BASE_URL/wallets/transactions/f1d61925-d4ae-450a-9f74-ab55f5e6647b/metadata" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "description": "Payment for services",
-    "category": "business"
+    "metadata": {
+      "key1": "value1",
+      "key2": "value2"
+    }
   }'
 ```
+
+**Response (200 OK):**
+```json
+{
+  "transaction": {
+    "metadata": {
+      "key": "value"
+    },
+    "id": "f1d61925-d4ae-450a-9f74-ab55f5e6647b",
+    "createdAt": "2025-08-20T19:32:23.581Z",
+    "updatedAt": "2025-08-20T20:45:12.385Z",
+    "executedAt": "2025-08-20T20:45:12.385Z",
+    "status": "COMPLETED",
+    "transactionHash": {
+      "hash": "0x68232841f033cf0d9420b0197d667058ab463ed5a524b544f9d016576ca8e2fb",
+      "explorerURL": "https://polygonscan.com/tx/0x68232841f033cf0d9420b0197d667058ab463ed5a524b544f9d016576ca8e2fb",
+      "explorer": "PolygonScan"
+    },
+    "chain": {
+      "id": 137,
+      "name": "POLYGON",
+      "logo": "https://logopolygon.com"
+    },
+    "type": "CRYPTO_DEPOSIT",
+    "userOperationHash": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+    "receivedBy": "0xa2acc967a9fc4fd5d18351d06deb9b8718c18333",
+    "receivedFromAddress": "0xeca5dd1bfbdd52fb9d94438d2ea4d27acae33b72",
+    "receivedCryptoCurrency": {
+      "name": "Wrapped Bitcoin",
+      "symbol": "WBTC",
+      "decimals": 18,
+      "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+      "logoURL": "https://assets.notus.team/wbtc.png"
+    },
+    "receivedAmount": {
+      "token": {
+        "name": "Wrapped Bitcoin",
+        "symbol": "WBTC",
+        "decimals": 18,
+        "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+        "logoURL": "https://assets.notus.team/wbtc.png"
+      },
+      "cryptoCurrency": {
+        "name": "Wrapped Bitcoin",
+        "symbol": "WBTC",
+        "decimals": 18,
+        "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+        "logoURL": "https://assets.notus.team/wbtc.png"
+      },
+      "amount": "3342.7389263",
+      "amountIn": {
+        "btc": "1234.98765",
+        "eth": "1234.98765",
+        "usd": "1234.98765",
+        "eur": "1234.98765",
+        "brl": "1234.98765"
+      }
+    }
+  }
+}
+```
+
+**Path Parameters:**
+- `transactionId` (string, required): ID interno da transação. Não confundir com o hash da transação, que é um conceito relacionado à blockchain e que múltiplas operações de usuário podem ser executadas no mesmo hash de transação
+
+**Request Body:**
+- `metadata` (object, required): Pares chave-valor para metadados. Tanto as chaves quanto os valores devem ser strings
+
+**Response Fields:**
+- `transaction` (object): Transação que foi atualizada
+  - `metadata` (object): Objeto de metadados definido para esta transação, null se nenhum
+  - `id` (string): ID da transação, use para paginação
+  - `createdAt` (string): Tempo em que a transação foi criada na API
+  - `updatedAt` (string): Última vez que os detalhes da transação foram atualizados
+  - `executedAt` (string): Tempo em que a transação foi executada na blockchain
+  - `status` (string): Status atual da operação
+  - `transactionHash` (object): Hash da transação que executou esta operação de usuário
+  - `chain` (object): Chain onde a operação de usuário foi executada
+  - `type` (string): Tipo de transação
+  - `userOperationHash` (string): Hash único desta operação de usuário específica
+  - `receivedBy` (string): Wallet que recebeu o ativo
+  - `receivedFromAddress` (string): Endereço que enviou o ativo para o usuário
+  - `receivedCryptoCurrency` (object, DEPRECATED): Use receivedAmount.cryptoCurrency ao invés
+  - `receivedAmount` (object): Quantia da moeda crypto que o usuário recebeu
 
 **Status de Retorno:**
 - `200` - Metadados da transação atualizados
-- `400` - Dados inválidos
-- `500` - Erro interno do servidor
+- `400` - Metadados inválidos (invalid_metadata)
+- `404` - Transação não encontrada (TRANSACTION_NOT_FOUND)
 
 ---
 
 ## 🔄 Swaps
 
 ### 25. Create Swap
-**Endpoint:** `POST /swaps`
+**Endpoint:** `POST /crypto/swap`
+
+Este endpoint fornece uma cotação em tempo real para um swap de tokens, detalhando o valor estimado do token de destino, taxas e outros parâmetros relevantes.
 
 ```bash
-curl -X POST "$BASE_URL/swaps" \
+curl -X POST "$BASE_URL/crypto/swap" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-    "tokenIn": "0xA0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
-    "tokenOut": "0xB0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
-    "amountIn": "100.00",
-    "chainId": 137,
-    "slippage": 0.5
+    "amountIn": "1.2",
+    "chainIdIn": 42161,
+    "chainIdOut": 43114,
+    "routeProfile": "QUICKEST_QUOTE",
+    "gasFeePaymentMethod": "ADD_TO_AMOUNT",
+    "payGasFeeToken": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+    "tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+    "tokenOut": "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
+    "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "toAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "transactionFeePercent": 0.5,
+    "slippage": 0.5,
+    "metadata": {
+      "key": "value"
+    }
   }'
 ```
 
+**Response (200 OK):**
+```json
+{
+  "quotes": [
+    {
+      "metadata": {
+        "key": "value"
+      },
+      "userOperationHash": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+      "quoteId": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+      "revertReason": {
+        "decoded": "ERC-20 insufficient balance. Address 0xf12534a4939c7fbda50f893774a9525265fe1a9a has 120. The operation requested 200.",
+        "raw": "0xe450d38c000000000000000000000000f12534a4939c7fbda50f893774a9525265fe1a9a0000000000000000000000000000000000000000000000068155a43676e0000000000000000000000000000000000000000000000000000ad78ebc5ac6200000",
+        "utf8": "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000%4\u000f7tRRe\u001a\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0006U6v\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\n׎Z \u0000\u0000"
+      },
+      "authorization": {
+        "chainId": 42161,
+        "address": "0xd6cedde84be40893d153be9d467cd6ad37875b28",
+        "nonce": 10,
+        "hash": "0x777811ae5d51875409b9978ddc1b40a9da1bbe9570040bdd7c5f186d70ceceba"
+      },
+      "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+      "tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+      "amountIn": "1.26",
+      "tokenOut": "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
+      "chainIn": 42161,
+      "chainOut": 43114,
+      "minAmountOut": "23.48",
+      "estimatedExecutionTime": "2026-04-12T14:49:12.762Z",
+      "estimatedGasFees": {
+        "payGasFeeToken": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+        "maxGasFeeToken": "12.345",
+        "gasFeeTokenAmount": "12.345",
+        "gasFeeTokenAmountUSD": "0.321",
+        "maxGasFeeNative": "string"
+      },
+      "estimatedCollectedFee": {
+        "collectedFeeToken": "string",
+        "collectedFee": "string",
+        "collectedFeePercent": "string",
+        "notusCollectedFee": "string",
+        "notusCollectedFeePercent": "string"
+      },
+      "amountInUSD": "23.4921",
+      "amountOutUSD": "23.502",
+      "tokenInPrice": "1.736",
+      "swapProvider": "ENSO",
+      "expiresAt": 1751469204210
+    }
+  ]
+}
+```
+
+**Request Body:**
+- `amountIn` (string, required): A quantidade a ser trocada, expressa como string decimal
+- `chainIdIn` (number, required): A rede blockchain onde o swap se origina. Chains EVM suportadas: Arbitrum One: 42161, Avalanche: 43114, Base: 8453, BNB Smart Chain: 56, Ethereum: 1, Gnosis: 100, OP Mainnet: 10, Polygon: 137
+- `chainIdOut` (number, required): A rede blockchain onde o ativo trocado será enviado. Chains suportadas: Arbitrum One: 42161, Avalanche: 43114, Base: 8453, BNB Smart Chain: 56, Ethereum: 1, Gnosis: 100, OP Mainnet: 10, Polygon: 137, Bitcoin: 0
+- `routeProfile` (string, optional): Perfis de rota definem a ordem e quais cotações são retornadas no array. Valores: QUICKEST_QUOTE, FASTEST_BRIDGE, BEST_OUTPUT. Padrão: QUICKEST_QUOTE
+- `gasFeePaymentMethod` (string, required): Define como a taxa será paga: ADD_TO_AMOUNT adiciona ao valor de entrada, DEDUCT_FROM_AMOUNT subtrai do valor de entrada
+- `payGasFeeToken` (string, required): Endereço do token (em formato hexadecimal) usado para pagar a taxa de transação
+- `tokenIn` (string, required): Endereço (em formato hexadecimal) do token sendo trocado
+- `tokenOut` (string, required): Endereço (em formato hexadecimal) do token sendo trocado para
+- `walletAddress` (string, required): Endereço da wallet (em formato hexadecimal) iniciando o swap
+- `toAddress` (string, required): Endereço (EVM ou Bitcoin) recebendo o swap. Geralmente igual ao walletAddress, mas pode ser outro endereço
+- `transactionFeePercent` (number, optional): Taxa percentual a ser cobrada (0 a 99%). A taxa é deduzida do token de entrada e enviada para o treasuryAddress se configurado
+- `slippage` (number, optional): Parâmetro opcional controlando o desvio máximo permitido do preço esperado de uma negociação e o preço real no qual a negociação é executada, com valor mínimo de 0.5 e máximo de 99, padrão é 0.5, onde 1 unidade equivale a 1%
+- `metadata` (object, optional): Metadados personalizados para a entidade. Pares chave-valor com valores string. Tamanho máximo 1KB
+
+**Response Fields:**
+- `quotes` (array): Array de cotações, uma para cada provedor que foi solicitado
+  - `metadata` (object): Objeto de metadados definido para esta transação, null se nenhum
+  - `userOperationHash` (string): Identificador único para a cotação de swap, necessário para executar a transação
+  - `quoteId` (string, DEPRECATED): Use userOperationHash ao invés
+  - `revertReason` (object): Razão pela qual o hash da operação de usuário é null
+  - `authorization` (object): Autorização EIP-7702. Se a wallet for uma wallet EIP-7702, este campo estará disponível para a primeira operação de usuário
+  - `walletAddress` (string): Endereço da wallet (em formato hexadecimal) iniciando o swap
+  - `tokenIn` (string): Endereço (em formato hexadecimal) do token sendo trocado
+  - `amountIn` (string): A quantidade a ser trocada, expressa como string
+  - `tokenOut` (string): Endereço (em formato hexadecimal) do token sendo trocado para
+  - `chainIn` (number): A rede blockchain onde o swap se origina
+  - `chainOut` (number): A rede blockchain onde o ativo trocado será enviado
+  - `minAmountOut` (string): A quantidade mínima aceitável de saída para o swap
+  - `estimatedExecutionTime` (string): Tempo estimado que a transação executará
+  - `estimatedGasFees` (object): Detalhes das taxas estimadas para o swap, incluindo taxas de gas e provedor
+  - `estimatedCollectedFee` (object): Detalhes das taxas estimadas para o swap, incluindo taxas de gas e provedor
+  - `amountInUSD` (string): A quantidade em USD do token sendo trocado
+  - `amountOutUSD` (string): A quantidade em USD do token sendo trocado para
+  - `tokenInPrice` (string): O preço do token sendo trocado em USD
+  - `swapProvider` (string): O provedor lidando com a execução do swap. Valores: ENSO, LIFI, ODOS, PARASWAP, RANGO, RELAY, XY
+  - `expiresAt` (number): A data de expiração da cotação
+
 **Status de Retorno:**
-- `200` - Swap criado com sucesso
-- `400` - Dados inválidos ou saldo insuficiente
-- `500` - Erro interno do servidor
+- `200` - Cotação de swap criada com sucesso
+- `400` - Tokens não autorizados (NOT_AUTHORIZED_TOKENS)
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `404` - Wallet não registrada com o projeto (ACCOUNT_ABSTRACTION_ADDRESS_NOT_REGISTERED_WITH_PROJECT)
+- `500` - Falha ao obter cotação de swap (SWAP_QUOTE)
 
 ---
 
 ## 💸 Transfers
 
 ### 26. Create Transfer
-**Endpoint:** `POST /transfers`
+**Endpoint:** `POST /crypto/transfer`
+
+Este endpoint fornece uma cotação em tempo real para uma transferência de tokens, incluindo o valor estimado do token, taxas e outros detalhes relevantes.
 
 ```bash
-curl -X POST "$BASE_URL/transfers" \
+curl -X POST "$BASE_URL/crypto/transfer" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-    "toAddress": "0x8B2d35Cc6634C0532925a3b8D4C9db96C4b4d8b7",
-    "token": "0xA0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
-    "amount": "50.00",
-    "chainId": 137
+    "amount": "101.25",
+    "chainId": 42161,
+    "gasFeePaymentMethod": "ADD_TO_AMOUNT",
+    "payGasFeeToken": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+    "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+    "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "toAddress": "0xa7a9dcfcb65ed67e05d9c7eb49d2d74ce1f5f4f1",
+    "transactionFeePercent": 0.5,
+    "metadata": {
+      "key": "value"
+    }
   }'
 ```
 
+**Response (200 OK):**
+```json
+{
+  "transfer": {
+    "metadata": {
+      "key": "value"
+    },
+    "userOperationHash": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+    "quoteId": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+    "revertReason": {
+      "decoded": "ERC-20 insufficient balance. Address 0xf12534a4939c7fbda50f893774a9525265fe1a9a has 120. The operation requested 200.",
+      "raw": "0xe450d38c000000000000000000000000f12534a4939c7fbda50f893774a9525265fe1a9a0000000000000000000000000000000000000000000000068155a43676e0000000000000000000000000000000000000000000000000000ad78ebc5ac6200000",
+      "utf8": "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000%4\u000f7tRRe\u001a\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0006U6v\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\n׎Z \u0000\u0000"
+    },
+    "authorization": {
+      "chainId": 42161,
+      "address": "0xd6cedde84be40893d153be9d467cd6ad37875b28",
+      "nonce": 10,
+      "hash": "0x777811ae5d51875409b9978ddc1b40a9da1bbe9570040bdd7c5f186d70ceceba"
+    },
+    "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "token": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+    "amountToSend": "1.26",
+    "amountToSendUSD": "23.48",
+    "amountToBeReceived": "1.255",
+    "amountToBeReceivedUSD": "23.386825396825396825",
+    "chain": 43114,
+    "estimatedExecutionTime": "2026-04-12T14:49:12.762Z",
+    "estimatedGasFees": {
+      "payGasFeeToken": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+      "maxGasFeeToken": "12.345",
+      "gasFeeTokenAmount": "12.345",
+      "gasFeeTokenAmountUSD": "0.321",
+      "maxGasFeeNative": "string"
+    },
+    "estimatedCollectedFee": {
+      "collectedFeeToken": "string",
+      "collectedFee": "string",
+      "collectedFeePercent": "string",
+      "notusCollectedFee": "string",
+      "notusCollectedFeePercent": "string"
+    },
+    "toAddress": "0x89c9da1cc13daebe9caca2418c1028253636b163",
+    "expiresAt": 1751469204210
+  }
+}
+```
+
+**Request Body:**
+- `amount` (string, required): A quantidade a ser transferida, expressa como string decimal
+- `chainId` (number, required): A rede blockchain onde a transferência executa. Chains EVM suportadas: Arbitrum One: 42161, Avalanche: 43114, Base: 8453, BNB Smart Chain: 56, Ethereum: 1, Gnosis: 100, OP Mainnet: 10, Polygon: 137
+- `gasFeePaymentMethod` (string, required): Define como a taxa será paga: ADD_TO_AMOUNT adiciona ao valor de entrada, DEDUCT_FROM_AMOUNT subtrai do valor de entrada
+- `payGasFeeToken` (string, required): Endereço do token (em formato hexadecimal) usado para pagar a taxa de transação
+- `token` (string, required): Endereço (em formato hexadecimal) do token sendo transferido
+- `walletAddress` (string, required): Endereço da wallet (em formato hexadecimal) iniciando a transferência
+- `toAddress` (string, required): Endereço da wallet (em formato hexadecimal) recebendo a transferência
+- `transactionFeePercent` (number, optional): Taxa percentual a ser cobrada (0 a 99%). A taxa é deduzida do token de entrada e enviada para o treasuryAddress se configurado
+- `metadata` (object, optional): Metadados personalizados para a entidade. Pares chave-valor com valores string. Tamanho máximo 1KB
+
+**Response Fields:**
+- `transfer` (object): Detalhes sobre a transferência
+  - `metadata` (object): Objeto de metadados definido para esta transação, null se nenhum
+  - `userOperationHash` (string): Identificador único para a cotação de transferência, necessário para executar a transação
+  - `quoteId` (string, DEPRECATED): Use userOperationHash ao invés
+  - `revertReason` (object): Razão pela qual o hash da operação de usuário é null
+  - `authorization` (object): Autorização EIP-7702. Se a wallet for uma wallet EIP-7702, este campo estará disponível para a primeira operação de usuário
+  - `walletAddress` (string): Endereço da wallet (em formato hexadecimal) iniciando a transferência
+  - `token` (string): Endereço (em formato hexadecimal) do token sendo transferido
+  - `amountToSend` (string): A quantidade a ser transferida, expressa como string decimal
+  - `amountToSendUSD` (string): A quantidade a ser transferida em USD, expressa como string decimal
+  - `amountToBeReceived` (string): A quantidade a ser recebida, expressa como string decimal
+  - `amountToBeReceivedUSD` (string): A quantidade a ser recebida em USD, expressa como string decimal
+  - `chain` (number): A rede blockchain onde a transferência executa
+  - `estimatedExecutionTime` (string): Tempo estimado que a transação executará
+  - `estimatedGasFees` (object): Detalhes das taxas estimadas para a transferência, incluindo taxas de gas e provedor
+  - `estimatedCollectedFee` (object): Detalhes das taxas estimadas para a transferência, incluindo taxas de gas e provedor
+  - `toAddress` (string): Endereço da wallet (em formato hexadecimal) recebendo a transferência
+  - `expiresAt` (number): A data de expiração da cotação
+
 **Status de Retorno:**
-- `200` - Transfer criada com sucesso
-- `400` - Dados inválidos ou saldo insuficiente
-- `500` - Erro interno do servidor
+- `200` - Cotação de transferência criada com sucesso
+- `400` - Tokens não autorizados (NOT_AUTHORIZED_TOKENS)
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `404` - Wallet não registrada com o projeto (ACCOUNT_ABSTRACTION_ADDRESS_NOT_REGISTERED_WITH_PROJECT)
 
 ---
 
 ## ⚙️ User Operations
 
 ### 27. Create Batch Operation
-**Endpoint:** `POST /user-operations/batch`
+**Endpoint:** `POST /crypto/batch-operations`
+
+Uma operação que pode unir transferências e swaps em uma única operação.
 
 ```bash
-curl -X POST "$BASE_URL/user-operations/batch" \
+curl -X POST "$BASE_URL/crypto/batch-operations" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "walletAddress": "0xa2acc967a9fc4fd5d18351d06deb9b8718c18333",
+    "chainId": 42161,
     "operations": [
       {
-        "type": "TRANSFER",
-        "toAddress": "0x8B2d35Cc6634C0532925a3b8D4C9db96C4b4d8b7",
-        "token": "0xA0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
-        "amount": "25.00"
-      },
-      {
-        "type": "SWAP",
-        "tokenIn": "0xA0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
-        "tokenOut": "0xB0b86a33E6441c8C06DDD1233a2d3C2B8C2a2B8C",
-        "amountIn": "25.00"
+        "type": "transfer",
+        "params": {
+          "amount": "101.25",
+          "gasFeePaymentMethod": "ADD_TO_AMOUNT",
+          "payGasFeeToken": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+          "token": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+          "toAddress": "0xa7a9dcfcb65ed67e05d9c7eb49d2d74ce1f5f4f1",
+          "transactionFeePercent": 0.5,
+          "metadata": {
+            "key": "value"
+          }
+        }
       }
-    ],
-    "chainId": 137
+    ]
   }'
 ```
 
+**Response (200 OK):**
+```json
+{
+  "userOperationHash": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+  "quoteId": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+  "authorization": {
+    "chainId": 42161,
+    "address": "0xd6cedde84be40893d153be9d467cd6ad37875b28",
+    "nonce": 10,
+    "hash": "0x777811ae5d51875409b9978ddc1b40a9da1bbe9570040bdd7c5f186d70ceceba"
+  },
+  "expiresAt": "2025-10-26T13:27:49.542Z",
+  "operations": [
+    {
+      "swap": {
+        "metadata": {
+          "key": "value"
+        },
+        "userOperationHash": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+        "quoteId": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+        "revertReason": {
+          "decoded": "ERC-20 insufficient balance. Address 0xf12534a4939c7fbda50f893774a9525265fe1a9a has 120. The operation requested 200.",
+          "raw": "0xe450d38c000000000000000000000000f12534a4939c7fbda50f893774a9525265fe1a9a0000000000000000000000000000000000000000000000068155a43676e0000000000000000000000000000000000000000000000000000ad78ebc5ac6200000",
+          "utf8": "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000%4\u000f7tRRe\u001a\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0006U6v\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\n׎Z \u0000\u0000"
+        },
+        "authorization": {
+          "chainId": 42161,
+          "address": "0xd6cedde84be40893d153be9d467cd6ad37875b28",
+          "nonce": 10,
+          "hash": "0x777811ae5d51875409b9978ddc1b40a9da1bbe9570040bdd7c5f186d70ceceba"
+        },
+        "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+        "tokenIn": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+        "amountIn": "1.26",
+        "tokenOut": "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
+        "chainIn": 42161,
+        "chainOut": 43114,
+        "minAmountOut": "23.48",
+        "estimatedExecutionTime": "2026-04-12T14:49:12.762Z",
+        "estimatedGasFees": {
+          "payGasFeeToken": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+          "maxGasFeeToken": "12.345",
+          "gasFeeTokenAmount": "12.345",
+          "gasFeeTokenAmountUSD": "0.321",
+          "maxGasFeeNative": "string"
+        },
+        "estimatedCollectedFee": {
+          "collectedFeeToken": "string",
+          "collectedFee": "string",
+          "collectedFeePercent": "string",
+          "notusCollectedFee": "string",
+          "notusCollectedFeePercent": "string"
+        },
+        "amountInUSD": "23.4921",
+        "amountOutUSD": "23.502",
+        "tokenInPrice": "1.736",
+        "swapProvider": "ENSO",
+        "expiresAt": 1751469204210
+      }
+    }
+  ]
+}
+```
+
+**Request Body:**
+- `walletAddress` (string, required): Endereço da wallet (em formato hexadecimal) iniciando a operação
+- `chainId` (number, required): A rede blockchain onde a operação se origina. Chains EVM suportadas: Arbitrum One: 42161, Avalanche: 43114, Base: 8453, BNB Smart Chain: 56, Ethereum: 1, Gnosis: 100, OP Mainnet: 10, Polygon: 137
+- `operations` (array, required): Lista de operações para executar, a ordem na lista é a ordem de execução
+  - `type` (string, required): Tipo de operação. Valores: "transfer", "swap", "liquidity"
+  - `params` (object, required): Parâmetros para executar a operação
+    - Para transfer: `amount`, `gasFeePaymentMethod`, `payGasFeeToken`, `token`, `toAddress`, `transactionFeePercent`, `metadata`
+    - Para swap: `amountIn`, `chainIdIn`, `chainIdOut`, `routeProfile`, `gasFeePaymentMethod`, `payGasFeeToken`, `tokenIn`, `tokenOut`, `toAddress`, `transactionFeePercent`, `slippage`, `metadata`
+    - Para liquidity: `liquidityProvider`, `walletAddress`, `toAddress`, `chainId`, `transactionFeePercent`, `payGasFeeToken`, `gasFeePaymentMethod`, `token0`, `token1`, `poolFeePercent`, `token0Amount`, `token1Amount`, `minPrice`, `maxPrice`, `slippage`, `metadata`
+
+**Response Fields:**
+- `userOperationHash` (string): Identificador único para a operação em lote, necessário para executar a transação
+- `quoteId` (string, DEPRECATED): Use userOperationHash ao invés
+- `authorization` (object): Autorização EIP-7702. Se a wallet for uma wallet EIP-7702, este campo estará disponível para a primeira operação de usuário
+- `expiresAt` (string): A data de expiração da operação em lote
+- `operations` (array): As operações da operação em lote
+  - `swap` (object): Detalhes sobre a operação de swap
+  - `transfer` (object): Detalhes sobre a operação de transferência
+  - `operation` (object): Detalhes sobre a operação de liquidez
+
 **Status de Retorno:**
-- `200` - Operação em lote criada
-- `400` - Dados inválidos ou operações incompatíveis
-- `500` - Erro interno do servidor
+- `200` - Operação em lote criada com sucesso
+- `400` - Tokens não autorizados (NOT_AUTHORIZED_TOKENS)
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `404` - Wallet não registrada com o projeto (ACCOUNT_ABSTRACTION_ADDRESS_NOT_REGISTERED_WITH_PROJECT)
+- `500` - Falha ao obter cotação de swap (SWAP_QUOTE)
 
 ### 28. Create Custom User Operation
-**Endpoint:** `POST /user-operations/custom`
+**Endpoint:** `POST /crypto/custom-user-operation`
+
+Permite criar operações de usuário customizadas com controle total sobre os parâmetros da transação. User Operations são o formato de transação usado em Account Abstraction, são transações blockchain executadas através de smart wallets. Este endpoint permite executar qualquer função de smart contract, transferir tokens nativos ou realizar operações complexas definindo suas próprias assinaturas de método, dados de chamada e mais.
 
 ```bash
-curl -X POST "$BASE_URL/user-operations/custom" \
+curl -X POST "$BASE_URL/crypto/custom-user-operation" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "walletAddress": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-    "target": "0x8B2d35Cc6634C0532925a3b8D4C9db96C4b4d8b7",
-    "data": "0x1234567890abcdef",
-    "value": "0",
-    "chainId": 137
+    "chainId": 42161,
+    "operations": [
+      {
+        "address": "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
+        "methodSignature": "transfer(address,uint256)",
+        "arguments": ["0xa7a9dcfcb65ed67e05d9c7eb49d2d74ce1f5f4f1", "10000000000000000000"],
+        "value": "0",
+        "metadata": {
+          "key": "value"
+        }
+      }
+    ],
+    "payGasFeeToken": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+    "payGasFeeTokenAddress": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+    "walletAddress": "0x6e397ddf51d9f15dbe0414538e7529f51f2e5464",
+    "metadata": {
+      "key": "value"
+    }
   }'
 ```
 
+**Response (200 OK):**
+```json
+{
+  "userOperation": {
+    "metadata": {
+      "key": "value"
+    },
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "userOperationHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "authorization": {
+      "chainId": 42161,
+      "address": "0xd6cedde84be40893d153be9d467cd6ad37875b28",
+      "nonce": 10,
+      "hash": "0x777811ae5d51875409b9978ddc1b40a9da1bbe9570040bdd7c5f186d70ceceba"
+    },
+    "chainIn": {
+      "id": 137,
+      "name": "POLYGON",
+      "logo": "https://logopolygon.com"
+    },
+    "chainOut": {
+      "id": 137,
+      "name": "POLYGON",
+      "logo": "https://logopolygon.com"
+    },
+    "chainIdIn": 1,
+    "chainIdOut": 137,
+    "sender": {
+      "walletAddress": "0x1234567890abcdef1234567890abcdef12345678",
+      "accountAbstraction": "0x1234567890abcdef1234567890abcdef12345678",
+      "externallyOwnedAccount": "0x1234567890abcdef1234567890abcdef12345678"
+    },
+    "nonce": "1",
+    "signature": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "callGasLimit": "100000",
+    "verificationGasLimit": "50000",
+    "preVerificationGas": "21000",
+    "maxFeePerGas": "20000000000",
+    "maxPriorityFeePerGas": "1500000000",
+    "maxGasFeeNative": "0.01",
+    "maxGasFeeToken": "0.5",
+    "payFeesToken": "0xabcdef1234567890abcdef1234567890abcdef12",
+    "factory": {
+      "data": "0x1234567890abcdef",
+      "address": "0x1234567890abcdef1234567890abcdef12345678",
+      "entryPointVersion": "v0.6"
+    },
+    "paymaster": "0xabcdef1234567890abcdef1234567890abcdef12",
+    "paymasterData": "0x1234567890abcdef1234567890abcdef",
+    "paymasterPostOpGasLimit": "30000",
+    "paymasterVerificationGasLimit": "40000",
+    "expiresAt": "2023-12-31T23:59:59.999Z",
+    "projectId": "123e4567-e89b-12d3-a456-426614174000",
+    "organizationId": "123e4567-e89b-12d3-a456-426614174000"
+  }
+}
+```
+
+**Request Body:**
+- `chainId` (number, required): Chain onde a operação será iniciada. Chains EVM suportadas: Arbitrum One: 42161, Avalanche: 43114, Base: 8453, BNB Smart Chain: 56, Ethereum: 1, Gnosis: 100, OP Mainnet: 10, Polygon: 137
+- `operations` (array, required): Lista de operações para executar, a ordem aqui é a ordem de execução
+  - `address` (string, required): Endereço do smart contract cuja função será executada, ou um endereço de destino se enviando tokens nativos
+  - `methodSignature` (string, optional): A função no smart contract para executar
+  - `arguments` (array, optional): Lista de argumentos para serem dados aos parâmetros da função, mesma ordem definida na função
+  - `value` (string, required): Quantidade de token nativo que esta operação precisa enviar. Não confundir com suas contrapartes wrapped que geralmente começam com W, estes são tokens ERC-20
+  - `metadata` (object, optional): Metadados personalizados para a entidade. Pares chave-valor com valores string. Tamanho máximo 1KB
+- `payGasFeeToken` (string, optional): Token que será usado para cobrir taxas de gas. Este é obrigatório, o opcional é apenas para suportar o campo depreciado
+- `payGasFeeTokenAddress` (string, optional, DEPRECATED): Use payGasFeeToken ao invés
+- `walletAddress` (string, required): Smart wallet que executará estas operações
+- `metadata` (object, optional): Metadados personalizados para a entidade. Pares chave-valor com valores string. Tamanho máximo 1KB
+
+**Response Fields:**
+- `userOperation` (object): A operação customizada
+  - `metadata` (object): Objeto de metadados definido para esta transação, null se nenhum
+  - `id` (string): Identificador único da operação de usuário
+  - `userOperationHash` (string): Hash da operação de usuário
+  - `hash` (string, DEPRECATED): Use userOperationHash ao invés
+  - `authorization` (object): Autorização EIP-7702. Se a wallet for uma wallet EIP-7702, este campo estará disponível para a primeira operação de usuário
+  - `chainIn` (object): Chain da rede de origem
+  - `chainOut` (object): Chain da rede de destino
+  - `chainIdIn` (number, DEPRECATED): Use chainIn.id ao invés. Chain ID da rede de origem
+  - `chainIdOut` (number, DEPRECATED): Use chainOut.id ao invés. Chain ID da rede de destino
+  - `sender` (object): Endereço remetente da operação de usuário
+  - `nonce` (string): Nonce da operação de usuário
+  - `signature` (string): Assinatura da operação de usuário
+  - `callGasLimit` (string): Limite de gas para a chamada
+  - `verificationGasLimit` (string): Limite de gas para verificação
+  - `preVerificationGas` (string): Gas usado antes da verificação
+  - `maxFeePerGas` (string): Taxa máxima por gas
+  - `maxPriorityFeePerGas` (string): Taxa máxima de prioridade por gas
+  - `maxGasFeeNative` (string): Taxa máxima de gas em moeda nativa
+  - `maxGasFeeToken` (string): Taxa máxima de gas em token
+  - `payFeesToken` (string): Token usado para pagar taxas
+  - `factory` (object): Endereço factory
+  - `entryPointVersion` (string): Versão do entry point
+  - `paymaster` (string): Endereço paymaster
+  - `paymasterData` (string): Dados paymaster
+  - `paymasterPostOpGasLimit` (string): Limite de gas pós-operação paymaster
+  - `paymasterVerificationGasLimit` (string): Limite de gas de verificação paymaster
+  - `expiresAt` (string): Data de expiração da operação de usuário
+  - `projectId` (string): ID do projeto
+  - `organizationId` (string): ID da organização
+
 **Status de Retorno:**
-- `200` - Operação customizada criada
-- `400` - Dados inválidos
-- `500` - Erro interno do servidor
+- `200` - Operação de usuário customizada criada com sucesso
 
 ### 29. Execute User Operation
-**Endpoint:** `POST /user-operations/execute`
+**Endpoint:** `POST /crypto/execute-user-op`
+
+Este endpoint enfileira para execução uma operação de usuário na blockchain, como uma cotação de swap ou uma transferência. A execução ocorre de forma assíncrona conforme aguarda ser incluída em um bloco. Você pode verificar o status usando o hash retornado no endpoint de histórico ou com nossos webhooks.
 
 ```bash
-curl -X POST "$BASE_URL/user-operations/execute" \
+curl -X POST "$BASE_URL/crypto/execute-user-op" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY" \
   -d '{
-    "userOperationHash": "0x1234567890abcdef1234567890abcdef12345678",
-    "signature": "0xabcdef1234567890abcdef1234567890abcdef12"
+    "userOperationHash": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+    "quoteId": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+    "signature": "0xeecdd469465113db97d2d57949c581a080a4e7d7c528187ffc80e4f55ca68e083dcda2338666db182417608b971f5237c5807d67c7515e52f9ffe045e775ec791b",
+    "authorization": "0xeecdd469465113db97d2d57949c581a080a4e7d7c528187ffc80e4f55ca68e083dcda2338666db182417608b971f5237c5807d67c7515e52f9ffe045e775ec791b"
   }'
 ```
 
+**Response (202 Accepted):**
+```json
+{
+  "userOperationHash": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+  "userOpHash": "0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1",
+  "estimatedExecutionTime": "2026-04-12T14:49:12.762Z"
+}
+```
+
+**Request Body:**
+- `userOperationHash` (string, optional): Identificador único para a cotação de swap, necessário para executar a transação
+- `quoteId` (string, optional, DEPRECATED): Use userOperationHash ao invés. Será ignorado se userOperationHash for usado
+- `signature` (string, required): A assinatura da transação, necessária para executar a transação
+- `authorization` (string, optional): A assinatura da autorização, necessária para executar a primeira transação de uma wallet EIP-7702. Se o campo authorization foi null na operação que você solicitou, então você não precisa enviar isso
+
+**Response Fields:**
+- `userOperationHash` (string): O hash da operação de usuário executada, representado em formato hexadecimal. Serve como identificador único para a operação na blockchain
+- `userOpHash` (string, DEPRECATED): Use userOperationHash ao invés
+- `estimatedExecutionTime` (string): Tempo estimado que a transação será executada
+
 **Status de Retorno:**
-- `200` - User operation executada
-- `400` - Hash ou assinatura inválidos
-- `500` - Erro interno do servidor
+- `202` - Hash da operação de usuário para transação enfileirada
+- `400` - Operação de usuário expirada (EXECUTE_USER_OP)
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `404` - Operação de usuário não encontrada (USER_OPERATION_NOT_FOUND)
+- `500` - Falha ao executar operação de usuário (EXECUTE_USER_OP)
 
 ### 30. Get User Operation
-**Endpoint:** `GET /user-operations/{userOpHash}`
+**Endpoint:** `GET /crypto/user-operation/{userOperationHash}`
+
+Obter uma operação de usuário pelo seu hash.
 
 ```bash
-curl -X GET "$BASE_URL/user-operations/0x1234567890abcdef1234567890abcdef12345678" \
+curl -X GET "$BASE_URL/crypto/user-operation/0x2aac7a66d5331454eafc9b981be3596ad08a40dad24883e3b9c4a5362cd7f7e1" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $NOTUS_API_KEY"
 ```
 
+**Response (200 OK):**
+```json
+{
+  "userOperation": {
+    "metadata": {
+      "key": "value"
+    },
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "userOperationHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "authorization": {
+      "chainId": 42161,
+      "address": "0xd6cedde84be40893d153be9d467cd6ad37875b28",
+      "nonce": 10,
+      "hash": "0x777811ae5d51875409b9978ddc1b40a9da1bbe9570040bdd7c5f186d70ceceba"
+    },
+    "chainIn": {
+      "id": 137,
+      "name": "POLYGON",
+      "logo": "https://logopolygon.com"
+    },
+    "chainOut": {
+      "id": 137,
+      "name": "POLYGON",
+      "logo": "https://logopolygon.com"
+    },
+    "chainIdIn": 1,
+    "chainIdOut": 137,
+    "sender": {
+      "walletAddress": "0x1234567890abcdef1234567890abcdef12345678",
+      "accountAbstraction": "0x1234567890abcdef1234567890abcdef12345678",
+      "externallyOwnedAccount": "0x1234567890abcdef1234567890abcdef12345678"
+    },
+    "nonce": "1",
+    "signature": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "callGasLimit": "100000",
+    "verificationGasLimit": "50000",
+    "preVerificationGas": "21000",
+    "maxFeePerGas": "20000000000",
+    "maxPriorityFeePerGas": "1500000000",
+    "maxGasFeeNative": "0.01",
+    "maxGasFeeToken": "0.5",
+    "payFeesToken": "0xabcdef1234567890abcdef1234567890abcdef12",
+    "factory": {
+      "data": "0x1234567890abcdef",
+      "address": "0x1234567890abcdef1234567890abcdef12345678",
+      "entryPointVersion": "v0.6"
+    },
+    "paymaster": "0xabcdef1234567890abcdef1234567890abcdef12",
+    "paymasterData": "0x1234567890abcdef1234567890abcdef",
+    "paymasterPostOpGasLimit": "30000",
+    "paymasterVerificationGasLimit": "40000",
+    "expiresAt": "2023-12-31T23:59:59.999Z",
+    "projectId": "123e4567-e89b-12d3-a456-426614174000",
+    "organizationId": "123e4567-e89b-12d3-a456-426614174000"
+  }
+}
+```
+
+**Path Parameters:**
+- `userOperationHash` (string, required): Hash da operação de usuário
+
+**Response Fields:**
+- `userOperation` (object): Detalhes da operação de usuário
+  - `metadata` (object): Objeto de metadados definido para esta transação, null se nenhum
+  - `id` (string): Identificador único da operação de usuário
+  - `userOperationHash` (string): Hash da operação de usuário
+  - `hash` (string, DEPRECATED): Use userOperationHash ao invés
+  - `authorization` (object): Autorização EIP-7702. Se a wallet for uma wallet EIP-7702, este campo estará disponível para a primeira operação de usuário
+  - `chainIn` (object): Chain da rede de origem
+  - `chainOut` (object): Chain da rede de destino
+  - `chainIdIn` (number, DEPRECATED): Use chainIn.id ao invés. Chain ID da rede de origem
+  - `chainIdOut` (number, DEPRECATED): Use chainOut.id ao invés. Chain ID da rede de destino
+  - `sender` (object): Endereço remetente da operação de usuário
+  - `nonce` (string): Nonce da operação de usuário
+  - `signature` (string): Assinatura da operação de usuário
+  - `callGasLimit` (string): Limite de gas para a chamada
+  - `verificationGasLimit` (string): Limite de gas para verificação
+  - `preVerificationGas` (string): Gas usado antes da verificação
+  - `maxFeePerGas` (string): Taxa máxima por gas
+  - `maxPriorityFeePerGas` (string): Taxa máxima de prioridade por gas
+  - `maxGasFeeNative` (string): Taxa máxima de gas em moeda nativa
+  - `maxGasFeeToken` (string): Taxa máxima de gas em token
+  - `payFeesToken` (string): Token usado para pagar taxas
+  - `factory` (object): Endereço factory
+  - `entryPointVersion` (string): Versão do entry point
+  - `paymaster` (string): Endereço paymaster
+  - `paymasterData` (string): Dados paymaster
+  - `paymasterPostOpGasLimit` (string): Limite de gas pós-operação paymaster
+  - `paymasterVerificationGasLimit` (string): Limite de gas de verificação paymaster
+  - `expiresAt` (string): Data de expiração da operação de usuário
+  - `projectId` (string): ID do projeto
+  - `organizationId` (string): ID da organização
+
 **Status de Retorno:**
-- `200` - Detalhes da user operation
-- `400` - Hash inválido
-- `500` - Erro interno do servidor
+- `200` - Detalhes da operação de usuário
+- `403` - Unidades de computação insuficientes (UNAVAILABLE_COMPUTE_UNITS)
+- `404` - Operação de usuário não encontrada (USER_OPERATION_NOT_FOUND)
 
 ---
 

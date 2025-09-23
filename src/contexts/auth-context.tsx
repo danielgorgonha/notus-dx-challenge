@@ -7,6 +7,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: any;
+  individualId: string | null;
+  walletAddress: string | null;
   login: () => Promise<void>;
   logout: () => Promise<void>;
   ready: boolean;
@@ -33,6 +35,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { ready, authenticated, user, login, logout } = privyData;
   const [isLoading, setIsLoading] = useState(true);
 
+  // Extrair individualId e walletAddress do usuário
+  const individualId = user?.id || null;
+  const walletAddress = user?.wallet?.address || null;
+
   useEffect(() => {
     if (ready) {
       setIsLoading(false);
@@ -43,6 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: authenticated,
     isLoading,
     user,
+    individualId,
+    walletAddress,
     login: async () => {
       if (typeof login === 'function') {
         await login();

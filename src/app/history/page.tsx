@@ -1,14 +1,15 @@
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { History, ArrowRightLeft, Droplets, Wallet, ExternalLink } from "lucide-react";
 
 export default function HistoryPage() {
   return (
-    <DashboardLayout 
-      title="Transaction History"
-      description="View all your transaction history and activity"
+    <AppLayout 
+      title="Histórico"
+      description="Visualize suas transações e atividades passadas"
     >
+      <div className="space-y-8">
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="text-white flex items-center">
@@ -127,6 +128,7 @@ export default function HistoryPage() {
           </div>
         </CardContent>
       </Card>
-    </DashboardLayout>
+      </div>
+    </AppLayout>
   );
 }
