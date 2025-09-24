@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useCallback } from 'react';
+import { notusAPI } from '@/lib/client';
 import { 
-  notusAPI, 
   CreateStandardIndividualSessionRequest, 
   CreateStandardIndividualSessionResponse,
   KYCVerificationSession,
   DocumentUpload 
-} from '@/lib/api/notus';
+} from '@/types';
 import { useAuth } from '@/contexts/auth-context';
 
 export interface KYCManagerState {

@@ -2,12 +2,21 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/auth-context';
-import { notusAPI, NotusWallet, Portfolio, NotusWalletHistory } from '@/lib/api/notus';
+import { notusAPI, NotusWallet, Portfolio, WalletHistory } from '@/lib/client';
+import { 
+  registerSmartWallet, 
+  getSmartWallet, 
+  getSmartWalletPortfolio, 
+  getSmartWalletHistory,
+  createDepositTransaction,
+  updateTransactionMetadata
+} from '@/lib/wallet/operations';
+import { updateWalletMetadata } from '@/lib/wallet/metadata';
 
 export interface SmartWalletState {
   wallet: NotusWallet | null;
   portfolio: Portfolio | null;
-  history: NotusWalletHistory | null;
+  history: WalletHistory | null;
   loading: boolean;
   error: string | null;
   isRegistered: boolean;
@@ -39,7 +48,7 @@ export function useSmartWallet() {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const wallet = await notusAPI.registerSmartWallet(walletAddress, {
+      const wallet = await registerSmartWallet(walletAddress, {
         name: 'Notus DX Challenge Wallet',
         description: 'Smart wallet for testing Notus API functionality',
       });
@@ -74,7 +83,7 @@ export function useSmartWallet() {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const wallet = await notusAPI.getSmartWallet(walletAddress);
+      const wallet = await getSmartWallet(walletAddress);
       setState(prev => ({ 
         ...prev, 
         wallet, 
@@ -88,11 +97,11 @@ export function useSmartWallet() {
       if (error instanceof Error && error.message.includes('not registered')) {
         try {
           console.log('🔄 Wallet not registered, attempting to register...');
-          await notusAPI.registerSmartWallet(walletAddress);
+          await registerSmartWallet(walletAddress);
           console.log('✅ Wallet registered successfully!');
           
           // Tenta carregar novamente após registro
-          const wallet = await notusAPI.getSmartWallet(walletAddress);
+          const wallet = await getSmartWallet(walletAddress);
           setState(prev => ({ 
             ...prev, 
             wallet, 
@@ -119,35 +128,12 @@ export function useSmartWallet() {
     if (!walletAddress) return;
 
     try {
-      const portfolio = await notusAPI.getSmartWalletPortfolio(walletAddress);
+      // Usar o endereço da Smart Wallet se disponível, senão usar o EOA
+      const smartWalletAddress = state.wallet?.walletAddress || walletAddress;
+      const portfolio = await getSmartWalletPortfolio(smartWalletAddress);
       
-      // Se o portfólio estiver vazio, simula dados para demonstração
-      if (portfolio && portfolio.tokens && portfolio.tokens.length === 0) {
-        const simulatedPortfolio = {
-          totalBalanceUSD: "1250.75",
-          tokens: [
-            {
-              address: "0xA0b86a33E6441b8c4C8C0C4C0C4C0C4C0C4C0C4C",
-              symbol: "USDC",
-              name: "USD Coin",
-              decimals: 6,
-              balance: "1000.000000",
-              balanceUSD: "1000.00"
-            },
-            {
-              address: "0xB0b86a33E6441b8c4C8C0C4C0C4C0C4C0C4C0C4C",
-              symbol: "ETH",
-              name: "Ethereum",
-              decimals: 18,
-              balance: "0.250000",
-              balanceUSD: "250.75"
-            }
-          ]
-        };
-        setState(prev => ({ ...prev, portfolio: simulatedPortfolio }));
-      } else {
-        setState(prev => ({ ...prev, portfolio }));
-      }
+      // Usar dados reais da API
+      setState(prev => ({ ...prev, portfolio }));
     } catch (error) {
       console.error('Failed to load portfolio:', error);
       setState(prev => ({ 
@@ -155,14 +141,16 @@ export function useSmartWallet() {
         error: error instanceof Error ? error.message : 'Failed to load portfolio'
       }));
     }
-  }, [walletAddress]);
+  }, [walletAddress, state.wallet]);
 
   // Load transaction history
   const loadHistory = useCallback(async (page = 1, limit = 20) => {
     if (!walletAddress) return;
 
     try {
-      const history = await notusAPI.getSmartWalletHistory(walletAddress, page, limit);
+      // Usar o endereço da Smart Wallet se disponível, senão usar o EOA
+      const smartWalletAddress = state.wallet?.walletAddress || walletAddress;
+      const history = await getSmartWalletHistory(smartWalletAddress, limit);
       
       // Se o histórico estiver vazio, simula dados para demonstração
       if (history && history.transactions && history.transactions.length === 0) {
@@ -209,11 +197,11 @@ export function useSmartWallet() {
       if (error instanceof Error && error.message.includes('not registered')) {
         try {
           console.log('🔄 Wallet not registered, attempting to register...');
-          await notusAPI.registerSmartWallet(walletAddress);
+          await registerSmartWallet(walletAddress);
           console.log('✅ Wallet registered successfully!');
           
           // Tenta carregar novamente após registro
-          const history = await notusAPI.getSmartWalletHistory(walletAddress, page, limit);
+          const history = await getSmartWalletHistory(walletAddress, limit);
           setState(prev => ({ ...prev, history }));
           return;
         } catch (registerError) {
@@ -226,7 +214,7 @@ export function useSmartWallet() {
         error: error instanceof Error ? error.message : 'Failed to load history'
       }));
     }
-  }, [walletAddress]);
+  }, [walletAddress, state.wallet]);
 
   // Create deposit transaction
   const createDeposit = useCallback(async (amount: string, token: string) => {
@@ -238,7 +226,7 @@ export function useSmartWallet() {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const result = await notusAPI.createDepositTransaction(walletAddress, amount, token);
+      const result = await createDepositTransaction(walletAddress, amount, token, 137, walletAddress);
       
       // Reload portfolio and history after deposit
       await Promise.all([
@@ -268,7 +256,7 @@ export function useSmartWallet() {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const wallet = await notusAPI.updateWalletMetadata(walletAddress, metadata);
+      const wallet = await updateWalletMetadata(walletAddress, metadata);
       setState(prev => ({ ...prev, wallet, loading: false }));
     } catch (error) {
       console.error('Failed to update metadata:', error);
