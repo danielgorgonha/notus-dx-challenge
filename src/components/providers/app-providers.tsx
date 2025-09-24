@@ -23,7 +23,6 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <PrivyProvider
         appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
-        clientId={process.env.NEXT_PUBLIC_PRIVY_CLIENT_ID!}
         config={{
           appearance: {
             theme: 'dark',

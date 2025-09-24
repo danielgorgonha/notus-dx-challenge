@@ -38,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Extrair individualId e walletAddress do usuário
   const individualId = user?.id || null;
   const walletAddress = user?.wallet?.address || null;
+  
 
   useEffect(() => {
     if (ready) {
