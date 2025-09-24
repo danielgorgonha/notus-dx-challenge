@@ -52,16 +52,19 @@ const navigation = [
     name: "Swap & Transfer",
     href: "/swap",
     icon: ArrowRightLeft,
+    disabled: true,
   },
   {
     name: "Liquidity Pools",
     href: "/liquidity",
     icon: Zap,
+    disabled: true,
   },
   {
     name: "History",
     href: "/history",
     icon: History,
+    disabled: true,
   },
 ];
 
@@ -95,7 +98,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     }
   }, [expandedItems]);
 
-  const isSubmenuActive = (submenu: any[]) => {
+  const isSubmenuActive = (submenu: { href: string }[]) => {
     return submenu.some(subItem => pathname === subItem.href);
   };
 
@@ -196,14 +199,23 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             }
 
             return (
-              <Link
+              <div
                 key={item.name}
-                href={item.href}
-                className={`nav-item ${isActive ? 'active' : ''}`}
+                className={`nav-item ${isActive ? 'active' : ''} ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={item.disabled ? (e) => e.preventDefault() : undefined}
               >
-                <item.icon className="h-5 w-5 mr-3" />
-                {item.name}
-              </Link>
+                {item.disabled ? (
+                  <div className="flex items-center">
+                    <item.icon className="h-5 w-5 mr-3" />
+                    {item.name}
+                  </div>
+                ) : (
+                  <Link href={item.href} className="flex items-center">
+                    <item.icon className="h-5 w-5 mr-3" />
+                    {item.name}
+                  </Link>
+                )}
+              </div>
             );
           })}
         </div>
@@ -216,15 +228,15 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-blue-600 rounded-full mr-3"></div>
             <div>
               <div className="font-semibold text-white text-sm">
-                {user?.wallet?.address 
-                  ? `${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}`
-                  : user?.email?.address 
-                    ? user.email.address.slice(0, 10) + "..."
+                {(user as any)?.wallet?.address 
+                  ? `${(user as any).wallet.address.slice(0, 6)}...${(user as any).wallet.address.slice(-4)}`
+                  : (user as any)?.email?.address 
+                    ? (user as any).email.address.slice(0, 10) + "..."
                     : "0x1234...5678"
                 }
               </div>
               <div className="text-emerald-400 text-xs">
-                {user?.wallet?.address ? "Wallet Connected" : "Email Connected"}
+                {(user as any)?.wallet?.address ? "Wallet Connected" : "Email Connected"}
               </div>
             </div>
           </div>

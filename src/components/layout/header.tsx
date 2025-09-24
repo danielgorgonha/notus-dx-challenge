@@ -34,11 +34,11 @@ export function Header({ title, description, onMenuClick }: HeaderProps) {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            {user && (
+            {!!user && (
               <div className="flex items-center gap-2 text-slate-300">
                 <User className="h-4 w-4" />
                 <span className="text-sm">
-                  {user.email?.address || user.wallet?.address?.slice(0, 6)}...
+                  {(user as any)?.email?.address || (user as any)?.wallet?.address?.slice(0, 6)}...
                 </span>
               </div>
             )}
