@@ -4,6 +4,7 @@
  */
 
 import { notusAPI } from '../api/client';
+import { registerSmartWallet, getSmartWallet } from '../wallet';
 
 export interface AuthUser {
   id: string;
@@ -49,7 +50,7 @@ export async function getClientAuthUser(): Promise<AuthResult> {
  */
 export async function registerWalletClient(walletAddress: string, metadata?: any) {
   try {
-    const result = await notusAPI.registerSmartWallet(walletAddress, metadata);
+    const result = await registerSmartWallet(walletAddress, metadata);
     return { success: true, data: result };
   } catch (error) {
     return {
@@ -64,7 +65,7 @@ export async function registerWalletClient(walletAddress: string, metadata?: any
  */
 export async function getWalletClient(walletAddress: string) {
   try {
-    const result = await notusAPI.getSmartWallet(walletAddress);
+    const result = await getSmartWallet(walletAddress);
     return { success: true, data: result };
   } catch (error) {
     return {

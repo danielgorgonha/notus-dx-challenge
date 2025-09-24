@@ -3,13 +3,6 @@
  * Centraliza todas as chamadas à API com tratamento de erros consistente
  */
 
-export interface NotusAPIError {
-  status: number;
-  errorId?: string;
-  message: string;
-  originalResponse?: string;
-}
-
 export class NotusAPIError extends Error {
   constructor(
     message: string,
