@@ -12,13 +12,13 @@ import Link from "next/link";
 import { useKYC } from "@/contexts/kyc-context";
 import { useFiatDeposit } from "@/hooks/use-fiat-deposit";
 import { useAuth } from "@/contexts/auth-context";
-import { useKYCManager } from "@/hooks/use-kyc-manager";
+import { useKYCManager } from "@/hooks/useKYCManager";
 import { SUPPORTED_CHAINS } from "@/lib/client";
 
 export default function DepositPage() {
   const router = useRouter();
-  const { user } = useAuth();
-  const { session, hasApprovedKYC, getKYCLevel } = useKYCManager();
+  const { user, walletAddress } = useAuth();
+  const kycManager = useKYCManager(walletAddress || '');
   const { 
     quote, 
     order, 
@@ -38,16 +38,16 @@ export default function DepositPage() {
 
   // Limites baseados no nível de KYC
   const getAvailableLimit = () => {
-    const level = getKYCLevel();
-    if (level === 2) return 50000.00; // Nível 2 - R$ 50.000,00
-    if (level === 1) return 2000.00;  // Nível 1 - R$ 2.000,00
+    const level = kycManager.getCurrentStage();
+    if (level === '2') return 50000.00; // Nível 2 - R$ 50.000,00
+    if (level === '1') return 2000.00;  // Nível 1 - R$ 2.000,00
     return 0; // Sem KYC - sem limite
   };
 
   // Atualizar limite quando o status do KYC mudar
   useEffect(() => {
     setAvailableLimit(getAvailableLimit());
-  }, [getKYCLevel]);
+  }, [kycManager]);
   const minAmount = 20.00;
   const exchangeRate = 1.00; // 1 BRZ = 1.00 BRL
 
@@ -94,7 +94,7 @@ export default function DepositPage() {
   };
 
   const handleConfirm = async () => {
-    if (!session?.individualId) {
+    if (!kycManager.kycMetadata?.userData?.individualId) {
       alert('Individual ID não encontrado. Por favor, complete o KYC primeiro.');
       router.push('/wallet/kyc');
       return;
@@ -102,9 +102,9 @@ export default function DepositPage() {
 
     // Verificar se o valor está dentro do limite do nível atual
     const numAmount = parseFloat(amount);
-    const level = getKYCLevel();
+    const level = kycManager.getCurrentStage();
     
-    if (level === 1 && numAmount > 2000) {
+    if (level === '1' && numAmount > 2000) {
       alert('Valor acima do limite do Nível 1. Complete o KYC Nível 2 para valores acima de R$ 2.000.');
       router.push('/wallet/kyc');
       return;
@@ -115,7 +115,7 @@ export default function DepositPage() {
         amount,
         receiveCryptoCurrency,
         chainId,
-        individualId: session.individualId
+        individualId: kycManager.kycMetadata?.userData?.individualId || ''
       });
 
       setCurrentStep("pix");
@@ -139,7 +139,7 @@ export default function DepositPage() {
   };
 
   const renderKYCBlock = () => {
-    const level = getKYCLevel();
+    const level = kycManager.getCurrentStage();
     
     return (
       <div className="space-y-6">
@@ -156,10 +156,10 @@ export default function DepositPage() {
               </div>
               <div className="flex-1">
                 <h3 className="text-xl font-semibold text-white mb-2">
-                  {level === 0 ? 'KYC Necessário' : 'Upgrade de KYC Necessário'}
+                  {level === '0' ? 'KYC Necessário' : 'Upgrade de KYC Necessário'}
                 </h3>
                 <p className="text-slate-300 mb-4">
-                  {level === 0 
+                  {level === '0' 
                     ? 'Complete a verificação de identidade usando a API real da Notus para fazer depósitos.'
                     : 'Para valores acima de R$ 2.000, complete o KYC Nível 2 com documentos e liveness.'
                   }
@@ -167,7 +167,7 @@ export default function DepositPage() {
                 <Link href="/wallet/kyc">
                   <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
                     <Shield className="mr-2 h-4 w-4" />
-                    {level === 0 ? 'Iniciar KYC' : 'Upgrade para Nível 2'}
+                    {level === '0' ? 'Iniciar KYC' : 'Upgrade para Nível 2'}
                   </Button>
                 </Link>
               </div>
@@ -186,8 +186,8 @@ export default function DepositPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-slate-300">Nível 1 - Dados Pessoais</span>
-                <span className={level >= 1 ? "text-green-400 font-semibold" : "text-slate-400 font-semibold"}>
-                  {level >= 1 ? "✓ Completo" : "⏳ Pendente"}
+                <span className={parseInt(level) >= 1 ? "text-green-400 font-semibold" : "text-slate-400 font-semibold"}>
+                  {parseInt(level) >= 1 ? "✓ Completo" : "⏳ Pendente"}
                 </span>
               </div>
               <div className="text-sm text-slate-400 ml-4">• Nome, CPF, data nascimento</div>
@@ -195,8 +195,8 @@ export default function DepositPage() {
               
               <div className="flex items-center justify-between">
                 <span className="text-slate-300">Nível 2 - Documentos + Liveness</span>
-                <span className={level >= 2 ? "text-green-400 font-semibold" : "text-slate-400 font-semibold"}>
-                  {level >= 2 ? "✓ Completo" : "⏸️ Bloqueado"}
+                <span className={parseInt(level) >= 2 ? "text-green-400 font-semibold" : "text-slate-400 font-semibold"}>
+                  {parseInt(level) >= 2 ? "✓ Completo" : "⏸️ Bloqueado"}
                 </span>
               </div>
               <div className="text-sm text-slate-400 ml-4">• Foto do documento</div>
@@ -629,7 +629,7 @@ export default function DepositPage() {
       <div className="flex justify-center">
         <div className="w-full max-w-2xl space-y-6">
           {/* Content */}
-          {!hasApprovedKYC() ? (
+          {kycManager.getCurrentStage() === '0' ? (
             renderKYCBlock()
           ) : (
             <>

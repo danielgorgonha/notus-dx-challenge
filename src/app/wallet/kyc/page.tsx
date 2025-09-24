@@ -8,15 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Clock, AlertCircle, User, FileText, Camera, Shield } from "lucide-react";
 import { useKYC } from "@/contexts/kyc-context";
-import { useKYCManager } from "@/hooks/use-kyc-manager";
+import { useKYCManager } from "@/hooks/useKYCManager";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function KYCPage() {
   const router = useRouter();
   const { currentLevel, kycPhase0Completed, kycPhase1Completed, kycPhase2Completed } = useKYC();
-  const { getKYCLevel } = useKYCManager();
+  const { user, walletAddress } = useAuth();
+  const kycManager = useKYCManager(walletAddress || '');
 
   // Usar o nível real da API Notus
-  const realKYCLevel = getKYCLevel();
+  const realKYCLevel = kycManager.getCurrentStage();
   
   const levels = [
     {
@@ -30,7 +32,7 @@ export default function KYCPage() {
     {
       id: 1,
       name: "Nível 1", 
-      status: realKYCLevel >= 1 ? "completed" : (kycPhase0Completed ? "pending" : "locked"),
+      status: parseInt(realKYCLevel) >= 1 ? "completed" : (kycPhase0Completed ? "pending" : "locked"),
       limit: "Até R$ 2.000,00 mensais",
       requirements: [
         "Nome Completo",
@@ -43,7 +45,7 @@ export default function KYCPage() {
     {
       id: 2,
       name: "Nível 2",
-      status: realKYCLevel >= 2 ? "completed" : (realKYCLevel >= 1 ? "pending" : "locked"),
+      status: parseInt(realKYCLevel) >= 2 ? "completed" : (parseInt(realKYCLevel) >= 1 ? "pending" : "locked"),
       limit: "Até R$ 50.000,00 mensais", 
       requirements: [
         "Documento de Identificação (ID Nacional, CNH ou RNM)",
@@ -105,8 +107,8 @@ export default function KYCPage() {
                   <span>Nível Atual: {realKYCLevel}</span>
                 </div>
                  <span className="text-2xl font-bold text-blue-400">
-                   {realKYCLevel === 1 ? "R$ 2.000,00" : 
-                    realKYCLevel === 2 ? "R$ 50.000,00" : 
+                   {realKYCLevel === '1' ? "R$ 2.000,00" : 
+                    realKYCLevel === '2' ? "R$ 50.000,00" : 
                     "R$ 0,00"}
                  </span>
               </CardTitle>
@@ -116,16 +118,16 @@ export default function KYCPage() {
                 <div>
                   <p className="text-slate-400">Limite de depósito:</p>
                    <p className="text-white font-semibold">
-                     {realKYCLevel === 1 ? "R$ 2.000,00" : 
-                      realKYCLevel === 2 ? "R$ 50.000,00" : 
+                     {realKYCLevel === '1' ? "R$ 2.000,00" : 
+                      realKYCLevel === '2' ? "R$ 50.000,00" : 
                       "R$ 0,00"}
                    </p>
                  </div>
                  <div>
                    <p className="text-slate-400">Limite de saque:</p>
                    <p className="text-white font-semibold">
-                     {realKYCLevel === 1 ? "R$ 2.000,00" : 
-                      realKYCLevel === 2 ? "R$ 50.000,00" : 
+                     {realKYCLevel === '1' ? "R$ 2.000,00" : 
+                      realKYCLevel === '2' ? "R$ 50.000,00" : 
                       "R$ 0,00"}
                    </p>
                 </div>

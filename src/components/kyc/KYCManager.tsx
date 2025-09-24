@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { useKYCManager } from '@/hooks/useKYCManager';
-import { KYCStage1Data, CreateKYCSessionData } from '@/types/kyc';
+import { KYCStage1Data, CreateKYCSessionData, DocumentUploadData } from '@/types/kyc';
 import { KYCStatusCard } from './KYCStatusCard';
 import { KYCStage1Form } from './KYCStage1Form';
 import { DocumentUpload } from './DocumentUpload';
@@ -98,7 +98,7 @@ export function KYCManager({ walletAddress, className = '' }: KYCManagerProps) {
   };
 
   // Função para fazer upload de documento
-  const handleDocumentUpload = async (uploadData: any) => {
+  const handleDocumentUpload = async (uploadData: DocumentUploadData) => {
     const result = await uploadDocument(uploadData);
     
     if (!result.success) {
@@ -192,7 +192,7 @@ export function KYCManager({ walletAddress, className = '' }: KYCManagerProps) {
       )}
 
       {/* Tabs para navegação */}
-      <Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as any)}>
+      <Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as 'status' | 'stage1' | 'stage2')}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="status" className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
