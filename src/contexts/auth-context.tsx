@@ -6,7 +6,7 @@ import { usePrivy } from "@privy-io/react-auth";
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  user: any;
+  user: unknown;
   individualId: string | null;
   walletAddress: string | null;
   login: () => Promise<void>;
@@ -17,20 +17,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Verifica se estamos dentro do PrivyProvider
-  let privyData = null;
-  try {
-    privyData = usePrivy();
-  } catch (error) {
-    // Se não estiver dentro do PrivyProvider, usa valores padrão
-    privyData = {
-      ready: false,
-      authenticated: false,
-      user: null,
-      login: async () => {},
-      logout: async () => {},
-    };
-  }
+  // Sempre chama usePrivy - se não estiver dentro do PrivyProvider, será tratado pelo próprio hook
+  const privyData = usePrivy();
 
   const { ready, authenticated, user, login, logout } = privyData;
   const [isLoading, setIsLoading] = useState(true);

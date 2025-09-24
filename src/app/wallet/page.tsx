@@ -63,9 +63,9 @@ export default function WalletPage() {
     try {
       await createWallet();
       success('Carteira Criada!', 'Carteira integrada criada com sucesso');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to create wallet:', error);
-      if (error.message?.includes('already has an embedded wallet')) {
+      if (error instanceof Error && error.message?.includes('already has an embedded wallet')) {
         showError('Carteira Já Existe', 'Você já possui uma carteira integrada. Por favor, atualize a página.');
       } else {
         showError('Falha na Criação da Carteira', 'Falha ao criar carteira integrada');

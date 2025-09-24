@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, FileText, Camera, Upload, CheckCircle } from "lucide-react";
+import { ArrowLeft, FileText, Camera, Upload, CheckCircle, Shield } from "lucide-react";
 import { useKYC } from "@/contexts/kyc-context";
 import { useToast } from "@/hooks/use-toast";
 

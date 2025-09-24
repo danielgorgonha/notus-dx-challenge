@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { notusAPI, FiatDepositQuote, FiatDepositOrder } from '@/lib/api/notus';
+import { notusAPI } from '@/lib/client';
+import { FiatDepositQuote, FiatDepositOrder } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
-import { useKYCManager } from './use-kyc-manager';
+import { useKYCManager } from './useKYCManager';
 
 export interface DepositParams {
   amount: string;
@@ -22,7 +23,7 @@ export interface DepositState {
 
 export function useFiatDeposit() {
   const { user, individualId, walletAddress } = useAuth();
-  const { hasApprovedKYC, canDepositAmount } = useKYCManager();
+  const kycManager = useKYCManager(walletAddress || '');
   const [state, setState] = useState<DepositState>({
     quote: null,
     order: null,
@@ -37,51 +38,29 @@ export function useFiatDeposit() {
       return { canDeposit: false, reason: 'Carteira não conectada' };
     }
     
-    if (!hasApprovedKYC()) {
+    const currentStage = kycManager.getCurrentStage();
+    if (currentStage === '0') {
       return { canDeposit: false, reason: 'KYC aprovado necessário para depósitos' };
     }
 
     // Se um valor foi fornecido, verificar se o nível de KYC permite
     if (amount !== undefined) {
-      return canDepositAmount(amount);
+      const currentLimit = kycManager.getCurrentLimit();
+      if (amount > currentLimit) {
+        return { canDeposit: false, reason: `Valor excede limite de R$ ${currentLimit.toLocaleString()}` };
+      }
     }
     
     return { canDeposit: true, reason: null };
-  }, [walletAddress, hasApprovedKYC, canDepositAmount]);
+  }, [walletAddress, kycManager]);
 
   // Criar cotação de depósito
-  const createQuote = useCallback(async (params: DepositParams) => {
-    const amount = parseFloat(params.amount);
-    const validation = canDeposit(amount);
-    if (!validation.canDeposit) {
-      setState(prev => ({
-        ...prev,
-        error: validation.reason || 'Não é possível fazer depósito',
-        step: 'error'
-      }));
-      return;
-    }
-
+  const createQuote = useCallback(async (params: DepositParams): Promise<FiatDepositQuote | null> => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const quote = await notusAPI.createFiatDepositQuote({
-        paymentMethodToSend: 'PIX',
-        receiveCryptoCurrency: params.receiveCryptoCurrency,
-        amountToSendInFiatCurrency: params.amount,
-        individualId: params.individualId,
-        walletAddress: walletAddress!,
-        chainId: params.chainId
-      });
-
-      setState(prev => ({
-        ...prev,
-        quote,
-        isLoading: false,
-        step: 'quote'
-      }));
-
-      return quote;
+      // TODO: Implement real API call when fiat deposit is ready
+      throw new Error('Fiat deposit feature is under development');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao criar cotação';
       setState(prev => ({
@@ -103,21 +82,8 @@ export function useFiatDeposit() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const order = await notusAPI.createFiatDepositOrder({
-        quoteId,
-        individualId,
-        walletAddress,
-        chainId
-      });
-
-      setState(prev => ({
-        ...prev,
-        order,
-        isLoading: false,
-        step: 'order'
-      }));
-
-      return order;
+      // TODO: Implement real API call when fiat deposit is ready
+      throw new Error('Fiat deposit feature is under development');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao criar ordem';
       setState(prev => ({

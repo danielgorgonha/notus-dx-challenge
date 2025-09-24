@@ -23,7 +23,7 @@ import {
 import {
   saveStage1DataToWallet,
   createStage2KYCSession,
-  processStage2Verification
+  processStage2Verification as processStage2VerificationLib
 } from '@/lib/kyc';
 
 import { notusAPI } from '@/lib/api/client';
@@ -312,7 +312,7 @@ export function useKYCManager(walletAddress: string): UseKYCManagerReturn {
     setError(null);
 
     try {
-      const result = await processStage2Verification(walletAddress, sessionId);
+      const result = await processStage2VerificationLib(walletAddress, sessionId);
       
       if (result.success) {
         // Recarregar metadados

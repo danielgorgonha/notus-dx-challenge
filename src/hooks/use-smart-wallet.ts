@@ -33,10 +33,10 @@ export function useSmartWallet() {
     isRegistered: false,
   });
 
-  const walletAddress = user?.wallet?.address || 
-                       user?.linkedAccounts?.find(account => account.type === 'wallet')?.address ||
-                       user?.linkedAccounts?.find(account => account.type === 'embedded-wallet')?.address ||
-                       user?.linkedAccounts?.find(account => account.type === 'privy-wallet')?.address;
+  const walletAddress = (user as any)?.wallet?.address || 
+                       (user as any)?.linkedAccounts?.find((account: any) => account.type === 'wallet')?.address ||
+                       (user as any)?.linkedAccounts?.find((account: any) => account.type === 'embedded-wallet')?.address ||
+                       (user as any)?.linkedAccounts?.find((account: any) => account.type === 'privy-wallet')?.address;
 
   // Register wallet with Notus API
   const registerWallet = useCallback(async () => {
@@ -164,7 +164,7 @@ export function useSmartWallet() {
               value: "100.000000",
               token: "USDC",
               timestamp: Math.floor(Date.now() / 1000) - 3600,
-              type: "transfer"
+              type: "transfer" as const
             },
             {
               hash: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
@@ -173,7 +173,7 @@ export function useSmartWallet() {
               value: "0.100000",
               token: "ETH",
               timestamp: Math.floor(Date.now() / 1000) - 7200,
-              type: "swap"
+              type: "swap" as const
             },
             {
               hash: "0x9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba",
@@ -182,9 +182,12 @@ export function useSmartWallet() {
               value: "50.000000",
               token: "USDC",
               timestamp: Math.floor(Date.now() / 1000) - 10800,
-              type: "transfer"
+              type: "transfer" as const
             }
-          ]
+          ],
+          total: 3,
+          page: 1,
+          limit: 10
         };
         setState(prev => ({ ...prev, history: simulatedHistory }));
       } else {
@@ -247,7 +250,7 @@ export function useSmartWallet() {
   }, [walletAddress, loadPortfolio, loadHistory]);
 
   // Update wallet metadata
-  const updateMetadata = useCallback(async (metadata: any) => {
+  const updateMetadata = useCallback(async (metadata: unknown) => {
     if (!walletAddress) {
       setState(prev => ({ ...prev, error: 'No wallet address found' }));
       return;
@@ -256,7 +259,7 @@ export function useSmartWallet() {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const wallet = await updateWalletMetadata(walletAddress, metadata);
+      const wallet = await updateWalletMetadata(walletAddress, metadata as any);
       setState(prev => ({ ...prev, wallet, loading: false }));
     } catch (error) {
       console.error('Failed to update metadata:', error);
