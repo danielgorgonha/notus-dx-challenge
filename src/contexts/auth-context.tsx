@@ -3,12 +3,14 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { PrivyUser, AuthContextType } from "@/types/auth";
+import { useRouter } from "next/navigation";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Sempre chama usePrivy - se não estiver dentro do PrivyProvider, será tratado pelo próprio hook
   const privyData = usePrivy();
+  const router = useRouter();
 
   const { ready, authenticated, user, login, logout } = privyData;
   const [isLoading, setIsLoading] = useState(true);
@@ -36,8 +38,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     },
     logout: async () => {
-      if (typeof logout === 'function') {
-        await logout();
+      try {
+        if (typeof logout === 'function') {
+          await logout();
+          // Redirecionar para a página inicial após logout
+          router.push('/');
+        }
+      } catch (error) {
+        console.error('Erro ao fazer logout:', error);
+        // Mesmo com erro, redirecionar para a página inicial
+        router.push('/');
       }
     },
     ready,

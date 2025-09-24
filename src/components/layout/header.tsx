@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
-import { Shield, LogOut, User, Menu } from "lucide-react";
+import { Shield, LogOut, User, Menu, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 interface HeaderProps {
   title: string;
@@ -12,6 +13,18 @@ interface HeaderProps {
 
 export function Header({ title, description, onMenuClick }: HeaderProps) {
   const { user, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <header className="bg-slate-900/80 backdrop-blur-xl border-b border-white/10">
@@ -45,10 +58,15 @@ export function Header({ title, description, onMenuClick }: HeaderProps) {
             <Button 
               variant="ghost" 
               className="text-slate-300 hover:text-white hover:bg-white/10"
-              onClick={logout}
+              onClick={handleLogout}
+              disabled={isLoggingOut}
             >
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
+              {isLoggingOut ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut className="mr-2 h-4 w-4" />
+              )}
+              {isLoggingOut ? 'Saindo...' : 'Logout'}
             </Button>
           </div>
         </div>
