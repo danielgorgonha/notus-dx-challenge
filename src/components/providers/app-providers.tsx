@@ -19,10 +19,27 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       })
   )
 
+  // Verificar se estamos no ambiente correto e se o App ID está disponível
+  const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+  const isClient = typeof window !== 'undefined';
+  
+  // Se não estamos no cliente ou não temos o App ID, renderizar sem Privy
+  if (!isClient || !privyAppId) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <KYCProvider>
+            {children}
+          </KYCProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <PrivyProvider
-        appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
+        appId={privyAppId}
         config={{
           appearance: {
             theme: 'dark',
