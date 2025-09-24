@@ -5,37 +5,22 @@
 
 import { notusAPI } from '../api/client';
 import { registerSmartWallet, getSmartWallet } from '../wallet';
-
-export interface AuthUser {
-  id: string;
-  email?: string;
-  walletAddress?: string;
-  individualId?: string;
-}
-
-export interface AuthResult {
-  success: boolean;
-  user?: AuthUser;
-  error?: string;
-}
+import { AuthUser, AuthResult } from '@/types/auth';
 
 /**
  * Get user information from client-side context
- * This is a placeholder - in a real app, you'd get this from your auth provider
+ * This function should be used in client components that need auth data
+ * For server components, use the auth() function from server.ts
  */
 export async function getClientAuthUser(): Promise<AuthResult> {
   try {
-    // This would typically come from your auth provider (Privy, etc.)
-    // For now, we'll return a mock user
-    const mockUser: AuthUser = {
-      id: 'mock-user-id',
-      email: 'user@example.com',
-      walletAddress: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6',
-    };
-
+    // This function is meant to be used in client components
+    // The actual user data should come from the AuthContext via useAuth()
+    // This is a fallback for cases where the context is not available
+    
     return {
-      success: true,
-      user: mockUser,
+      success: false,
+      error: 'Use useAuth() hook in client components instead of this function',
     };
   } catch (error) {
     return {

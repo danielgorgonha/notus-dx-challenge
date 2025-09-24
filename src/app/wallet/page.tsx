@@ -73,13 +73,6 @@ export default function WalletPage() {
     }
   };
 
-
-
-  // Withdraw Functions
-  const handleWithdrawComplete = (amount: string, method: string) => {
-    success('Saque Solicitado!', `Saque de ${amount} USDC via ${method} processado com sucesso`);
-  };
-
   return (
     <AppLayout 
       title="Carteira Inteligente"

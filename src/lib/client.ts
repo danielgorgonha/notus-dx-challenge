@@ -17,9 +17,10 @@ export {
   getClientAuthUser,
   registerWalletClient,
   getWalletClient,
-  type AuthUser,
-  type AuthResult,
 } from './auth/client';
+
+// Shared types
+export type { AuthUser, AuthResult, PrivyUser, AuthContextType } from '@/types/auth';
 
 // Utils
 export * from './utils';

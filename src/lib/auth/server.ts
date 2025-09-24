@@ -6,6 +6,7 @@
 import { cookies } from "next/headers";
 import { PrivyClient } from "@privy-io/server-auth";
 import { notusAPI } from '../api/client';
+import { AuthUser } from '@/types/auth';
 
 // Privy client server-side
 const privy = new PrivyClient(
@@ -15,7 +16,7 @@ const privy = new PrivyClient(
 
 const FACTORY_ADDRESS = "0x7a1dbab750f12a90eb1b60d2ae3ad17d4d81effe";
 
-export async function auth() {
+export async function auth(): Promise<AuthUser | null> {
   try {
     const { get } = await cookies();
 

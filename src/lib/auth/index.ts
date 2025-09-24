@@ -7,9 +7,10 @@ export {
   getClientAuthUser,
   registerWalletClient,
   getWalletClient,
-  type AuthUser,
-  type AuthResult,
 } from './client';
 
 // Server-side auth functions (only for server components)
 export { auth } from './server';
+
+// Shared types
+export type { AuthUser, AuthResult, PrivyUser, AuthContextType } from '@/types/auth';
