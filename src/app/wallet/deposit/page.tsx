@@ -13,7 +13,7 @@ import { useKYC } from "@/contexts/kyc-context";
 import { useFiatDeposit } from "@/hooks/use-fiat-deposit";
 import { useAuth } from "@/contexts/auth-context";
 import { useKYCManager } from "@/hooks/use-kyc-manager";
-import { SUPPORTED_CHAINS } from "@/lib/api/notus";
+import { SUPPORTED_CHAINS } from "@/lib/client";
 
 export default function DepositPage() {
   const router = useRouter();
