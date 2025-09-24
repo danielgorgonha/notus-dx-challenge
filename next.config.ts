@@ -4,12 +4,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  env: {
-    NEXT_PUBLIC_NOTUS_API_URL: process.env.NEXT_PUBLIC_NOTUS_API_URL || 'https://api.notus.team/api/v1',
-    NEXT_PUBLIC_PRIVY_APP_ID: process.env.NEXT_PUBLIC_PRIVY_APP_ID || '',
-    NEXT_PUBLIC_APP_NAME: 'Notus DX Challenge',
-    NEXT_PUBLIC_APP_VERSION: '1.0.0'
-  },
   async headers() {
     return [
       {
