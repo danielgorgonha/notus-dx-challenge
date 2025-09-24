@@ -29,6 +29,27 @@ Esta seção contém toda a pesquisa, análise e feedback sobre a API Notus e ex
 - Estados da aplicação
 - Roadmap visual
 
+### [kyc-flow-diagrams.md](./kyc-flow-diagrams.md)
+**Diagramas do fluxo KYC**
+- Fluxo multi-etapas
+- Integração com wallet
+- Regulamentações bancárias
+- Limites por etapa
+
+### [kyc-testing-guide.md](./kyc-testing-guide.md)
+**Guia de testes KYC**
+- Cenários de teste
+- Scripts automatizados
+- Troubleshooting
+- Validação de fluxos
+
+### [scripts/](./scripts/)
+**Scripts de teste e validação**
+- Testes automatizados KYC
+- Validação de fluxos
+- Simulação de cenários
+- Documentação de uso
+
 ## 🎯 Objetivos da Pesquisa
 
 ### **Primários**

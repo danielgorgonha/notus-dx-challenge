@@ -2017,7 +2017,7 @@ curl -X POST "$BASE_URL/crypto/custom-user-operation" \
         "address": "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
         "methodSignature": "transfer(address,uint256)",
         "arguments": ["0xa7a9dcfcb65ed67e05d9c7eb49d2d74ce1f5f4f1", "10000000000000000000"],
-        "value": "0",
+    "value": "0",
         "metadata": {
           "key": "value"
         }
