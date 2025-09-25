@@ -98,7 +98,7 @@ export default function LandingPage() {
         <div id="features" className="mb-20">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-white mb-4">Notus API Features</h2>
-            <p className="text-slate-300 text-lg">What we're testing from the Notus API</p>
+            <p className="text-slate-300 text-lg">What we&apos;re testing from the Notus API</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">

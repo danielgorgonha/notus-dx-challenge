@@ -75,8 +75,11 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, walletAddress } = useAuth();
   const [expandedItems, setExpandedItems] = useState<string[]>(['Smart Wallet']);
+
+  console.log(user);
+  console.log(walletAddress);
 
   const toggleExpanded = (itemName: string) => {
     // Smart Wallet sempre deve ficar aberto
@@ -228,15 +231,15 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-blue-600 rounded-full mr-3"></div>
             <div>
               <div className="font-semibold text-white text-sm">
-                {(user as any)?.wallet?.address 
-                  ? `${(user as any).wallet.address.slice(0, 6)}...${(user as any).wallet.address.slice(-4)}`
-                  : (user as any)?.email?.address 
-                    ? (user as any).email.address.slice(0, 10) + "..."
+                {(user as { wallet?: { address: string }; email?: { address: string } })?.wallet?.address 
+                  ? `${(user as { wallet?: { address: string }; email?: { address: string } }).wallet!.address.slice(0, 6)}...${(user as { wallet?: { address: string }; email?: { address: string } }).wallet!.address.slice(-4)}`
+                  : (user as { wallet?: { address: string }; email?: { address: string } })?.email?.address 
+                    ? (user as { wallet?: { address: string }; email?: { address: string } }).email!.address.slice(0, 10) + "..."
                     : "0x1234...5678"
                 }
               </div>
               <div className="text-emerald-400 text-xs">
-                {(user as any)?.wallet?.address ? "Wallet Connected" : "Email Connected"}
+                {(user as { wallet?: { address: string }; email?: { address: string } })?.wallet?.address ? "Wallet Connected" : "Email Connected"}
               </div>
             </div>
           </div>
