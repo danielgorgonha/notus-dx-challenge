@@ -70,8 +70,8 @@ export async function executeUserOperation({
       signature,
     });
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error executing user operation:", error);
-    return { success: false, error: error.message || "Failed to execute user operation" };
+    return { success: false, error: error instanceof Error ? error.message : "Failed to execute user operation" };
   }
 }

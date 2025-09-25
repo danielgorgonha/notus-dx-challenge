@@ -5,6 +5,13 @@
  */
 
 import { notusAPI } from '../api/client';
+import type {
+  WalletAddressResponse,
+  WalletListResponse,
+  WalletPortfolioResponse,
+  WalletHistoryResponse,
+  WalletResponse
+} from '@/types/wallet';
 
 // Factory address para smart wallets
 export const FACTORY_ADDRESS = "0x7a1dbab750f12a90eb1b60d2ae3ad17d4d81effe";
@@ -26,7 +33,7 @@ export const walletActions = {
         salt: "0",
         ...params,
       },
-    }).json(),
+    }).json<WalletAddressResponse>(),
 
   /**
    * Busca endereço da smart wallet
@@ -44,9 +51,7 @@ export const walletActions = {
         salt: "0",
         ...params,
       },
-    }).json<{
-      wallet: { accountAbstraction: string; registeredAt: string | null };
-    }>(),
+    }).json<WalletAddressResponse>(),
 
   /**
    * Lista smart wallets do projeto
@@ -55,14 +60,14 @@ export const walletActions = {
   listWallets: (page: number = 1, perPage: number = 20) =>
     notusAPI.get("wallets", {
       searchParams: { page, perPage },
-    }).json(),
+    }).json<WalletListResponse>(),
 
   /**
    * Obtém portfolio da smart wallet
    * GET /wallets/{walletAddress}/portfolio
    */
   getPortfolio: (walletAddress: string) =>
-    notusAPI.get(`wallets/${walletAddress}/portfolio`).json(),
+    notusAPI.get(`wallets/${walletAddress}/portfolio`).json<WalletPortfolioResponse>(),
 
   /**
    * Obtém histórico de transações da smart wallet
@@ -78,7 +83,7 @@ export const walletActions = {
   }) =>
     notusAPI.get(`wallets/${walletAddress}/history`, {
       searchParams: params,
-    }).json(),
+    }).json<WalletHistoryResponse>(),
 
   /**
    * Cria transação de depósito

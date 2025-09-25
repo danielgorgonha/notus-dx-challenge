@@ -16,8 +16,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   // Extrair individualId e walletAddress do usuário com tipagem correta
-  const individualId = (user as PrivyUser)?.id || null;
-  const walletAddress = (user as PrivyUser)?.wallet?.address || null;
+  const individualId = (user as unknown as PrivyUser)?.id || null;
+  const walletAddress = (user as unknown as PrivyUser)?.wallet?.address || null;
   
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value: AuthContextType = {
     isAuthenticated: authenticated,
     isLoading,
-    user: user as PrivyUser | null,
+    user: user as unknown as PrivyUser | null,
     individualId,
     walletAddress,
     login: async () => {

@@ -5,6 +5,7 @@
  */
 
 import { notusAPI } from '../api/client';
+import type { KYCSessionResponse } from '@/types/kyc';
 
 export const kycActions = {
   /**

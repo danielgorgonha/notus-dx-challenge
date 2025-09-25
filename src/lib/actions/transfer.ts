@@ -55,8 +55,8 @@ export async function getTransferQuote({
       transactionFeePercent: 0,
     });
     return { success: true, data: response };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error getting transfer quote:", error);
-    return { success: false, error: error.message || "Failed to get transfer quote" };
+    return { success: false, error: error instanceof Error ? error.message : "Failed to get transfer quote" };
   }
 }

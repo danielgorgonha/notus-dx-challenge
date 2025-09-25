@@ -1,11 +1,12 @@
 import { create } from 'zustand';
+import type { PrivyUser } from '@/types/auth';
 
 interface AuthState {
   isAuthenticated: boolean;
-  user: any | null;
+  user: PrivyUser | null;
   individualId: string | null;
   walletAddress: string | null;
-  setAuth: (user: any, individualId?: string, walletAddress?: string) => void;
+  setAuth: (user: PrivyUser, individualId?: string, walletAddress?: string) => void;
   clearAuth: () => void;
 }
 

@@ -67,7 +67,7 @@ export function generateId(): string {
 /**
  * Debounce function
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -81,7 +81,7 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * Throttle function
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -98,14 +98,14 @@ export function throttle<T extends (...args: any[]) => any>(
 /**
  * Verifica se é um objeto vazio
  */
-export function isEmpty(obj: any): boolean {
+export function isEmpty(obj: Record<string, unknown>): boolean {
   return Object.keys(obj).length === 0;
 }
 
 /**
  * Remove propriedades undefined de um objeto
  */
-export function removeUndefined<T extends Record<string, any>>(obj: T): T {
+export function removeUndefined<T extends Record<string, unknown>>(obj: T): T {
   const result = {} as T;
   for (const key in obj) {
     if (obj[key] !== undefined) {
