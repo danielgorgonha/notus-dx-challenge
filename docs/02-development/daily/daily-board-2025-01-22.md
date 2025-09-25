@@ -57,38 +57,38 @@
 **Correções Realizadas:**
 
 #### **Endpoints de Wallets:**
-- ❌ `POST /crypto/wallets/register` → ✅ `POST /wallets/register`
-- ❌ `GET /crypto/wallets/address` → ✅ `GET /wallets/address`
-- ❌ `GET /crypto/wallets` → ✅ `GET /wallets`
-- ❌ `GET /crypto/wallets/{walletAddress}/portfolio` → ✅ `GET /wallets/{walletAddress}/portfolio`
-- ❌ `GET /crypto/wallets/{walletAddress}/history` → ✅ `GET /wallets/{walletAddress}/history`
-- ❌ `POST /crypto/wallets/{walletAddress}/deposit` → ✅ `POST /wallets/{walletAddress}/deposit`
-- ❌ `PATCH /crypto/wallets/{walletAddress}/metadata` → ✅ `PATCH /wallets/{walletAddress}/metadata`
+   - ❌ `POST /crypto/wallets/register` → ✅ `POST /wallets/register`
+   - ❌ `GET /crypto/wallets/address` → ✅ `GET /wallets/address`
+   - ❌ `GET /crypto/wallets` → ✅ `GET /wallets`
+   - ❌ `GET /crypto/wallets/{walletAddress}/portfolio` → ✅ `GET /wallets/{walletAddress}/portfolio`
+   - ❌ `GET /crypto/wallets/{walletAddress}/history` → ✅ `GET /wallets/{walletAddress}/history`
+   - ❌ `POST /crypto/wallets/{walletAddress}/deposit` → ✅ `POST /wallets/{walletAddress}/deposit`
+   - ❌ `PATCH /crypto/wallets/{walletAddress}/metadata` → ✅ `PATCH /wallets/{walletAddress}/metadata`
 
 #### **Endpoints de User Operations:**
-- ❌ `POST /crypto/user-operations/execute` → ✅ `POST /crypto/execute-user-op`
-- ❌ `GET /crypto/user-operations/{userOperationHash}` → ✅ `GET /crypto/user-operation/{userOperationHash}`
+   - ❌ `POST /crypto/user-operations/execute` → ✅ `POST /crypto/execute-user-op`
+   - ❌ `GET /crypto/user-operations/{userOperationHash}` → ✅ `GET /crypto/user-operation/{userOperationHash}`
 
 #### **Endpoints de Liquidity:**
-- ❌ `POST /crypto/liquidity/create` → ✅ `POST /liquidity/create`
-- ❌ `POST /crypto/liquidity/change` → ✅ `POST /liquidity/change`
-- ❌ `POST /crypto/liquidity/collect` → ✅ `POST /liquidity/collect`
-- ❌ `GET /crypto/liquidity/amounts` → ✅ `GET /liquidity/amounts`
-- ❌ `GET /crypto/liquidity/pools` → ✅ `GET /liquidity/pools`
+   - ❌ `POST /crypto/liquidity/create` → ✅ `POST /liquidity/create`
+   - ❌ `POST /crypto/liquidity/change` → ✅ `POST /liquidity/change`
+   - ❌ `POST /crypto/liquidity/collect` → ✅ `POST /liquidity/collect`
+   - ❌ `GET /crypto/liquidity/amounts` → ✅ `GET /liquidity/amounts`
+   - ❌ `GET /crypto/liquidity/pools` → ✅ `GET /liquidity/pools`
 
 #### **Endpoints de Fiat:**
-- ❌ `POST /crypto/fiat/deposit/quote` → ✅ `POST /fiat/deposit/quote`
-- ❌ `POST /crypto/fiat/deposit` → ✅ `POST /fiat/deposit`
-- ❌ `POST /crypto/fiat/withdraw/quote` → ✅ `POST /fiat/withdraw/quote`
-- ❌ `POST /crypto/fiat/withdraw` → ✅ `POST /fiat/withdraw`
+   - ❌ `POST /crypto/fiat/deposit/quote` → ✅ `POST /fiat/deposit/quote`
+   - ❌ `POST /crypto/fiat/deposit` → ✅ `POST /fiat/deposit`
+   - ❌ `POST /crypto/fiat/withdraw/quote` → ✅ `POST /fiat/withdraw/quote`
+   - ❌ `POST /crypto/fiat/withdraw` → ✅ `POST /fiat/withdraw`
 
 #### **Endpoints de KYC:**
-- ❌ `POST /crypto/kyc/individual-verification-sessions/standard` → ✅ `POST /kyc/individual-verification-sessions/standard`
-- ❌ `GET /crypto/kyc/individual-verification-sessions/standard/{sessionId}` → ✅ `GET /kyc/individual-verification-sessions/standard/{sessionId}`
+   - ❌ `POST /crypto/kyc/individual-verification-sessions/standard` → ✅ `POST /kyc/individual-verification-sessions/standard`
+   - ❌ `GET /crypto/kyc/individual-verification-sessions/standard/{sessionId}` → ✅ `GET /kyc/individual-verification-sessions/standard/{sessionId}`
 
 #### **Endpoints de Blockchain:**
-- ❌ `GET /blockchain/chains` → ✅ `GET /crypto/chains`
-- ❌ `GET /blockchain/tokens` → ✅ `GET /crypto/tokens`
+   - ❌ `GET /blockchain/chains` → ✅ `GET /crypto/chains`
+   - ❌ `GET /blockchain/tokens` → ✅ `GET /crypto/tokens`
 
 ### 📚 **Arquivos Criados/Atualizados**
 - ✅ `src/components/providers/app-providers.tsx` - Configuração do Privy

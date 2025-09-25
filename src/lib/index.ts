@@ -6,12 +6,6 @@
 // API Client
 export { notusAPI, NotusAPIError } from './api/client';
 
-// KYC
-export * from './kyc';
-
-// Wallet
-export * from './wallet';
-
 // Auth
 export * from './auth';
 

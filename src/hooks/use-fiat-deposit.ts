@@ -2,9 +2,9 @@
 
 import { useState, useCallback } from 'react';
 import { notusAPI } from '@/lib/client';
-import { FiatDepositQuote, FiatDepositOrder } from '@/types';
+import { FiatDepositQuote, FiatDepositOrder } from '@/types/fiat';
 import { useAuth } from '@/contexts/auth-context';
-import { useKYCManager } from './useKYCManager';
+import { useKYCManager } from './use-kyc-manager';
 
 export interface DepositParams {
   amount: string;

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Clock, AlertCircle, User, FileText, Camera, Shield } from "lucide-react";
 import { useKYC } from "@/contexts/kyc-context";
-import { useKYCManager } from "@/hooks/useKYCManager";
+import { useKYCManager } from "@/hooks/use-kyc-manager";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function KYCPage() {
