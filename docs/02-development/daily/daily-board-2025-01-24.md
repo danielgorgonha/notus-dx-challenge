@@ -86,6 +86,14 @@ Preparar o projeto para deploy na Vercel, corrigindo todos os erros de build e i
 - [ ] Documentar processo de CI/CD
 - [ ] Atualizar README com instruções de deploy
 
+### Estrutura Simplificada
+- [x] ✅ Organizar actions da API por funcionalidade
+- [x] ✅ Alinhar 100% com Postman collection oficial
+- [x] ✅ Simplificar estrutura KYC (apenas 3 funções essenciais)
+- [x] ✅ Remover pasta `/lib/wallet/` duplicada
+- [x] ✅ Simplificar hooks e componentes
+- [x] ✅ Atualizar auth e providers
+
 ## 💡 Lições Aprendidas
 
 1. **Mock vs Real API**: É importante migrar completamente de mocks para implementação real antes do deploy
@@ -93,16 +101,107 @@ Preparar o projeto para deploy na Vercel, corrigindo todos os erros de build e i
 3. **Build Process**: Configurações de build devem ser testadas localmente antes do deploy
 4. **Code Organization**: Commits organizados facilitam debugging e rollback
 5. **CI/CD**: Implementar CI/CD desde o início evita problemas de última hora
+6. **Simplificação**: Menos código = menos bugs e mais facilidade de manutenção
+7. **Alinhamento com API**: Seguir exatamente a documentação oficial evita problemas
+8. **Eliminação de Duplicação**: Remover código duplicado melhora consistência
+9. **Foco no Essencial**: Manter apenas o necessário para funcionalidade
+10. **Estrutura Organizada**: Commits por funcionalidade facilitam debugging
 
 ## 🎯 Status Final
 - **Build**: ✅ Funcionando
-- **Commits**: ✅ Organizados e prontos
+- **Estrutura**: ✅ Simplificada e organizada
+- **API**: ✅ Alinhada com Postman collection
+- **Commits**: ✅ Organizados e prontos (12 commits)
 - **Deploy**: 🔄 Próximo passo
-- **Documentação**: 🔄 Em andamento
+- **Documentação**: ✅ Atualizada
 
 ---
 
-**Tempo total investido**: ~4 horas
-**Arquivos modificados**: 15+ arquivos
-**Commits criados**: 6 commits organizados
-**Erros corrigidos**: 20+ erros de TypeScript e build
+**Tempo total investido**: ~6 horas
+**Arquivos modificados**: 20+ arquivos
+**Arquivos removidos**: 6 arquivos desnecessários
+**Commits criados**: 12 commits organizados
+**Linhas de código**: ~1000+ linhas removidas
+
+---
+
+## 🔄 Continuação - Simplificação da Estrutura
+
+### Sessão de Teste
+
+**1. Qual é o objetivo desta sessão?**
+Simplificar drasticamente a estrutura do projeto, removendo duplicações e complexidade desnecessária, alinhando 100% com a API oficial da Notus através do Postman collection.
+
+---
+
+**2. Qual abordagem você vai usar?**
+- Análise da estrutura atual vs Postman collection oficial
+- Identificação de duplicações e complexidade desnecessária
+- Remoção de arquivos e funções não utilizadas
+- Reorganização das actions da API por funcionalidade
+- Simplificação de hooks e componentes
+
+---
+
+**3. Há algo que precisa ser configurado antes de começar?**
+- Verificar alinhamento com Postman collection da Notus API
+- Identificar arquivos duplicados e funções não utilizadas
+- Mapear dependências entre arquivos
+
+---
+
+**4. Você conseguiu atingir o objetivo da sessão?**
+
+* [x] Sim
+* [ ] Não. Se **não**, explique o que impediu.
+
+---
+
+**5. Problemas encontrados**
+- **Duplicação de código**: Actions em `/lib/wallet/` duplicavam `/lib/actions/wallet.ts`
+- **Complexidade desnecessária**: KYC tinha 3 arquivos quando precisava apenas de 3 funções
+- **Estrutura confusa**: Múltiplas camadas de abstração sem benefício
+- **Desalinhamento com API**: Actions não seguiam exatamente o Postman collection
+- **Hooks complexos**: Lógica desnecessária de metadata management
+
+---
+
+**6. Observações adicionais**
+
+**Simplificações realizadas:**
+- ✅ Removida pasta `/lib/wallet/` completamente
+- ✅ Simplificado KYC para apenas 3 funções essenciais (create, get, process)
+- ✅ Organizadas actions por funcionalidade em `/lib/actions/`
+- ✅ Alinhadas 100% com Postman collection oficial
+- ✅ Removidos 6 arquivos desnecessários
+- ✅ Eliminadas ~1000+ linhas de código
+
+**Benefícios alcançados:**
+- 🎯 **Menos código**: Redução drástica de linhas
+- 🎯 **Menos bugs**: Menos pontos de falha
+- 🎯 **Mais fácil de manter**: Estrutura linear e clara
+- 🎯 **Alinhado com API**: Segue exatamente a documentação oficial
+- 🎯 **Sem duplicação**: Uma única fonte de verdade
+
+**Commits organizados:**
+1. `3f2f401` - feat: add organized API actions structure
+2. `c9659e6` - refactor: simplify KYC and auth structure  
+3. `cd4f8a4` - refactor: update hooks to use simplified structure
+4. `4fef5e2` - refactor: update API client and providers
+5. `61ee1ba` - fix: resolve build errors and improve UI
+6. `ac28abe` - chore: update dependencies and configuration
+
+**Insights importantes:**
+- Menos código = menos bugs e mais facilidade de manutenção
+- Seguir exatamente a documentação oficial evita problemas
+- Remover código duplicado melhora consistência
+- Manter apenas o necessário para funcionalidade
+- Commits por funcionalidade facilitam debugging
+
+---
+
+**Tempo total investido**: ~6 horas
+**Arquivos modificados**: 20+ arquivos  
+**Arquivos removidos**: 6 arquivos desnecessários
+**Commits criados**: 12 commits organizados
+**Linhas de código**: ~1000+ linhas removidas
