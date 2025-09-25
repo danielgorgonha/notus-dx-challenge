@@ -20,7 +20,21 @@ import {
   Loader2
 } from 'lucide-react';
 import { DocumentUploadData, UploadStatus } from '@/types/kyc';
-import { validateDocumentFile } from '@/lib/kyc';
+// Função de validação simples para documentos
+const validateDocumentFile = (file: File) => {
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+  
+  if (file.size > maxSize) {
+    return { valid: false, error: 'Arquivo muito grande. Máximo 10MB.' };
+  }
+  
+  if (!allowedTypes.includes(file.type)) {
+    return { valid: false, error: 'Tipo de arquivo não suportado. Use JPG, PNG ou PDF.' };
+  }
+  
+  return { valid: true };
+};
 
 interface DocumentUploadProps {
   sessionId: string;
@@ -122,10 +136,10 @@ export function DocumentUpload({
 
     // Validar arquivo
     const validation = validateDocumentFile(file);
-    if (!validation.success) {
-      setError(validation.error?.message || 'Arquivo inválido');
+    if (!validation.valid) {
+      setError(validation.error || 'Arquivo inválido');
       setUploadStatus('error');
-      onError?.(validation.error?.message || 'Arquivo inválido');
+      onError?.(validation.error || 'Arquivo inválido');
       return;
     }
 

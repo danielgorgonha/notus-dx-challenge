@@ -4,8 +4,8 @@
  */
 
 import React, { useState } from 'react';
-import { useKYCManager } from '@/hooks/useKYCManager';
-import { CreateKYCSessionData, KYCStage1Data } from '@/types/kyc';
+import { useKYCManager } from '@/hooks/use-kyc-manager';
+import { CreateKYCSessionData, KYCStage1Data, KYCSessionResponse } from '@/types/kyc';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -27,7 +27,7 @@ export function KYCManager({ walletAddress }: KYCManagerProps) {
 
   const [currentStep, setCurrentStep] = useState<'status' | 'stage1' | 'stage2'>('status');
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [sessionStatus, setSessionStatus] = useState<any>(null);
+  const [sessionStatus, setSessionStatus] = useState<KYCSessionResponse | null>(null);
 
   // Criar sessão KYC
   const handleCreateSession = async (stage1Data: KYCStage1Data) => {
@@ -51,7 +51,7 @@ export function KYCManager({ walletAddress }: KYCManagerProps) {
     
     const result = await getKYCSessionStatus(sessionId);
     
-    if (result.success) {
+    if (result.success && result.data) {
       setSessionStatus(result.data);
     }
   };

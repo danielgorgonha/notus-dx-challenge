@@ -6,7 +6,7 @@
 'use client';
 
 import React from 'react';
-import { useKYCManager } from '@/hooks/useKYCManager';
+import { useKYCManager } from '@/hooks/use-kyc-manager';
 import { KYC_STATUS_COLORS, KYC_SESSION_STATUS_COLORS } from '@/types/kyc';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
