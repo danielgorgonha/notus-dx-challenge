@@ -161,5 +161,4 @@
 
 ---
 
-**Última atualização:** 22/01/2025 23:30  
-**Próxima revisão:** 23/01/2025 04:00
+**Última atualização:** 22/01/2025

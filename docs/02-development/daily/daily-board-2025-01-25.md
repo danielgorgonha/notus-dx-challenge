@@ -173,5 +173,4 @@
 
 ---
 
-**Última atualização:** 25/01/2025 16:30  
-**Próxima revisão:** 26/01/2025 04:00
+**Última atualização:** 25/01/2025
