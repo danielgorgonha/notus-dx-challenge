@@ -1,186 +1,147 @@
-// Re-export all types from lib client
+/**
+ * Types - Exports centralizados
+ * Organizado por funcionalidade para facilitar importações
+ */
+
+// 🌐 Blockchain
 export type {
-  Token,
-  Transaction,
-  Portfolio,
-  NotusWallet,
-  WalletHistory,
-} from '@/lib/client'
+  Chain,
+  TokenInfo,
+  NFTCollectionInfo,
+  NFTInfo,
+  ChainListResponse,
+  TokenListResponse,
+} from './blockchain';
 
-// Additional app-specific types
-export interface User {
-  id: string
-  email?: string
-  walletAddress: string
-  smartWalletAddress?: string
-  kycStatus?: 'pending' | 'approved' | 'rejected'
-  createdAt: Date
-}
+// 🔐 Smart Wallets
+export type {
+  DeployedChain,
+  WalletResponse,
+  TransactionInfo,
+  PortfolioResponse,
+  WalletHistoryResponse,
+  WalletAddressResponse,
+  WalletListResponse,
+  WalletPortfolioResponse,
+  DepositRequest,
+  MetadataUpdateRequest,
+  TransactionMetadataUpdateRequest,
+} from './wallet';
 
-export interface AppState {
-  isLoading: boolean
-  error: string | null
-  currentRoute: string
-}
+// 🆔 KYC
+export type {
+  KYCStatus,
+  KYCStage,
+  KYCSessionStatus,
+  DocumentCategory,
+  DocumentCountry,
+  Nationality,
+  KYCStage1Data,
+  KYCStage2Data,
+  ActiveKYCSession,
+  KYCSessionHistory,
+  KYCLimits,
+  WalletKYCMetadata,
+  CreateKYCSessionData,
+  KYCSessionResponse,
+  DocumentUploadData,
+  UploadStatus,
+  KYCError,
+  KYCResult,
+} from './kyc';
 
-export interface TransferForm {
-  to: string
-  token: string
-  amount: string
-}
+// 💰 Fiat Operations
+export type {
+  FiatDepositQuote,
+  FiatDepositOrder,
+  FiatWithdrawQuote,
+  FiatWithdrawOrder,
+  FiatDepositRequest,
+  FiatDepositOrderRequest,
+  FiatWithdrawRequest,
+  FiatWithdrawOrderRequest,
+} from './fiat';
 
-export interface SwapForm {
-  fromToken: string
-  toToken: string
-  amount: string
-  slippage: string
-}
+// 🔄 Swaps
+export type {
+  SwapRequest,
+  SwapQuote,
+  SwapOrder,
+  SwapExecutionRequest,
+  SwapStatus,
+  SwapHistoryItem,
+} from './swap';
 
-export interface LiquidityForm {
-  poolAddress: string
-  tokenA: string
-  tokenB: string
-  amountA: string
-  amountB: string
-}
+// 💸 Transfers
+export type {
+  TransferRequest,
+  TransferQuote,
+  TransferOrder,
+  TransferExecutionRequest,
+  TransferStatus,
+  TransferHistoryItem,
+} from './transfer';
 
-export interface KYCForm {
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  country: string
-  documentType: string
-  documentNumber: string
-}
+// 🏊 Liquidity
+export type {
+  LiquidityPool,
+  CreateLiquidityRequest,
+  ChangeLiquidityRequest,
+  CollectFeesRequest,
+  GetAmountsRequest,
+  LiquidityAmountsResponse,
+  HistoricalDataRequest,
+  HistoricalDataResponse,
+  LiquidityStatus,
+  LiquidityHistoryItem,
+} from './liquidity';
 
-// KYC Types from Notus API
-export interface CreateStandardIndividualSessionRequest {
-  firstName: string;
-  lastName: string;
-  birthDate: string; // Format: "DD/MM/YYYY"
-  documentId: string; // CPF/CNPJ (only digits)
-  documentCategory: "IDENTITY_CARD" | "PASSPORT" | "DRIVERS_LICENSE";
-  documentCountry: "US" | "BRAZIL";
-  livenessRequired?: boolean;
-}
+// ⚙️ User Operations
+export type {
+  BatchOperationRequest,
+  CustomOperationRequest,
+  ExecuteUserOperationRequest,
+  UserOperationResponse,
+  UserOperationStatus,
+  UserOperationDetails,
+  OperationType,
+  OperationData,
+} from './execute';
 
-export interface CreateStandardIndividualSessionResponse {
-  session: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    birthDate: string;
-    document: {
-      id: string;
-      type: string | null;
-      category: string;
-    };
-    status: "PENDING" | "VERIFYING" | "COMPLETED" | "FAILED" | "EXPIRED";
-    livenessRequired: boolean;
-    createdAt: string;
-    updatedAt: string | null;
-    individualId?: string; // Present when status is COMPLETED
-  };
-  frontDocumentUpload: DocumentUpload;
-  backDocumentUpload: DocumentUpload | null;
-}
+// 🔐 Auth
+export type {
+  PrivyUser,
+  AuthUser,
+  AuthResult,
+  AuthContextType,
+} from './auth';
 
-export interface KYCVerificationSession {
-  id: string;
-  firstName: string;
-  lastName: string;
-  birthDate: string;
-  document: {
-    id: string;
-    type: string | null;
-    category: string;
-  };
-  status: "PENDING" | "VERIFYING" | "COMPLETED" | "FAILED" | "EXPIRED";
-  livenessRequired: boolean;
-  createdAt: string;
-  updatedAt: string | null;
-  individualId?: string; // Present when status is COMPLETED
-}
+// ============================================================================
+// LEGACY EXPORTS (para compatibilidade)
+// ============================================================================
 
-export interface DocumentUpload {
-  url: string;
-  fields: {
-    bucket: string;
-    "X-Amz-Algorithm": string;
-    "X-Amz-Credential": string;
-    "X-Amz-Date": string;
-    key: string;
-    Policy: string;
-    "X-Amz-Signature": string;
-  };
-}
+// Re-export para manter compatibilidade com código existente
+export type {
+  // App-specific types
+  User,
+  AppState,
+  TransferForm,
+  SwapForm,
+  LiquidityForm,
+  KYCForm,
+  CreateStandardIndividualSessionRequest,
+  CreateStandardIndividualSessionResponse,
+  KYCVerificationSession,
+  DocumentUpload,
+  APIResponse,
+  APIError,
+  Route,
+  NavigationItem,
+} from './legacy';
 
-// Fiat Operations Types
-export interface FiatDepositQuote {
-  quoteId: string;
-  amountToSendInFiatCurrency: string;
-  amountToReceiveInCryptoCurrency: string;
-  expiresAt: string;
-  paymentMethodToSend: string;
-  receiveCryptoCurrency: string;
-}
+// ============================================================================
+// CONSTANTS
+// ============================================================================
 
-export interface FiatDepositOrder {
-  orderId: string;
-  expiresAt: string;
-  paymentMethodToSendDetails: {
-    type: string;
-    pixKey: string;
-    qrCode: string; // base64
-  };
-}
-
-export interface FiatWithdrawQuote {
-  quoteId: string;
-  amountToSendInCryptoCurrency: string;
-  amountToReceiveInFiatCurrency: string;
-  estimatedGasFeeInCryptoCurrency: string;
-  transactionFeeInCryptoCurrency: string;
-  expiresAt: string;
-}
-
-export interface FiatWithdrawOrder {
-  userOperationHash: string;
-  orderId: string;
-  amountToSendInCryptoCurrency: string;
-  amountToReceiveInFiatCurrency: string;
-  transactionFeeAmountInCryptoCurrency: string;
-  estimatedGasFeeAmountInCryptoCurrency: string;
-}
-
-// API Response types
-export interface APIResponse<T> {
-  data: T
-  success: boolean
-  message?: string
-}
-
-export interface APIError {
-  code: string
-  message: string
-  details?: any
-}
-
-// Navigation types
-export type Route = 
-  | '/'
-  | '/dashboard'
-  | '/transfers'
-  | '/swaps'
-  | '/liquidity'
-  | '/portfolio'
-  | '/history'
-  | '/kyc'
-
-export interface NavigationItem {
-  label: string
-  href: Route
-  icon: string
-  description: string
-}
+// KYC Configuration
+export { KYC_LIMITS_CONFIG, KYC_STATUS_COLORS, KYC_SESSION_STATUS_COLORS } from './kyc';

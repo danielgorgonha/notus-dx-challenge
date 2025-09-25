@@ -151,11 +151,11 @@ export type UploadStatus = "idle" | "uploading" | "success" | "error";
 export interface KYCError {
   code: string;
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 // Resultado de operação KYC
-export interface KYCResult<T = any> {
+export interface KYCResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: KYCError;
