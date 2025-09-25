@@ -9,15 +9,9 @@ export { notusAPI, NotusAPIError } from './api/client';
 // KYC
 export * from './kyc';
 
-// Wallet
-export * from './wallet';
 
-// Client-side Auth only
-export {
-  getClientAuthUser,
-  registerWalletClient,
-  getWalletClient,
-} from './auth/client';
+// Client-side Auth - Use useAuth() hook instead
+// Removed duplicate auth functions - use AuthContext
 
 // Shared types
 export type { AuthUser, AuthResult, PrivyUser, AuthContextType } from '@/types/auth';

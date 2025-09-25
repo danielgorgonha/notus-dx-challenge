@@ -1,11 +1,12 @@
 /**
  * Autenticação server-side
  * Integração com Privy para autenticação no servidor
+ * Seguindo padrão da documentação oficial Privy + Notus API
  */
 
 import { cookies } from "next/headers";
 import { PrivyClient } from "@privy-io/server-auth";
-import { notusAPI } from '../api/client';
+import { walletActions } from '../actions';
 import { AuthUser } from '@/types/auth';
 
 // Privy client server-side
@@ -14,20 +15,23 @@ const privy = new PrivyClient(
   process.env.PRIVY_APP_SECRET!,
 );
 
-const FACTORY_ADDRESS = "0x7a1dbab750f12a90eb1b60d2ae3ad17d4d81effe";
 
+// Server-side authentication function that handles Privy auth and smart wallet setup
 export async function auth(): Promise<AuthUser | null> {
   try {
+    // Get Privy token from cookies
     const { get } = await cookies();
-
     const token = get("privy-id-token");
-
     if (!token) {
       return null;
     }
 
+    // Get user from Privy
     let user = await privy.getUser({ idToken: token.value });
 
+    console.log('🔍 User:', user);
+
+    // Create wallet if user doesn't have one
     if (!user.wallet?.address) {
       user = await privy.createWallets({
         userId: user.id,
@@ -35,18 +39,21 @@ export async function auth(): Promise<AuthUser | null> {
       });
     }
 
-    const { wallet } = await notusAPI.get<{
-      wallet: { accountAbstraction: string; registeredAt: string | null };
-    }>(`/wallets/address?externallyOwnedAccount=${user.wallet?.address}&factory=${FACTORY_ADDRESS}`);
+    // Check if smart wallet exists
+    const { wallet } = await walletActions.getAddress({
+      externallyOwnedAccount: user.wallet?.address as string,
+    });
 
+    // Register smart wallet if it doesn't exist
     if (!wallet.registeredAt) {
-      await notusAPI.post('/wallets/register', {
+      await walletActions.register({
         externallyOwnedAccount: user.wallet?.address as string,
-        factory: FACTORY_ADDRESS,
-        salt: "0",
       });
     }
 
+    console.log('🔍 Wallet:', wallet.accountAbstraction);
+
+    // Return user with smart wallet address
     return {
       ...user,
       accountAbstractionAddress: wallet.accountAbstraction,

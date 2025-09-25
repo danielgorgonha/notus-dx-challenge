@@ -1,46 +1,23 @@
 /**
- * Módulo KYC - Exportações centralizadas
+ * KYC - Exportações simplificadas
+ * Apenas as 3 funções essenciais para integração com a API Notus
  */
 
-// Sessões KYC
-export {
-  createKYCSession,
-  getKYCSessionStatus,
-  processKYCSession,
-  uploadDocumentToS3
+// Funções principais de sessão KYC
+export { 
+  createKYCSession, 
+  getKYCSessionStatus, 
+  processKYCSession 
 } from './session';
 
-// Stage 1 - Dados do formulário
-export {
-  saveStage1DataToWallet,
-  isStage1Completed,
-  getStage1DataFromWallet
-} from './stage1';
+// Actions diretas da API (se necessário)
+export { kycActions } from '../actions/kyc';
 
-// Stage 2 - Sessão KYC completa
-export {
-  createStage2KYCSession,
-  processStage2Verification,
-  isStage2Completed
-} from './stage2';
-
-// Validações
-export {
-  validateStage1Data,
-  validateDocumentFile,
-  validateCPF,
-  formatCPF,
-  formatCEP
-} from './validation';
-
-// Utilitários
-export {
-  formatKYCSessionData,
-  isSessionExpired,
-  getTimeUntilExpiration,
-  getKYCStatusDescription,
-  getKYCStatusColor,
-  getKYCStatusIcon,
-  formatFileSize,
-  generateUniqueFileName
-} from './utils';
+// Tipos
+export type {
+  CreateKYCSessionData,
+  KYCSessionResponse,
+  KYCResult,
+  KYCStage1Data,
+  DocumentUploadData
+} from '@/types/kyc';

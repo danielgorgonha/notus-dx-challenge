@@ -20,7 +20,7 @@ export interface PrivyUser {
     address?: string;
   }>;
   // Permitir propriedades adicionais do Privy
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Tipo estendido do usuário com dados do Notus

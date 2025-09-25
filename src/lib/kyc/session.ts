@@ -1,19 +1,19 @@
 /**
  * Gerenciador de sessões KYC
- * Centraliza a lógica de criação, consulta e processamento de sessões
+ * Funções essenciais para integração com a API Notus
+ * Baseado no Postman collection oficial
  */
 
-import { notusAPI } from '../api/client';
-import { 
-  CreateKYCSessionData, 
-  KYCSessionResponse, 
+import { kycActions } from '../actions/kyc';
+import {
+  CreateKYCSessionData,
+  KYCSessionResponse,
   KYCResult,
-  KYCStage1Data,
-  DocumentUploadData
 } from '@/types/kyc';
 
 /**
  * Cria uma nova sessão KYC na API Notus
+ * POST /kyc/individual-verification-sessions/standard
  */
 export async function createKYCSession(
   data: CreateKYCSessionData
@@ -48,14 +48,11 @@ export async function createKYCSession(
     };
 
     // Criar sessão na API Notus
-    const sessionResponse = await notusAPI.post<KYCSessionResponse>(
-      '/kyc/individual-verification-sessions/standard',
-      payload
-    );
+    const sessionResponse = await kycActions.createStandardSession(payload);
 
     return {
       success: true,
-      data: sessionResponse
+      data: sessionResponse as KYCSessionResponse
     };
   } catch (error) {
     console.error('Erro ao criar sessão KYC:', error);
@@ -71,19 +68,18 @@ export async function createKYCSession(
 
 /**
  * Consulta o status de uma sessão KYC
+ * GET /kyc/individual-verification-sessions/standard/{session_id}
  */
 export async function getKYCSessionStatus(sessionId: string): Promise<KYCResult<any>> {
   try {
-    const sessionData = await notusAPI.get<any>(
-      `/kyc/individual-verification-sessions/standard/${sessionId}`
-    );
+    const sessionData = await kycActions.getSessionResult(sessionId);
 
     return {
       success: true,
       data: sessionData
     };
   } catch (error) {
-    console.error('Erro ao consultar status da sessão:', error);
+    console.error('Erro ao consultar status da sessão KYC:', error);
     return {
       success: false,
       error: {
@@ -96,12 +92,11 @@ export async function getKYCSessionStatus(sessionId: string): Promise<KYCResult<
 
 /**
  * Processa uma sessão KYC (inicia a verificação)
+ * POST /kyc/individual-verification-sessions/standard/{session_id}/process
  */
 export async function processKYCSession(sessionId: string): Promise<KYCResult<void>> {
   try {
-    await notusAPI.post<void>(
-      `/kyc/individual-verification-sessions/standard/${sessionId}/process`
-    );
+    await kycActions.processSession(sessionId);
 
     return {
       success: true
@@ -113,53 +108,6 @@ export async function processKYCSession(sessionId: string): Promise<KYCResult<vo
       error: {
         code: 'NETWORK_ERROR',
         message: error instanceof Error ? error.message : 'Erro de rede'
-      }
-    };
-  }
-}
-
-/**
- * Upload de documento para S3
- */
-export async function uploadDocumentToS3(uploadData: DocumentUploadData): Promise<KYCResult<void>> {
-  try {
-    // Criar FormData para upload S3
-    const formData = new FormData();
-    
-    // Adicionar campos obrigatórios do S3
-    Object.entries(uploadData.fields).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
-    
-    // Adicionar o arquivo
-    formData.append('file', uploadData.file);
-
-    // Upload para S3
-    const uploadResponse = await fetch(uploadData.uploadUrl, {
-      method: 'POST',
-      body: formData
-    });
-
-    if (!uploadResponse.ok) {
-      return {
-        success: false,
-        error: {
-          code: 'UPLOAD_ERROR',
-          message: `Erro no upload: ${uploadResponse.statusText}`
-        }
-      };
-    }
-
-    return {
-      success: true
-    };
-  } catch (error) {
-    console.error('Erro no upload do documento:', error);
-    return {
-      success: false,
-      error: {
-        code: 'UPLOAD_ERROR',
-        message: error instanceof Error ? error.message : 'Erro no upload'
       }
     };
   }

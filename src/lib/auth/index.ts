@@ -2,12 +2,8 @@
  * Módulo Auth - Exportações centralizadas
  */
 
-// Client-side auth functions
-export {
-  getClientAuthUser,
-  registerWalletClient,
-  getWalletClient,
-} from './client';
+// Client-side auth functions - Use useAuth() hook instead
+// Removed duplicate functions - use AuthContext
 
 // Server-side auth functions (only for server components)
 export { auth } from './server';
