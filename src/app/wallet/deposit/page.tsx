@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useKYC } from "@/contexts/kyc-context";
 import { useFiatDeposit } from "@/hooks/use-fiat-deposit";
 import { useAuth } from "@/contexts/auth-context";
-import { useKYCManager } from "@/hooks/useKYCManager";
+import { useKYCManager } from "@/hooks/use-kyc-manager";
 import { SUPPORTED_CHAINS } from "@/lib/client";
 
 export default function DepositPage() {
@@ -125,8 +125,8 @@ export default function DepositPage() {
   };
 
   const copyPixKey = () => {
-    if (order?.paymentMethodToSendDetails?.pixKey) {
-      navigator.clipboard.writeText(order.paymentMethodToSendDetails.pixKey);
+    if (order?.paymentInstructions?.pixKey) {
+      navigator.clipboard.writeText(order.paymentInstructions.pixKey);
       // Mostrar toast de sucesso
     }
   };
@@ -536,7 +536,7 @@ export default function DepositPage() {
               <div className="text-center">
                 <div className="inline-block p-4 bg-white rounded-lg">
                   <img 
-                    src={`data:image/png;base64,${order.paymentMethodToSendDetails.qrCode}`} 
+                    src={`data:image/png;base64,${(order.paymentInstructions as any).qrCode || ''}`} 
                     alt="PIX QR Code" 
                     className="w-48 h-48" 
                   />
@@ -548,7 +548,7 @@ export default function DepositPage() {
                 <Label className="text-white">PIX Copia e Cola</Label>
                 <div className="flex items-center space-x-2">
                   <Input
-                    value={order.paymentMethodToSendDetails.pixKey}
+                    value={order.paymentInstructions.pixKey}
                     readOnly
                     className="bg-slate-800 border-slate-600 text-white text-sm"
                   />
@@ -580,7 +580,7 @@ export default function DepositPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Válido até</span>
-                  <span className="text-white">{new Date(order.expiresAt).toLocaleString('pt-BR')}</span>
+                  <span className="text-white">{new Date(order.paymentInstructions.expiresAt).toLocaleString('pt-BR')}</span>
                 </div>
               </div>
             </div>

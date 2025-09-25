@@ -73,7 +73,7 @@ export function useSmartWallet() {
     isRegistered: false,
   });
 
-  const walletAddress = (user as any)?.wallet?.address;
+  const walletAddress = (user as { wallet?: { address: string } })?.wallet?.address;
 
   // Carregar dados da wallet quando o usuário estiver disponível
   useEffect(() => {
@@ -161,7 +161,7 @@ export function useSmartWallet() {
 
     try {
       const portfolio = await walletActions.getPortfolio(state.wallet.accountAbstraction);
-      setState(prev => ({ ...prev, portfolio: portfolio as Portfolio }));
+      setState(prev => ({ ...prev, portfolio: portfolio as unknown as Portfolio }));
     } catch (error) {
       console.error('Failed to load portfolio:', error);
     }
@@ -173,7 +173,7 @@ export function useSmartWallet() {
 
     try {
       const history = await walletActions.getHistory(state.wallet.accountAbstraction, { take: limit });
-      setState(prev => ({ ...prev, history: history as WalletHistory }));
+      setState(prev => ({ ...prev, history: history as unknown as WalletHistory }));
     } catch (error) {
       console.error('Failed to load history:', error);
     }

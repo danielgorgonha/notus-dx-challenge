@@ -6,8 +6,7 @@
 // API Client
 export { notusAPI, NotusAPIError } from './api/client';
 
-// KYC
-export * from './kyc';
+// KYC - Removed, use kycActions from lib/actions instead
 
 
 // Client-side Auth - Use useAuth() hook instead
