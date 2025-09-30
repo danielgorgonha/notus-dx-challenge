@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { kycActions } from '@/lib/actions';
+import { clientKYCActions } from '@/lib/api/client-side';
 import {
   CreateKYCSessionData,
   KYCSessionResponse,
@@ -53,7 +53,7 @@ export function useKYCManager(walletAddress: string): UseKYCManagerReturn {
     setError(null);
 
     try {
-      const sessionResponse = await kycActions.createStandardSession({
+      const sessionResponse = await clientKYCActions.createStandardSession({
         firstName: data.stage1Data?.firstName || '',
         lastName: data.stage1Data?.lastName || '',
         birthDate: data.stage1Data?.birthDate || '',
@@ -81,11 +81,12 @@ export function useKYCManager(walletAddress: string): UseKYCManagerReturn {
 
   // Consultar status da sessão
   const getKYCSessionStatusHandler = useCallback(async (sessionId: string): Promise<KYCResult<KYCSessionResponse>> => {
+
     setIsLoading(true);
     setError(null);
 
     try {
-      const sessionData = await kycActions.getSessionResult(sessionId);
+      const sessionData = await clientKYCActions.getSessionResult(sessionId);
       return { success: true, data: sessionData as KYCSessionResponse };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao consultar status da sessão';
@@ -98,11 +99,12 @@ export function useKYCManager(walletAddress: string): UseKYCManagerReturn {
 
   // Processar sessão KYC
   const processKYCSessionHandler = useCallback(async (sessionId: string): Promise<KYCResult<void>> => {
+
     setIsLoading(true);
     setError(null);
 
     try {
-      await kycActions.processSession(sessionId);
+      await clientKYCActions.processSession(sessionId);
       return { success: true };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao processar sessão KYC';

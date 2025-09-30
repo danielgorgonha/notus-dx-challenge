@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { notusAPI } from '@/lib/client';
+import { clientFiatActions } from '@/lib/api/client-side';
 import { FiatDepositQuote, FiatDepositOrder } from '@/types/fiat';
-import { useAuth } from '@/contexts/auth-context';
 import { useKYCManager } from './use-kyc-manager';
+import { useSmartWallet } from './use-smart-wallet';
 
 export interface DepositParams {
   amount: string;
@@ -22,7 +22,8 @@ export interface DepositState {
 }
 
 export function useFiatDeposit() {
-  const { user, individualId, walletAddress } = useAuth();
+  const { wallet } = useSmartWallet();
+  const walletAddress = wallet?.accountAbstraction;
   const kycManager = useKYCManager(walletAddress || '');
   const [state, setState] = useState<DepositState>({
     quote: null,
@@ -59,8 +60,15 @@ export function useFiatDeposit() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // TODO: Implement real API call when fiat deposit is ready
-      throw new Error('Fiat deposit feature is under development');
+      const quote = await clientFiatActions.createDepositQuote({
+        amount: params.amount,
+        receiveCryptoCurrency: params.receiveCryptoCurrency,
+        chainId: params.chainId,
+        individualId: params.individualId,
+      }) as FiatDepositQuote;
+      
+      setState(prev => ({ ...prev, quote, step: 'quote' }));
+      return quote;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao criar cotação';
       setState(prev => ({
@@ -82,8 +90,15 @@ export function useFiatDeposit() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // TODO: Implement real API call when fiat deposit is ready
-      throw new Error('Fiat deposit feature is under development');
+      const order = await clientFiatActions.createDepositOrder({
+        quoteId,
+        individualId,
+        chainId,
+        walletAddress,
+      }) as FiatDepositOrder;
+      
+      setState(prev => ({ ...prev, order, step: 'order' }));
+      return order;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao criar ordem';
       setState(prev => ({

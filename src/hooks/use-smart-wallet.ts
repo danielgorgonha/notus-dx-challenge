@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/contexts/auth-context';
-import { walletActions } from '@/lib/actions';
+import { clientWalletActions } from '@/lib/api/client-side';
+import { usePrivy } from '@privy-io/react-auth';
 
 // Tipos simplificados
 export interface NotusWallet {
@@ -63,7 +63,7 @@ export interface SmartWalletState {
 }
 
 export function useSmartWallet() {
-  const { user } = useAuth();
+  const { user } = usePrivy();
   const [state, setState] = useState<SmartWalletState>({
     wallet: null,
     portfolio: null,
@@ -75,13 +75,6 @@ export function useSmartWallet() {
 
   const walletAddress = (user as { wallet?: { address: string } })?.wallet?.address;
 
-  // Carregar dados da wallet quando o usuário estiver disponível
-  useEffect(() => {
-    if (walletAddress) {
-      loadWallet();
-    }
-  }, [walletAddress]);
-
   // Carregar dados da wallet
   const loadWallet = useCallback(async () => {
     if (!walletAddress) return;
@@ -90,8 +83,7 @@ export function useSmartWallet() {
 
     try {
       // Verificar se a wallet está registrada
-      const response = await walletActions.getAddress({ externallyOwnedAccount: walletAddress });
-      const walletData = response.wallet;
+      const walletData = await clientWalletActions.getAddress({ externallyOwnedAccount: walletAddress }) as any;
 
       if (walletData.registeredAt) {
         // Wallet já registrada
@@ -128,6 +120,13 @@ export function useSmartWallet() {
     }
   }, [walletAddress]);
 
+  // Carregar dados da wallet quando o usuário estiver disponível
+  useEffect(() => {
+    if (walletAddress) {
+      loadWallet();
+    }
+  }, [walletAddress, loadWallet]);
+
   // Registrar wallet
   const registerWallet = useCallback(async () => {
     if (!walletAddress) return;
@@ -135,7 +134,7 @@ export function useSmartWallet() {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      await walletActions.register({
+      await clientWalletActions.register({
         externallyOwnedAccount: walletAddress,
         metadata: {
           name: 'Notus DX Challenge Wallet',
@@ -160,7 +159,7 @@ export function useSmartWallet() {
     if (!walletAddress || !state.wallet) return;
 
     try {
-      const portfolio = await walletActions.getPortfolio(state.wallet.accountAbstraction);
+      const portfolio = await clientWalletActions.getPortfolio(state.wallet.accountAbstraction);
       setState(prev => ({ ...prev, portfolio: portfolio as unknown as Portfolio }));
     } catch (error) {
       console.error('Failed to load portfolio:', error);
@@ -172,7 +171,7 @@ export function useSmartWallet() {
     if (!walletAddress || !state.wallet) return;
 
     try {
-      const history = await walletActions.getHistory(state.wallet.accountAbstraction, { take: limit });
+      const history = await clientWalletActions.getHistory(state.wallet.accountAbstraction, { take: limit });
       setState(prev => ({ ...prev, history: history as unknown as WalletHistory }));
     } catch (error) {
       console.error('Failed to load history:', error);
@@ -186,7 +185,7 @@ export function useSmartWallet() {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      await walletActions.updateMetadata(state.wallet.accountAbstraction, metadata);
+      await clientWalletActions.updateMetadata(state.wallet.accountAbstraction, metadata);
       setState(prev => ({ ...prev, loading: false }));
     } catch (error) {
       console.error('Failed to update metadata:', error);
