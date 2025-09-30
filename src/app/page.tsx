@@ -35,7 +35,7 @@ export default function LandingPage() {
           <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-emerald-500 rounded-xl mx-auto mb-4 flex items-center justify-center animate-pulse">
             <Lock className="h-8 w-8 text-white" />
           </div>
-          <p className="text-white text-lg">Loading...</p>
+          <p className="text-white text-lg">Carregando...</p>
         </div>
       </div>
     );
@@ -66,7 +66,7 @@ export default function LandingPage() {
                 onClick={login}
               >
                 <Shield className="mr-2 h-4 w-4" />
-                Get Started
+                Começar
               </Button>
             </div>
           </div>
@@ -78,11 +78,11 @@ export default function LandingPage() {
         <div className="text-center mb-20">
           <h1 className="text-6xl md:text-8xl font-bold text-white mb-6">
             <span className="text-blue-400">Notus API</span><br />
-            <span className="text-white">Testing Made Simple</span>
+            <span className="text-white">Testes Simplificados</span>
           </h1>
           <p className="text-xl text-slate-300 mb-12 max-w-4xl mx-auto">
-            Test Web3 functionality through a unified dashboard.
-            Experience the future of blockchain APIs with comprehensive testing tools.
+            Teste funcionalidades Web3 através de um dashboard unificado.
+            Experimente o futuro das APIs blockchain com ferramentas de teste abrangentes.
           </p>
 
         </div>
@@ -90,8 +90,8 @@ export default function LandingPage() {
         {/* API Features Section */}
         <div id="features" className="mb-20">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">Notus API Features</h2>
-            <p className="text-slate-300 text-lg">What we&apos;re testing from the Notus API</p>
+            <h2 className="text-4xl font-bold text-white mb-4">Funcionalidades da Notus API</h2>
+            <p className="text-slate-300 text-lg">O que estamos testando da Notus API</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -102,7 +102,7 @@ export default function LandingPage() {
                 </div>
                 <CardTitle className="text-white">Smart Wallet</CardTitle>
                 <CardDescription className="text-slate-300">
-                  Account Abstraction & Wallet Management
+                  Account Abstraction & Gerenciamento de Wallet
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -114,7 +114,7 @@ export default function LandingPage() {
                 </div>
                 <CardTitle className="text-white">Cross-Chain Swaps</CardTitle>
                 <CardDescription className="text-slate-300">
-                  Seamless Token Exchanges
+                  Trocas de Tokens Sem Interrupção
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -126,7 +126,7 @@ export default function LandingPage() {
                 </div>
                 <CardTitle className="text-white">Liquidity Pools</CardTitle>
                 <CardDescription className="text-slate-300">
-                  DeFi Pool Management
+                  Gerenciamento de Pools DeFi
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -138,7 +138,7 @@ export default function LandingPage() {
                 </div>
                 <CardTitle className="text-white">Portfolio Tracking</CardTitle>
                 <CardDescription className="text-slate-300">
-                  Real-time Analytics
+                  Analytics em Tempo Real
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -148,8 +148,8 @@ export default function LandingPage() {
         {/* Our Features Section */}
         <div id="about" className="mb-20">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">Our Testing Platform</h2>
-            <p className="text-slate-300 text-lg">What our dApp offers for comprehensive API testing</p>
+            <h2 className="text-4xl font-bold text-white mb-4">Nossa Plataforma de Testes</h2>
+            <p className="text-slate-300 text-lg">O que nossa dApp oferece para testes abrangentes de API</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -158,24 +158,24 @@ export default function LandingPage() {
                 <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-emerald-500 rounded-xl flex items-center justify-center mb-4">
                   <Globe className="h-6 w-6 text-white" />
                 </div>
-                <CardTitle className="text-white">Unified Dashboard</CardTitle>
+                <CardTitle className="text-white">Dashboard Unificado</CardTitle>
                 <CardDescription className="text-slate-300">
-                  Single interface to test all Notus API endpoints
+                  Interface única para testar todos os endpoints da Notus API
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="text-sm text-slate-400 space-y-2">
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-emerald-400 mr-2" />
-                    Real-time testing
+                    Testes em tempo real
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-emerald-400 mr-2" />
-                    Interactive UI
+                    Interface interativa
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-emerald-400 mr-2" />
-                    Error handling
+                    Tratamento de erros
                   </li>
                 </ul>
               </CardContent>
@@ -188,22 +188,22 @@ export default function LandingPage() {
                 </div>
                 <CardTitle className="text-white">Developer Experience</CardTitle>
                 <CardDescription className="text-slate-300">
-                  Focus on API usability and developer feedback
+                  Foco na usabilidade da API e feedback de desenvolvedores
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="text-sm text-slate-400 space-y-2">
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-emerald-400 mr-2" />
-                    API documentation
+                    Documentação da API
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-emerald-400 mr-2" />
-                    Code examples
+                    Exemplos de código
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-emerald-400 mr-2" />
-                    Best practices
+                    Melhores práticas
                   </li>
                 </ul>
               </CardContent>
@@ -214,25 +214,25 @@ export default function LandingPage() {
                 <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
                   <Users className="h-6 w-6 text-white" />
                 </div>
-                <CardTitle className="text-white">Research Focus</CardTitle>
+                <CardTitle className="text-white">Foco em Pesquisa</CardTitle>
                 <CardDescription className="text-slate-300">
-                  Contributing to NotusLabs DX Research program
+                  Contribuindo para o programa NotusLabs DX Research
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="text-sm text-slate-400 space-y-2">
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-emerald-400 mr-2" />
-                  Feedback collection
+                    Coleta de feedback
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-emerald-400 mr-2" />
-                  Performance metrics
-          </li>
+                    Métricas de performance
+                  </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-emerald-400 mr-2" />
-                  UX insights
-          </li>
+                    Insights de UX
+                  </li>
                 </ul>
               </CardContent>
             </Card>
@@ -245,7 +245,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-6 py-8">
           <div className="text-center text-slate-400">
             <p className="mb-2 text-lg">NotusLabs DX Research</p>
-            <p className="text-sm">Testing Notus API for Developer Experience research</p>
+            <p className="text-sm">Testando Notus API para pesquisa de Developer Experience</p>
           </div>
         </div>
       </footer>
