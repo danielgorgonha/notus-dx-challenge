@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PrivyClientConfig, PrivyProvider } from '@privy-io/react-auth'
 import { KYCProvider } from '@/contexts/kyc-context'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const config = {
   appearance: {
@@ -40,7 +40,23 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
       })
   )
 
+  const [isClient, setIsClient] = useState(false);
   const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Durante o build/SSR, não renderizar o PrivyProvider
+  if (!isClient) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <KYCProvider>
+          {children}
+        </KYCProvider>
+      </QueryClientProvider>
+    );
+  }
 
   if (!privyAppId) {
     console.error('NEXT_PUBLIC_PRIVY_APP_ID is not defined');
