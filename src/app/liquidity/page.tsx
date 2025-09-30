@@ -1,9 +1,16 @@
+import { auth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Zap, TrendingUp, Activity } from "lucide-react";
 
-export default function LiquidityPage() {
+export default async function LiquidityPage() {
+  const user = await auth();
+
+  if (!user) {
+    redirect("/");
+  }
   return (
     <AppLayout 
       title="Liquidity Pools"

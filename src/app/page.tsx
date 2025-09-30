@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/contexts/auth-context";
+import { usePrivy } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,20 +18,17 @@ import {
   Globe,
   Users
 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { redirect } from "next/navigation";
 
 export default function LandingPage() {
-  const { isAuthenticated, isLoading, login } = useAuth();
-  const router = useRouter();
+  const { ready, authenticated, user, login } = usePrivy();
 
-  useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      router.push("/dashboard");
-    }
-  }, [isAuthenticated, isLoading, router]);
+  // Se o usuário já estiver autenticado, redirecionar para o dashboard
+  if (ready && authenticated && user) {
+    redirect("/dashboard");
+  }
 
-  if (isLoading) {
+  if (!ready) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
@@ -42,10 +39,6 @@ export default function LandingPage() {
         </div>
       </div>
     );
-  }
-
-  if (isAuthenticated) {
-    return null; // Will redirect to dashboard
   }
 
   return (

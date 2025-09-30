@@ -2,7 +2,6 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PrivyClientConfig, PrivyProvider } from '@privy-io/react-auth'
-import { AuthProvider } from '@/contexts/auth-context'
 import { KYCProvider } from '@/contexts/kyc-context'
 import { useState } from 'react'
 
@@ -45,14 +44,11 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <PrivyProvider
         appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
-        clientId={process.env.NEXT_PUBLIC_PRIVY_CLIENT_ID!}
         config={config}
       >
-        <AuthProvider>
-          <KYCProvider>
-            {children}
-          </KYCProvider>
-        </AuthProvider>
+        <KYCProvider>
+          {children}
+        </KYCProvider>
       </PrivyProvider>
     </QueryClientProvider>
   )

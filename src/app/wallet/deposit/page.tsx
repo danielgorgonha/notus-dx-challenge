@@ -11,13 +11,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useKYC } from "@/contexts/kyc-context";
 import { useFiatDeposit } from "@/hooks/use-fiat-deposit";
-import { useAuth } from "@/contexts/auth-context";
 import { useKYCManager } from "@/hooks/use-kyc-manager";
+import { useSmartWallet } from "@/hooks/use-smart-wallet";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 import { SUPPORTED_CHAINS } from "@/lib/client";
 
 export default function DepositPage() {
   const router = useRouter();
-  const { user, walletAddress } = useAuth();
+  const { wallet } = useSmartWallet();
+  
+  const walletAddress = wallet?.accountAbstraction;
   const kycManager = useKYCManager(walletAddress || '');
   const { 
     quote, 
@@ -622,10 +625,11 @@ export default function DepositPage() {
   };
 
   return (
-    <AppLayout 
-      title="Depósito PIX"
-      description="Deposite reais e receba BRZ tokens"
-    >
+    <ProtectedRoute>
+      <AppLayout 
+        title="Depósito PIX"
+        description="Deposite reais e receba BRZ tokens"
+      >
       <div className="flex justify-center">
         <div className="w-full max-w-2xl space-y-6">
           {/* Content */}
@@ -640,6 +644,7 @@ export default function DepositPage() {
           )}
         </div>
       </div>
-    </AppLayout>
+      </AppLayout>
+    </ProtectedRoute>
   );
 }

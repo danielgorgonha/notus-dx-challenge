@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, FileText, Camera, Upload, CheckCircle, Shield } from "lucide-react";
 import { useKYC } from "@/contexts/kyc-context";
 import { useToast } from "@/hooks/use-toast";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 
 export default function KYCLevel2Page() {
   const router = useRouter();
@@ -83,7 +84,8 @@ export default function KYCLevel2Page() {
   };
 
   return (
-    <div className="flex justify-center">
+    <ProtectedRoute>
+      <div className="flex justify-center">
       <div className="w-full max-w-2xl space-y-6">
         {/* Header */}
         <div className="flex items-center space-x-4">
@@ -291,6 +293,7 @@ export default function KYCLevel2Page() {
           </CardContent>
         </Card>
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

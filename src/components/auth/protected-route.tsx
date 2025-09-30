@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/contexts/auth-context";
+import { usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -9,16 +9,16 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, ready } = useAuth();
+  const { ready, authenticated, user } = usePrivy();
   const router = useRouter();
 
   useEffect(() => {
-    if (ready && !isLoading && !isAuthenticated) {
+    if (ready && !authenticated) {
       router.push("/");
     }
-  }, [isAuthenticated, isLoading, ready, router]);
+  }, [ready, authenticated, router]);
 
-  if (!ready || isLoading) {
+  if (!ready) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
@@ -34,7 +34,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!authenticated || !user) {
     return null; // Will redirect to landing
   }
 

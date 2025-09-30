@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/auth-context";
+import { usePrivy } from "@privy-io/react-auth";
 import { Shield, LogOut, User, Menu, Loader2 } from "lucide-react";
 import { useState } from "react";
 
@@ -12,7 +12,7 @@ interface HeaderProps {
 }
 
 export function Header({ title, description, onMenuClick }: HeaderProps) {
-  const { user, logout } = useAuth();
+  const { user, logout } = usePrivy();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {

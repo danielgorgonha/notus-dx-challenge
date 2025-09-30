@@ -5,15 +5,17 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowRight, Shield } from "lucide-react";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 
 export default function KYCLevel1SuccessPage() {
   const router = useRouter();
 
   return (
-    <AppLayout 
-      title="Verificação Aprovada"
-      description="Seus dados pessoais foram verificados com sucesso"
-    >
+    <ProtectedRoute>
+      <AppLayout 
+        title="Verificação Aprovada"
+        description="Seus dados pessoais foram verificados com sucesso"
+      >
       <div className="flex justify-center">
         <div className="w-full max-w-2xl space-y-6">
         {/* Success Card */}
@@ -102,6 +104,7 @@ export default function KYCLevel1SuccessPage() {
         </Card>
         </div>
       </div>
-    </AppLayout>
+      </AppLayout>
+    </ProtectedRoute>
   );
 }

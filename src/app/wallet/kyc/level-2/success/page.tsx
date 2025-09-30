@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowRight, Shield, Star } from "lucide-react";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 
 export default function KYCLevel2SuccessPage() {
   const router = useRouter();
 
   return (
-    <div className="flex justify-center">
+    <ProtectedRoute>
+      <div className="flex justify-center">
       <div className="w-full max-w-2xl space-y-6">
         {/* Success Card */}
         <Card className="glass-card bg-gradient-to-r from-green-600/20 to-emerald-600/20 border-green-500/30">
@@ -142,6 +144,7 @@ export default function KYCLevel2SuccessPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

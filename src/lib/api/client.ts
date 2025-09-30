@@ -78,11 +78,7 @@ export const notusAPI = ky.create({
 });
 
 
-// Verificar se as variáveis de ambiente estão configuradas
-if (!process.env.NOTUS_API_KEY) {
-  throw new Error('NOTUS_API_KEY não encontrada nas variáveis de ambiente');
-}
-
+// Log da configuração da API
 console.log('🔧 Notus API Client Config:', {
   baseURL: process.env.NEXT_PUBLIC_NOTUS_API_URL || 'https://api.notus.team/api/v1',
   hasApiKey: !!process.env.NOTUS_API_KEY,

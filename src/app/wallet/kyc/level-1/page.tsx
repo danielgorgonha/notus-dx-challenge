@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { User, Calendar, CreditCard, Globe } from "lucide-react";
 import { useKYC } from "@/contexts/kyc-context";
 import { useToast } from "@/hooks/use-toast";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 
 export default function KYCLevel1Page() {
   const router = useRouter();
@@ -91,10 +92,11 @@ export default function KYCLevel1Page() {
   };
 
   return (
-    <AppLayout 
-      title="Verificação Nível 1"
-      description="Complete seus dados pessoais para aumentar seus limites"
-    >
+    <ProtectedRoute>
+      <AppLayout 
+        title="Verificação Nível 1"
+        description="Complete seus dados pessoais para aumentar seus limites"
+      >
       <div className="flex justify-center">
         <div className="w-full max-w-2xl space-y-6">
           {/* Header */}
@@ -237,6 +239,7 @@ export default function KYCLevel1Page() {
         </Card>
         </div>
       </div>
-    </AppLayout>
+      </AppLayout>
+    </ProtectedRoute>
   );
 }

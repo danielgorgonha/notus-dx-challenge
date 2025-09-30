@@ -9,12 +9,15 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Clock, AlertCircle, User, FileText, Camera, Shield } from "lucide-react";
 import { useKYC } from "@/contexts/kyc-context";
 import { useKYCManager } from "@/hooks/use-kyc-manager";
-import { useAuth } from "@/contexts/auth-context";
+import { useSmartWallet } from "@/hooks/use-smart-wallet";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 
 export default function KYCPage() {
   const router = useRouter();
   const { currentLevel, kycPhase0Completed, kycPhase1Completed, kycPhase2Completed } = useKYC();
-  const { user, walletAddress } = useAuth();
+  const { wallet } = useSmartWallet();
+  
+  const walletAddress = wallet?.accountAbstraction;
   const kycManager = useKYCManager(walletAddress || '');
 
   // Usar o nível real da API Notus
@@ -90,10 +93,11 @@ export default function KYCPage() {
   };
 
   return (
-    <AppLayout 
-      title="Verificação KYC"
-      description="Complete sua verificação de identidade para aumentar limites"
-    >
+    <ProtectedRoute>
+      <AppLayout 
+        title="Verificação KYC"
+        description="Complete sua verificação de identidade para aumentar limites"
+      >
       <div className="flex justify-center">
         <div className="w-full max-w-2xl space-y-6">
           {/* Current Level Status */}
@@ -237,6 +241,7 @@ export default function KYCPage() {
           </Card>
         </div>
       </div>
-    </AppLayout>
+      </AppLayout>
+    </ProtectedRoute>
   );
 }

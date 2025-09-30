@@ -1,8 +1,18 @@
+import { auth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Activity, Zap, ArrowRightLeft, Wallet, Droplets, Shield } from "lucide-react";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const user = await auth();
+
+  console.log('user', user);
+
+  if (!user) {
+    redirect("/");
+  }
+
   return (
     <AppLayout 
       title="Dashboard"
