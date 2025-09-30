@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { usePrivy } from "@privy-io/react-auth";
 import { Shield, LogOut, User, Menu, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   title: string;
@@ -14,11 +15,14 @@ interface HeaderProps {
 export function Header({ title, description, onMenuClick }: HeaderProps) {
   const { user, logout } = usePrivy();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
       await logout();
+      // Redirecionar para a landing page após logout
+      router.push("/");
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     } finally {

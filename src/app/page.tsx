@@ -18,15 +18,20 @@ import {
   Globe,
   Users
 } from "lucide-react";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function LandingPage() {
   const { ready, authenticated, user, login } = usePrivy();
+  const router = useRouter();
 
   // Se o usuário já estiver autenticado, redirecionar para o dashboard
-  if (ready && authenticated && user) {
-    redirect("/dashboard");
-  }
+  useEffect(() => {
+    if (ready && authenticated && user) {
+      console.log('🔍 LandingPage: Usuário autenticado, redirecionando para dashboard');
+      router.push("/dashboard");
+    }
+  }, [ready, authenticated, user, router]);
 
   if (!ready) {
     return (
