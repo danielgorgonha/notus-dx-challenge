@@ -6,7 +6,7 @@
 // Removed duplicate functions - use AuthContext
 
 // Server-side auth functions (only for server components)
-export { auth } from './server';
+export { auth } from './auth';
 
 // Shared types
 export type { AuthUser, AuthResult, PrivyUser, AuthContextType } from '@/types/auth';
