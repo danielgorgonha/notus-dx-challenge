@@ -43,6 +43,10 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
   const [isClient, setIsClient] = useState(false);
   const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 
+  // Debug log para verificar as variáveis
+  console.log('🔍 ClientProviders - privyAppId:', privyAppId);
+  console.log('🔍 ClientProviders - isClient:', isClient);
+
   useEffect(() => {
     setIsClient(true);
   }, []);
