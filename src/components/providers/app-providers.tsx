@@ -40,10 +40,25 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       })
   )
 
+  const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+
+  // Durante o build, pode não ter as variáveis de ambiente disponíveis
+  // Nesse caso, retornamos apenas os children sem o PrivyProvider
+  if (!privyAppId) {
+    console.warn('NEXT_PUBLIC_PRIVY_APP_ID is not defined - running without PrivyProvider');
+    return (
+      <QueryClientProvider client={queryClient}>
+        <KYCProvider>
+          {children}
+        </KYCProvider>
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <PrivyProvider
-        appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
+        appId={privyAppId}
         config={config}
       >
         <KYCProvider>
