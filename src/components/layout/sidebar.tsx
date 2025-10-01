@@ -97,7 +97,13 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   }, [expandedItems]);
 
   const isSubmenuActive = (submenu: { href: string }[]) => {
-    return submenu.some(subItem => pathname === subItem.href);
+    return submenu.some(subItem => {
+      // Para KYC, verificar se está em qualquer rota que comece com /wallet/kyc
+      if (subItem.href === '/wallet/kyc') {
+        return pathname.startsWith('/wallet/kyc');
+      }
+      return pathname === subItem.href;
+    });
   };
 
   return (

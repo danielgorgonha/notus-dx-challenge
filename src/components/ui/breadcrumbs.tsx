@@ -32,6 +32,23 @@ export function Breadcrumbs({ items, className = "" }: BreadcrumbsProps) {
     else if (pathname.startsWith('/wallet/kyc')) {
       breadcrumbs.push({ label: "Smart Wallet", href: "/wallet" });
       breadcrumbs.push({ label: "KYC", href: "/wallet/kyc" });
+      
+      // Adicionar sub-rotas do KYC
+      if (pathname === '/wallet/kyc/level-1') {
+        breadcrumbs.push({ label: "Nível 1", href: "/wallet/kyc/level-1" });
+      } else if (pathname === '/wallet/kyc/level-2') {
+        breadcrumbs.push({ label: "Nível 2", href: "/wallet/kyc/level-2" });
+      } else if (pathname.startsWith('/wallet/kyc/level-1/')) {
+        breadcrumbs.push({ label: "Nível 1", href: "/wallet/kyc/level-1" });
+        if (pathname.includes('/success')) {
+          breadcrumbs.push({ label: "Sucesso", href: "/wallet/kyc/level-1/success" });
+        }
+      } else if (pathname.startsWith('/wallet/kyc/level-2/')) {
+        breadcrumbs.push({ label: "Nível 2", href: "/wallet/kyc/level-2" });
+        if (pathname.includes('/success')) {
+          breadcrumbs.push({ label: "Sucesso", href: "/wallet/kyc/level-2/success" });
+        }
+      }
     }
     // Depósito - submenu da Smart Wallet
     else if (pathname.startsWith('/wallet/deposit')) {
