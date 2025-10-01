@@ -3,10 +3,10 @@ import { walletActions } from '@/lib/actions';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { walletAddress: string } }
+  { params }: { params: Promise<{ walletAddress: string }> }
 ) {
   try {
-    const { walletAddress } = params;
+    const { walletAddress } = await params;
     const { searchParams } = new URL(request.url);
     
     const queryParams = {
