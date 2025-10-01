@@ -31,14 +31,14 @@ export function Header({ title, description, onMenuClick }: HeaderProps) {
   };
 
   return (
-    <header className="bg-slate-900/80 backdrop-blur-xl border-b border-white/10">
+    <header className="bg-slate-900/80 backdrop-blur-xl border-b border-slate-700/50">
       <div className="px-8 py-6">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             {/* Botão menu hambúrguer para mobile */}
             <button
               onClick={onMenuClick}
-              className="lg:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
+              className="lg:hidden p-2 rounded-lg hover:bg-slate-700/50 transition-colors"
             >
               <Menu className="h-6 w-6 text-white" />
             </button>
@@ -61,7 +61,7 @@ export function Header({ title, description, onMenuClick }: HeaderProps) {
             )}
             <Button 
               variant="ghost" 
-              className="text-slate-300 hover:text-white hover:bg-white/10"
+              className="text-slate-300 hover:text-yellow-400 hover:bg-yellow-500/10"
               onClick={handleLogout}
               disabled={isLoggingOut}
             >

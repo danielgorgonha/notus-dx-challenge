@@ -138,29 +138,29 @@
 }
 
 .glass-card:hover {
-  @apply -translate-y-1 shadow-2xl shadow-blue-500/20;
+  @apply -translate-y-1 shadow-2xl shadow-yellow-500/20;
 }
 
 /* Primary button with gradient */
 .btn-primary {
-  @apply bg-gradient-to-r from-blue-600 to-emerald-500 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all duration-300;
+  @apply bg-gradient-to-r from-yellow-400 to-yellow-500 text-green-900 px-6 py-3 rounded-xl font-semibold shadow-lg shadow-yellow-500/30 transition-all duration-300;
 }
 
 .btn-primary:hover {
-  @apply -translate-y-0.5 shadow-xl shadow-blue-500/40;
+  @apply -translate-y-0.5 shadow-xl shadow-yellow-500/40;
 }
 
 /* Sidebar navigation */
 .nav-item {
-  @apply flex items-center px-4 py-3 mx-2 rounded-xl text-white/70 transition-all duration-200;
+  @apply flex items-center px-4 py-3 mx-2 rounded-xl text-slate-300 transition-all duration-200;
 }
 
 .nav-item:hover {
-  @apply bg-white/10 text-white;
+  @apply bg-slate-700/50 text-white;
 }
 
 .nav-item.active {
-  @apply bg-blue-600/20 text-blue-400 border border-blue-500/30;
+  @apply bg-yellow-500/20 text-yellow-300 border border-yellow-500/30;
 }
 
 /* Privy Modal Customization */

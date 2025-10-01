@@ -112,17 +112,17 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       
       {/* Sidebar */}
       <div className={`
-        fixed left-0 top-0 w-72 h-full bg-slate-900/95 backdrop-blur-xl border-r border-white/10 z-50
+        fixed left-0 top-0 w-72 h-full bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-50
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0
       `}>
         {/* Logo */}
-        <div className="p-6 border-b border-white/10">
+        <div className="p-6 border-b border-slate-700/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-emerald-500 rounded-xl flex items-center justify-center mr-3">
-                <Lock className="h-5 w-5 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-r from-yellow-500/80 to-yellow-600/80 rounded-xl flex items-center justify-center mr-3">
+                <Lock className="h-5 w-5 text-slate-900" />
               </div>
               <div>
                 <div className="font-bold text-white text-lg">Notus DX</div>
@@ -133,7 +133,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             {/* Botão fechar para mobile */}
             <button
               onClick={onClose}
-              className="lg:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
+              className="lg:hidden p-2 rounded-lg hover:bg-yellow-400/10 transition-colors"
             >
               <X className="h-5 w-5 text-white" />
             </button>
@@ -221,20 +221,17 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
       {/* User Status */}
       <div className="absolute bottom-6 left-6 right-6">
-        <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+        <div className="bg-slate-800/30 p-4 rounded-xl border border-slate-700/50">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-blue-600 rounded-full mr-3"></div>
+            <div className="w-8 h-8 bg-gradient-to-r from-yellow-500/60 to-yellow-600/60 rounded-full mr-3 flex items-center justify-center">
+              <div className="w-4 h-4 bg-slate-900 rounded-full"></div>
+            </div>
             <div>
               <div className="font-semibold text-white text-sm">
-                {/* {(user as { wallet?: { address: string }; email?: { address: string } })?.wallet?.address 
-                  ? `${(user as { wallet?: { address: string }; email?: { address: string } }).wallet!.address.slice(0, 6)}...${(user as { wallet?: { address: string }; email?: { address: string } }).wallet!.address.slice(-4)}`
-                  : (user as { wallet?: { address: string }; email?: { address: string } })?.email?.address 
-                    ? (user as { wallet?: { address: string }; email?: { address: string } }).email!.address.slice(0, 10) + "..."
-                    : "0x1234...5678"
-                } */}
+                Usuário Conectado
               </div>
-              <div className="text-emerald-400 text-xs">
-                {/* {(user as { wallet?: { address: string }; email?: { address: string } })?.wallet?.address ? "Wallet Connected" : "Email Connected"} */}
+              <div className="text-slate-400 text-xs">
+                🇧🇷 Carteira Brasileira
               </div>
             </div>
           </div>
