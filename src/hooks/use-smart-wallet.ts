@@ -84,25 +84,29 @@ export function useSmartWallet() {
     try {
       // Verificar se a wallet está registrada
       const walletData = await clientWalletActions.getAddress({ externallyOwnedAccount: walletAddress }) as any;
+      
+      // Verificar se accountAbstraction está em walletData ou walletData.wallet
+      const accountAbstraction = walletData.accountAbstraction || walletData.wallet?.accountAbstraction;
+      const registeredAt = walletData.registeredAt || walletData.wallet?.registeredAt;
 
-      if (walletData.registeredAt) {
-        // Wallet já registrada
+      if (accountAbstraction) {
+        // Wallet encontrada (registrada ou não)
         setState(prev => ({ 
           ...prev, 
           wallet: {
             walletAddress,
-            accountAbstraction: walletData.accountAbstraction,
+            accountAbstraction: accountAbstraction,
             factory: '0x7a1dbab750f12a90eb1b60d2ae3ad17d4d81effe',
             implementation: '',
             deployedChains: [],
             salt: '0',
-            registeredAt: walletData.registeredAt,
+            registeredAt: registeredAt || null,
           } as NotusWallet,
-          isRegistered: true, 
+          isRegistered: !!registeredAt, 
           loading: false 
         }));
       } else {
-        // Wallet não registrada
+        // Wallet não encontrada
         setState(prev => ({ 
           ...prev, 
           wallet: null,

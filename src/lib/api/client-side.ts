@@ -8,25 +8,6 @@ import ky from 'ky';
 // Cliente ky para endpoints internos
 export const clientAPI = ky.create({
   prefixUrl: '/api',
-  hooks: {
-    beforeRequest: [
-      (request) => {
-        console.log('🔍 Client API Request:', {
-          url: request.url,
-          method: request.method,
-        });
-      },
-    ],
-    afterResponse: [
-      (request, options, response) => {
-        console.log('📡 Client API Response:', {
-          status: response.status,
-          statusText: response.statusText,
-          url: response.url,
-        });
-      },
-    ],
-  },
 });
 
 // Funções específicas para o cliente
