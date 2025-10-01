@@ -3,10 +3,10 @@ import { walletActions } from '@/lib/actions';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { walletAddress: string } }
+  { params }: { params: Promise<{ walletAddress: string }> }
 ) {
   try {
-    const { walletAddress } = params;
+    const { walletAddress } = await params;
     const body = await request.json();
     const response = await walletActions.updateMetadata(walletAddress, body);
     return NextResponse.json(response);

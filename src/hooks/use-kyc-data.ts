@@ -60,7 +60,12 @@ export function useKYCData(): UseKYCDataReturn {
     try {
       // TODO: Implementar endpoint para buscar metadados da wallet
       // const response = await clientWalletActions.getMetadata(wallet.accountAbstraction);
-      // setKycData(response.kycData || null);
+      // const kycDataString = response.kycData;
+      // if (kycDataString) {
+      //   setKycData(JSON.parse(kycDataString));
+      // } else {
+      //   setKycData(null);
+      // }
       
       // Por enquanto, simular dados vazios
       setKycData(null);
@@ -82,8 +87,9 @@ export function useKYCData(): UseKYCDataReturn {
     setError(null);
 
     try {
+      // A API Notus espera metadados como strings, não objetos
       await clientWalletActions.updateMetadata(wallet.accountAbstraction, {
-        kycData: data
+        kycData: JSON.stringify(data) // Serializar para string
       });
       
       setKycData(prev => prev ? { ...prev, ...data } : null);
