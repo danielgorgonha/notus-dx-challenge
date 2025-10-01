@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,12 @@ export default function KYCLevel2Page() {
   const [frontDocumentFile, setFrontDocumentFile] = useState<File | null>(null);
   const [backDocumentFile, setBackDocumentFile] = useState<File | null>(null);
   
+  // Estados para verificação facial
+  const [cameraActive, setCameraActive] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  
   // Dados do Level 1 carregados
   const [level1Data, setLevel1Data] = useState<any>(null);
 
@@ -67,6 +73,29 @@ export default function KYCLevel2Page() {
     loadLevel1Data();
   }, [wallet?.accountAbstraction]);
 
+  // Limpar câmera quando componente for desmontado
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
+
+  // Configurar vídeo quando stream for definido
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      console.log('🎥 Configurando vídeo com stream:', stream);
+      videoRef.current.srcObject = stream;
+      
+      // Forçar o vídeo a carregar
+      videoRef.current.onloadedmetadata = () => {
+        console.log('🎥 Vídeo carregado com sucesso');
+        videoRef.current?.play();
+      };
+    }
+  }, [stream]);
+
   // Navegação entre steps
   const nextStep = () => {
     if (currentStep === 3) {
@@ -80,7 +109,10 @@ export default function KYCLevel2Page() {
         // Se enviou o verso, vai para verificação facial
         setCurrentStep(4);
       }
-    } else if (currentStep < 4) {
+    } else if (currentStep === 4 && facialVerificationCompleted) {
+      // Step 4: Após verificação facial, vai para finalização
+      setCurrentStep(5);
+    } else if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -125,11 +157,11 @@ export default function KYCLevel2Page() {
       // Salvar arquivo baseado no lado selecionado
       if (selectedDocumentSide === 'front') {
         setFrontDocumentFile(file);
-        setFrontDocumentUploaded(true);
+      setFrontDocumentUploaded(true);
         success('Sucesso!', 'Documento da frente carregado com sucesso');
-      } else {
+    } else {
         setBackDocumentFile(file);
-        setBackDocumentUploaded(true);
+      setBackDocumentUploaded(true);
         success('Sucesso!', 'Documento do verso carregado com sucesso');
       }
       
@@ -137,11 +169,62 @@ export default function KYCLevel2Page() {
     }
   };
 
+  // Funções para gerenciar a câmera
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: 'user'
+        },
+        audio: false
+      });
+      
+      setStream(mediaStream);
+      setCameraActive(true);
+      
+      success('Câmera ativada!', 'Posicione seu rosto na tela');
+    } catch (err) {
+      console.error('Erro ao acessar câmera:', err);
+      error('Erro!', 'Não foi possível acessar a câmera. Verifique as permissões.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+      setCameraActive(false);
+    }
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && cameraActive) {
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      
+      if (context) {
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
+        context.drawImage(videoRef.current, 0, 0);
+        
+        const photoDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        setCapturedPhoto(photoDataUrl);
+        stopCamera();
+        
+        success('Foto capturada!', 'Verificação facial concluída com sucesso');
+        setFacialVerificationCompleted(true);
+      }
+    }
+  };
+
   const handleFacialVerification = () => {
-    // Simular verificação facial
-    setFacialVerificationCompleted(true);
-    success('Sucesso!', 'Verificação facial concluída com sucesso');
-    nextStep();
+    if (!cameraActive) {
+      startCamera();
+    } else {
+      capturePhoto();
+    }
   };
 
   const handleSubmit = async () => {
@@ -207,78 +290,78 @@ export default function KYCLevel2Page() {
         title="Verificação Nível 2" 
         description="Complete sua verificação com documentos"
       >
-        <div className="flex justify-center">
-          <div className="w-full max-w-2xl space-y-6">
-            {/* Header */}
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
+    <div className="flex justify-center">
+      <div className="w-full max-w-2xl space-y-6">
+        {/* Header */}
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="ghost"
+            size="sm"
                 onClick={() => router.push('/wallet/kyc')}
-                className="text-slate-400 hover:text-white"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
+            className="text-slate-400 hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
                 Voltar ao KYC
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-white">Verificação Nível 2</h1>
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Verificação Nível 2</h1>
                 <p className="text-slate-400">Complete sua verificação com documentos</p>
-              </div>
-            </div>
+          </div>
+        </div>
 
             {/* Progress Indicator */}
-            <Card className="glass-card">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                      <CheckCircle className="h-4 w-4 text-white" />
-                    </div>
-                    <span className="text-white font-medium">Dados Pessoais</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
+        <Card className="glass-card">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <CheckCircle className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-white font-medium">Dados Pessoais</span>
+              </div>
+              <div className="flex items-center space-x-2">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                       currentStep >= 2 ? 'bg-blue-500' : 'bg-slate-600'
                     }`}>
-                      <span className="text-white text-sm font-bold">2</span>
-                    </div>
-                    <span className="text-white font-medium">Documentos</span>
-                  </div>
+                  <span className="text-white text-sm font-bold">2</span>
                 </div>
-                <div className="w-full bg-slate-700 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full w-full"></div>
-                </div>
-              </CardContent>
-            </Card>
+                <span className="text-white font-medium">Documentos</span>
+              </div>
+            </div>
+            <div className="w-full bg-slate-700 rounded-full h-2">
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full w-full"></div>
+            </div>
+          </CardContent>
+        </Card>
 
             {/* Step 1: Document Type Selection */}
             {currentStep === 1 && (
-              <Card className="glass-card">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg mr-3">
-                      <FileText className="h-6 w-6 text-white" />
-                    </div>
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center">
+              <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg mr-3">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
                     Qual documento você irá utilizar?
-                  </CardTitle>
+            </CardTitle>
                   <p className="text-slate-400">Verificação KYC de Nível 2</p>
-                </CardHeader>
-                <CardContent>
-                  <RadioGroup value={selectedDocument} onValueChange={setSelectedDocument}>
-                    <div className="space-y-4">
-                      {documentTypes.map((doc) => (
-                        <div key={doc.value} className="flex items-start space-x-3 p-4 bg-slate-800/50 rounded-lg border border-slate-600">
-                          <RadioGroupItem value={doc.value} id={doc.value} className="mt-1" />
-                          <div className="flex-1">
-                            <Label htmlFor={doc.value} className="text-white font-medium cursor-pointer">
-                              {doc.label}
-                            </Label>
-                            <p className="text-slate-400 text-sm mt-1">{doc.description}</p>
-                          </div>
-                        </div>
-                      ))}
+          </CardHeader>
+          <CardContent>
+            <RadioGroup value={selectedDocument} onValueChange={setSelectedDocument}>
+              <div className="space-y-4">
+                {documentTypes.map((doc) => (
+                  <div key={doc.value} className="flex items-start space-x-3 p-4 bg-slate-800/50 rounded-lg border border-slate-600">
+                    <RadioGroupItem value={doc.value} id={doc.value} className="mt-1" />
+                    <div className="flex-1">
+                      <Label htmlFor={doc.value} className="text-white font-medium cursor-pointer">
+                        {doc.label}
+                      </Label>
+                      <p className="text-slate-400 text-sm mt-1">{doc.description}</p>
                     </div>
-                  </RadioGroup>
+                  </div>
+                ))}
+              </div>
+            </RadioGroup>
                   
                   {/* Warning */}
                   <div className="mt-4 p-4 bg-yellow-600/10 border border-yellow-500/30 rounded-lg">
@@ -307,8 +390,8 @@ export default function KYCLevel2Page() {
                       Continuar
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
+          </CardContent>
+        </Card>
             )}
 
             {/* Step 2: Document Side Selection */}
@@ -430,18 +513,18 @@ export default function KYCLevel2Page() {
 
             {/* Step 3: Document Upload */}
             {currentStep === 3 && (
-              <Card className="glass-card">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg mr-3">
-                      <Upload className="h-6 w-6 text-white" />
-                    </div>
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg mr-3">
+                  <Upload className="h-6 w-6 text-white" />
+                </div>
                     Envie a foto do seu documento
-                  </CardTitle>
+              </CardTitle>
                   <p className="text-slate-400">
                     Verificação KYC de Nível 2 - {selectedDocumentSide === 'front' ? 'Lado com foto (frente)' : 'Lado sem foto (verso)'}
                   </p>
-                </CardHeader>
+            </CardHeader>
                 <CardContent>
                   <div className="text-center">
                     {/* Document Preview */}
@@ -497,88 +580,131 @@ export default function KYCLevel2Page() {
                       >
                         {selectedDocumentSide === 'front' ? 'Enviar Verso' : 'Verificação Facial'}
                       </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
             {/* Step 4: Facial Verification */}
             {currentStep === 4 && (
-              <Card className="glass-card">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg mr-3">
-                      <Camera className="h-6 w-6 text-white" />
-                    </div>
-                    Iniciar verificação facial
-                  </CardTitle>
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg mr-3">
+                  <Camera className="h-6 w-6 text-white" />
+                </div>
+                Verificação Facial
+              </CardTitle>
                   <p className="text-slate-400">Verificação KYC de Nível 2</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center">
-                    <div className="w-24 h-24 bg-yellow-400 rounded-full mx-auto mb-6 flex items-center justify-center">
-                      <User className="h-12 w-12 text-black" />
-                    </div>
-                    
-                    <div className="space-y-4 mb-6 text-left">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
-                          <span className="text-black text-xs">☀️</span>
-                        </div>
-                        <p className="text-slate-300 text-sm">
-                          Esteja em um ambiente iluminado e sem pessoas e objetos ao fundo.
-                        </p>
+            </CardHeader>
+            <CardContent>
+                  {!cameraActive && !capturedPhoto && (
+                    <div className="text-center">
+                      <div className="w-24 h-24 bg-yellow-400 rounded-full mx-auto mb-6 flex items-center justify-center">
+                        <User className="h-12 w-12 text-black" />
                       </div>
                       
-                      <div className="flex items-center space-x-3">
-                        <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
-                          <span className="text-black text-xs">👤</span>
+                      <div className="space-y-4 mb-6 text-left">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
+                            <span className="text-black text-xs">☀️</span>
+                          </div>
+                          <p className="text-slate-300 text-sm">
+                            Esteja em um ambiente iluminado e sem pessoas e objetos ao fundo.
+                          </p>
                         </div>
-                        <p className="text-slate-300 text-sm">
-                          Deixe o rosto bem visível! Evite usar chapéu, óculos de sol, ou qualquer item que cubra parte do seu rosto.
-                        </p>
+                        
+                        <div className="flex items-center space-x-3">
+                          <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
+                            <span className="text-black text-xs">👤</span>
+                          </div>
+                          <p className="text-slate-300 text-sm">
+                            Deixe o rosto bem visível! Evite usar chapéu, óculos de sol, ou qualquer item que cubra parte do seu rosto.
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3">
+                          <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
+                            <span className="text-black text-xs">📱</span>
+                          </div>
+                          <p className="text-slate-300 text-sm">
+                            Posicione-se na frente da câmera.
+                          </p>
+                        </div>
                       </div>
                       
-                      <div className="flex items-center space-x-3">
-                        <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
-                          <span className="text-black text-xs">📱</span>
+                      <p className="text-slate-300 mb-6">
+                        Essa etapa da verificação serve para que possamos validar se seu documento pertence a você.
+                      </p>
+                    </div>
+                  )}
+
+                  {cameraActive && !capturedPhoto && (
+              <div className="text-center">
+                      <div className="relative mb-6">
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className="w-full max-w-md mx-auto rounded-lg border-2 border-blue-400"
+                          style={{ transform: 'scaleX(-1)' }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="w-32 h-32 border-2 border-yellow-400 rounded-full opacity-50"></div>
                         </div>
-                        <p className="text-slate-300 text-sm">
-                          Segure o celular na altura do rosto.
-                        </p>
                       </div>
-                    </div>
-                    
-                    <p className="text-slate-300 mb-6">
-                      Essa etapa da verificação serve para que possamos validar se seu documento pertence a você.
-                    </p>
-                    
-                    <div className="flex space-x-4">
-                      <Button
-                        onClick={prevStep}
-                        variant="outline"
-                        className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white bg-slate-800/50"
-                      >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Voltar
-                      </Button>
-                      <Button
-                        onClick={handleFacialVerification}
-                        className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                      >
-                        Iniciar
-                      </Button>
-                    </div>
+                      
+                      <p className="text-slate-300 mb-6">
+                        Posicione seu rosto dentro do círculo e mantenha-se parado.
+                      </p>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                  )}
+
+                  {capturedPhoto && (
+                    <div className="text-center">
+                  <div className="mb-6">
+                        <img
+                          src={capturedPhoto}
+                          alt="Foto capturada"
+                          className="w-full max-w-md mx-auto rounded-lg border-2 border-green-400"
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-center space-x-2 mb-6">
+                        <CheckCircle className="h-5 w-5 text-green-400" />
+                        <p className="text-green-400 font-medium">Foto capturada com sucesso!</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex space-x-4">
+                    <Button
+                      onClick={prevStep}
+                      variant="outline"
+                      className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white bg-slate-800/50"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Voltar
+                    </Button>
+                    <Button
+                      onClick={handleFacialVerification}
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      {!cameraActive && !capturedPhoto ? 'Iniciar Câmera' : 
+                       cameraActive && !capturedPhoto ? 'Capturar Foto' : 
+                       'Continuar'}
+                    </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
             {/* Final Submit */}
             {currentStep === 5 && (
-              <Card className="glass-card">
-                <CardContent className="p-6">
+          <Card className="glass-card">
+            <CardContent className="p-6">
                   <div className="text-center mb-6">
                     <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center">
                       <CheckCircle className="h-8 w-8 text-white" />
@@ -598,9 +724,9 @@ export default function KYCLevel2Page() {
                       <ArrowLeft className="h-4 w-4 mr-2" />
                       Voltar
                     </Button>
-                    <Button
-                      onClick={handleSubmit}
-                      disabled={loading}
+              <Button
+                onClick={handleSubmit}
+                disabled={loading}
                       className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                     >
                       {loading ? (
@@ -611,32 +737,32 @@ export default function KYCLevel2Page() {
                       ) : (
                         "Finalizar Verificação Nível 2"
                       )}
-                    </Button>
+              </Button>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+            </CardContent>
+          </Card>
+        )}
 
-            {/* Info Card */}
-            <Card className="glass-card bg-blue-600/10 border-blue-500/30">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-blue-500/20 rounded-lg">
-                    <Shield className="h-5 w-5 text-blue-400" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-white mb-2">Segurança dos Documentos</h4>
-                    <p className="text-slate-300 text-sm">
-                      Seus documentos são criptografados e armazenados com segurança. 
-                      Utilizamos tecnologia de ponta para proteger suas informações pessoais 
-                      e cumprir todas as regulamentações de privacidade.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        {/* Info Card */}
+        <Card className="glass-card bg-blue-600/10 border-blue-500/30">
+          <CardContent className="p-6">
+            <div className="flex items-start space-x-3">
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <Shield className="h-5 w-5 text-blue-400" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-white mb-2">Segurança dos Documentos</h4>
+                <p className="text-slate-300 text-sm">
+                  Seus documentos são criptografados e armazenados com segurança. 
+                  Utilizamos tecnologia de ponta para proteger suas informações pessoais 
+                  e cumprir todas as regulamentações de privacidade.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
       </AppLayout>
     </ProtectedRoute>
   );
