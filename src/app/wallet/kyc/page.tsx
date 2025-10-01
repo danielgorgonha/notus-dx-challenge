@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,17 +11,89 @@ import { useKYC } from "@/contexts/kyc-context";
 import { useKYCManager } from "@/hooks/use-kyc-manager";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { clientWalletActions } from "@/lib/api/client-side";
 
 export default function KYCPage() {
   const router = useRouter();
-  const { currentLevel, kycPhase0Completed, kycPhase1Completed, kycPhase2Completed } = useKYC();
+  const { currentLevel, kycPhase0Completed, kycPhase1Completed, kycPhase2Completed, completePhase1, completePhase2 } = useKYC();
   const { wallet } = useSmartWallet();
   
   const walletAddress = wallet?.accountAbstraction;
   const kycManager = useKYCManager(walletAddress || '');
+  
+  // Estado para dados KYC carregados da API
+  const [kycData, setKycData] = useState<any>(null);
+  const [isLoadingKYC, setIsLoadingKYC] = useState(true);
+
+  // Carregar dados KYC da wallet quando a página carrega
+  useEffect(() => {
+    const loadKYCData = async () => {
+      try {
+        console.log('🔍 Carregando dados KYC...');
+        
+        // Usar o EOA (externally owned account) que sabemos que existe
+        const eoaAddress = '0x7092C791436f7047956c42ABbD2aC67dedD7C511';
+        
+        console.log('🔍 Usando EOA:', eoaAddress);
+        
+        // Buscar dados da wallet usando o EOA
+        const response = await clientWalletActions.getAddress({
+          externallyOwnedAccount: eoaAddress,
+          factory: '0x7a1dbab750f12a90eb1b60d2ae3ad17d4d81effe',
+          salt: '0'
+        });
+        
+        console.log('🔍 Resposta da API:', response);
+        console.log('🔍 Wallet metadata:', response.wallet?.metadata);
+        console.log('🔍 KYC Data string:', response.wallet?.metadata?.kycData);
+        
+        if (response.wallet?.metadata?.kycData) {
+          const parsedData = JSON.parse(response.wallet.metadata.kycData);
+          console.log('🔍 Dados KYC encontrados:', parsedData);
+          setKycData(parsedData);
+          
+          // Atualizar contexto baseado nos dados reais
+          if (parsedData.kycLevel >= 1) {
+            console.log('🔍 Marcando Nível 1 como completo');
+            completePhase1();
+          }
+          if (parsedData.kycLevel >= 2) {
+            console.log('🔍 Marcando Nível 2 como completo');
+            completePhase2();
+          }
+        } else {
+          console.log('🔍 Nenhum dado KYC encontrado');
+          console.log('🔍 Estrutura completa da resposta:', JSON.stringify(response, null, 2));
+          setKycData(null);
+        }
+      } catch (error) {
+        console.error('🔍 Erro ao carregar dados KYC:', error);
+        setKycData(null);
+      } finally {
+        setIsLoadingKYC(false);
+      }
+    };
+
+    loadKYCData();
+  }, [walletAddress, completePhase1, completePhase2]);
 
   // Usar o nível real da API Notus
   const realKYCLevel = kycManager.getCurrentStage();
+  
+  // Determinar status baseado nos dados carregados
+  const isLevel1Completed = kycData?.kycLevel >= 1 || kycPhase1Completed;
+  const isLevel2Completed = kycData?.kycLevel >= 2 || kycPhase2Completed;
+  
+  // Debug logs
+  console.log('🔍 KYC Page Debug:', {
+    kycData,
+    isLoadingKYC,
+    isLevel1Completed,
+    isLevel2Completed,
+    kycPhase1Completed,
+    kycPhase2Completed,
+    walletAddress
+  });
   
   const levels = [
     {
@@ -35,7 +107,7 @@ export default function KYCPage() {
     {
       id: 1,
       name: "Nível 1", 
-      status: kycPhase1Completed ? "completed" : (kycPhase0Completed ? "pending" : "locked"),
+      status: isLevel1Completed ? "completed" : (kycPhase0Completed ? "pending" : "locked"),
       limit: "Até R$ 2.000,00 mensais",
       requirements: [
         "Nome Completo",
@@ -48,7 +120,7 @@ export default function KYCPage() {
     {
       id: 2,
       name: "Nível 2",
-      status: kycPhase2Completed ? "completed" : (kycPhase1Completed ? "pending" : "locked"),
+      status: isLevel2Completed ? "completed" : (isLevel1Completed ? "pending" : "locked"),
       limit: "Até R$ 50.000,00 mensais", 
       requirements: [
         "Documento de Identificação (ID Nacional, CNH ou RNM)",
@@ -111,8 +183,8 @@ export default function KYCPage() {
                   <span>Nível Atual: {realKYCLevel}</span>
                 </div>
                  <span className="text-2xl font-bold text-blue-400">
-                   {realKYCLevel === '1' ? "R$ 2.000,00" : 
-                    realKYCLevel === '2' ? "R$ 50.000,00" : 
+                   {isLevel2Completed ? "R$ 50.000,00" : 
+                    isLevel1Completed ? "R$ 2.000,00" : 
                     "R$ 0,00"}
                  </span>
               </CardTitle>
@@ -122,16 +194,16 @@ export default function KYCPage() {
                 <div>
                   <p className="text-slate-400">Limite de depósito:</p>
                    <p className="text-white font-semibold">
-                     {realKYCLevel === '1' ? "R$ 2.000,00" : 
-                      realKYCLevel === '2' ? "R$ 50.000,00" : 
+                     {isLevel2Completed ? "R$ 50.000,00" : 
+                      isLevel1Completed ? "R$ 2.000,00" : 
                       "R$ 0,00"}
                    </p>
                  </div>
                  <div>
                    <p className="text-slate-400">Limite de saque:</p>
                    <p className="text-white font-semibold">
-                     {realKYCLevel === '1' ? "R$ 2.000,00" : 
-                      realKYCLevel === '2' ? "R$ 50.000,00" : 
+                     {isLevel2Completed ? "R$ 50.000,00" : 
+                      isLevel1Completed ? "R$ 2.000,00" : 
                       "R$ 0,00"}
                    </p>
                 </div>
@@ -139,6 +211,25 @@ export default function KYCPage() {
             </CardContent>
           </Card>
 
+          {/* Success Message for Level 1 */}
+          {isLevel1Completed && !isLevel2Completed && (
+            <Card className="glass-card bg-gradient-to-r from-green-600/20 to-emerald-600/20 border-green-500/30">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-green-500/20 rounded-lg">
+                    <CheckCircle className="h-6 w-6 text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold">Nível 1 Concluído!</h3>
+                    <p className="text-slate-300 text-sm">
+                      Você pode transferir e receber entre wallets até R$ 2.000,00 mensais. 
+                      Continue para o Nível 2 para liberar PIX e depósitos.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Levels */}
           <div className="space-y-4">
