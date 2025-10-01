@@ -109,7 +109,7 @@ export default function DashboardPage() {
           </div>
           <div className="text-slate-300 text-sm mb-1">Total na Carteira</div>
           <div className="text-yellow-400 text-sm">
-            {portfolioData?.totalValueUSD ? `$${portfolioData.totalValueUSD}` : 'Carregando...'}
+            {portfolioLoading ? 'Carregando...' : `$${totalBalance.toFixed(2)}`}
           </div>
           <div className="mt-2 text-xs text-slate-400">
             ℹ️ Seu dinheiro está seguro e só você pode movimentar
