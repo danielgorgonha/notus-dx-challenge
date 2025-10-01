@@ -30,30 +30,36 @@ export default function KYCLevel1SuccessPage() {
             </h1>
             
             <p className="text-slate-300 text-lg mb-6">
-              Seus dados pessoais foram verificados com sucesso. Agora você pode fazer 
-              depósitos de até <span className="text-green-400 font-semibold">R$ 2.000,00</span> por mês.
+              Seus dados pessoais foram validados e salvos com sucesso! Agora você pode 
+              <span className="text-green-400 font-semibold"> transferir e receber até R$ 2.000,00</span> mensais.
             </p>
 
             <div className="bg-slate-800/50 rounded-lg p-6 mb-6">
-              <h3 className="text-white font-semibold mb-4">Próximos Passos</h3>
+              <h3 className="text-white font-semibold mb-4">Funcionalidades Liberadas</h3>
               <div className="space-y-3 text-left">
                 <div className="flex items-center space-x-3">
                   <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
                     <CheckCircle className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-slate-300">Dados pessoais verificados</span>
+                  <span className="text-slate-300">Transferências entre wallets</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">2</span>
+                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                    <CheckCircle className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-slate-300">Verificar documentos (Nível 2)</span>
+                  <span className="text-slate-300">Recebimentos</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-6 h-6 bg-slate-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">3</span>
+                    <span className="text-white text-sm font-bold">🔒</span>
                   </div>
-                  <span className="text-slate-400">Limites personalizados (Nível 3)</span>
+                  <span className="text-slate-400">PIX (precisa Nível 2)</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-6 h-6 bg-slate-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">🔒</span>
+                  </div>
+                  <span className="text-slate-400">Depósitos/Saques (precisa Nível 2)</span>
                 </div>
               </div>
             </div>
@@ -84,21 +90,29 @@ export default function KYCLevel1SuccessPage() {
               <div className="p-2 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg mr-3">
                 <Shield className="h-6 w-6 text-white" />
               </div>
-              Benefícios do Nível 1
+              Limites do Nível 1
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 bg-green-600/10 rounded-lg border border-green-500/30">
-                <h4 className="font-semibold text-white mb-2">Limite de Depósito</h4>
+                <h4 className="font-semibold text-white mb-2">Transferências</h4>
                 <p className="text-2xl font-bold text-green-400">R$ 2.000,00</p>
                 <p className="text-slate-400 text-sm">por mês</p>
               </div>
               <div className="p-4 bg-green-600/10 rounded-lg border border-green-500/30">
-                <h4 className="font-semibold text-white mb-2">Limite de Saque</h4>
+                <h4 className="font-semibold text-white mb-2">Recebimentos</h4>
                 <p className="text-2xl font-bold text-green-400">R$ 2.000,00</p>
                 <p className="text-slate-400 text-sm">por mês</p>
               </div>
+            </div>
+            
+            <div className="mt-4 p-4 bg-slate-800/50 rounded-lg">
+              <h4 className="font-semibold text-white mb-2">Para liberar PIX e depósitos:</h4>
+              <p className="text-slate-300 text-sm">
+                Complete o <span className="text-blue-400 font-semibold">Nível 2</span> enviando seus documentos 
+                para aumentar os limites e liberar funcionalidades bancárias.
+              </p>
             </div>
           </CardContent>
         </Card>

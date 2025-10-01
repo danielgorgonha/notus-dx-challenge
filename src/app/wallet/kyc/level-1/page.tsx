@@ -12,11 +12,14 @@ import { User, Calendar, CreditCard, Globe } from "lucide-react";
 import { useKYC } from "@/contexts/kyc-context";
 import { useToast } from "@/hooks/use-toast";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { validateLevel1Data, formatCPF, formatDate } from "@/lib/validation/personal-data";
+import { useKYCData } from "@/hooks/use-kyc-data";
 
 export default function KYCLevel1Page() {
   const router = useRouter();
   const { completePhase1 } = useKYC();
   const { success, error } = useToast();
+  const { updateKYCData } = useKYCData();
   
   const [formData, setFormData] = useState({
     fullName: "",
@@ -34,37 +37,16 @@ export default function KYCLevel1Page() {
     }));
   };
 
-  const formatCPF = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  };
-
-  const formatDate = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    return numbers.replace(/(\d{2})(\d{2})(\d{4})/, '$1/$2/$3');
-  };
+  // Funções de formatação movidas para lib/validation/personal-data.ts
 
   const validateForm = () => {
-    if (!formData.fullName.trim()) {
-      error('Erro', 'Nome completo é obrigatório');
+    const validation = validateLevel1Data(formData);
+    
+    if (!validation.valid) {
+      validation.errors.forEach(err => error('Erro', err));
       return false;
     }
-    if (formData.fullName.trim().split(' ').length < 2) {
-      error('Erro', 'Por favor, digite seu nome completo (nome e sobrenome)');
-      return false;
-    }
-    if (!formData.birthDate.trim()) {
-      error('Erro', 'Data de nascimento é obrigatória');
-      return false;
-    }
-    if (!formData.cpf.trim()) {
-      error('Erro', 'CPF é obrigatório');
-      return false;
-    }
-    if (formData.cpf.replace(/\D/g, '').length !== 11) {
-      error('Erro', 'CPF deve ter 11 dígitos');
-      return false;
-    }
+    
     return true;
   };
 
@@ -74,18 +56,40 @@ export default function KYCLevel1Page() {
     setLoading(true);
     
     try {
-      // Simular processamento
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Preparar dados do Nível 1
+      const level1Data = {
+        fullName: formData.fullName.trim(),
+        birthDate: formData.birthDate,
+        cpf: formData.cpf.replace(/\D/g, ''), // Salvar apenas números
+        nationality: formData.nationality,
+        completedAt: new Date().toISOString(),
+        kycLevel: 1,
+        limits: {
+          monthlyDeposit: 2000.00,
+          monthlyWithdrawal: 2000.00,
+          features: {
+            transfers: true,
+            receipts: true,
+            pix: false, // Bloqueado até Nível 2
+            onRamp: false, // Bloqueado até Nível 2
+            offRamp: false // Bloqueado até Nível 2
+          }
+        }
+      };
       
-      // Completar fase 1
+      // Salvar nos metadados da wallet via hook
+      await updateKYCData(level1Data);
+      
+      // Completar fase 1 (contexto local)
       completePhase1();
       
-      success('Sucesso!', 'Dados pessoais verificados com sucesso');
+      success('Sucesso!', 'Dados pessoais validados e salvos na sua wallet. Você pode agora transferir e receber até R$ 2.000,00 mensais.');
       
       // Redirecionar para página de sucesso
       router.push('/wallet/kyc/level-1/success');
     } catch (err) {
-      error('Erro', 'Falha ao processar verificação');
+      console.error('Erro ao salvar dados KYC:', err);
+      error('Erro', 'Falha ao salvar dados pessoais na wallet');
     } finally {
       setLoading(false);
     }
