@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Calendar, CreditCard, Globe } from "lucide-react";
+import { User, Calendar, CreditCard, Globe, Loader2 } from "lucide-react";
 import { useKYC } from "@/contexts/kyc-context";
 import { useToast } from "@/hooks/use-toast";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -77,16 +77,22 @@ export default function KYCLevel1Page() {
         }
       };
       
-      // Salvar nos metadados da wallet via hook
-      await updateKYCData(level1Data);
+      // Simular delay mínimo para feedback visual
+      const [saveResult] = await Promise.all([
+        updateKYCData(level1Data),
+        new Promise(resolve => setTimeout(resolve, 1000)) // Mínimo 1 segundo
+      ]);
       
       // Completar fase 1 (contexto local)
       completePhase1();
       
-      success('Sucesso!', 'Dados pessoais validados e salvos na sua wallet. Você pode agora transferir e receber até R$ 2.000,00 mensais.');
+      success('Sucesso!', 'Nível 1 concluído! Você pode transferir e receber entre wallets até R$ 2.000,00 mensais. Continue para o Nível 2 para liberar PIX e depósitos.');
       
-      // Redirecionar para página de sucesso
-      router.push('/wallet/kyc/level-1/success');
+      // Pequeno delay antes de redirecionar
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Redirecionar para página principal do KYC para continuar para Nível 2
+      router.push('/wallet/kyc');
     } catch (err) {
       console.error('Erro ao salvar dados KYC:', err);
       error('Erro', 'Falha ao salvar dados pessoais na wallet');
@@ -135,16 +141,39 @@ export default function KYCLevel1Page() {
         </Card>
 
         {/* Form */}
-        <Card className="glass-card">
+        <Card className={`glass-card ${loading ? 'opacity-75' : ''}`}>
           <CardHeader>
             <CardTitle className="text-white flex items-center">
               <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg mr-3">
-                <User className="h-6 w-6 text-white" />
+                {loading ? (
+                  <Loader2 className="h-6 w-6 text-white animate-spin" />
+                ) : (
+                  <User className="h-6 w-6 text-white" />
+                )}
               </div>
               Dados Pessoais
+              {loading && (
+                <div className="ml-auto">
+                  <div className="flex items-center space-x-2 text-blue-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Processando...</span>
+                  </div>
+                </div>
+              )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 relative">
+            {/* Loading Overlay */}
+            {loading && (
+              <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
+                <div className="text-center">
+                  <Loader2 className="h-8 w-8 text-blue-400 animate-spin mx-auto mb-2" />
+                  <p className="text-white font-medium">Validando dados...</p>
+                  <p className="text-slate-300 text-sm">Salvando na sua wallet</p>
+                </div>
+              </div>
+            )}
+            
             {/* Nome Completo */}
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-slate-300">Nome Completo</Label>
@@ -154,6 +183,7 @@ export default function KYCLevel1Page() {
                 onChange={(e) => handleInputChange('fullName', e.target.value)}
                 placeholder="Digite seu nome completo"
                 className="bg-slate-800/50 border-slate-600 text-white placeholder-slate-400"
+                disabled={loading}
               />
             </div>
 
@@ -170,6 +200,7 @@ export default function KYCLevel1Page() {
                 placeholder="DD/MM/AAAA"
                 maxLength={10}
                 className="bg-slate-800/50 border-slate-600 text-white placeholder-slate-400"
+                disabled={loading}
               />
             </div>
 
@@ -186,6 +217,7 @@ export default function KYCLevel1Page() {
                 placeholder="000.000.000-00"
                 maxLength={14}
                 className="bg-slate-800/50 border-slate-600 text-white placeholder-slate-400"
+                disabled={loading}
               />
             </div>
 
@@ -195,7 +227,11 @@ export default function KYCLevel1Page() {
                 <Globe className="h-4 w-4 mr-2" />
                 Nacionalidade
               </Label>
-              <Select value={formData.nationality} onValueChange={(value) => handleInputChange('nationality', value)}>
+              <Select 
+                value={formData.nationality} 
+                onValueChange={(value) => handleInputChange('nationality', value)}
+                disabled={loading}
+              >
                 <SelectTrigger className="bg-slate-800/50 border-slate-600 text-white">
                   <SelectValue placeholder="Selecione sua nacionalidade" />
                 </SelectTrigger>
@@ -215,9 +251,16 @@ export default function KYCLevel1Page() {
               <Button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? "Processando..." : "Continuar para Nível 2"}
+                {loading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Validando e salvando dados...</span>
+                  </div>
+                ) : (
+                  "Continuar para Nível 2"
+                )}
               </Button>
             </div>
           </CardContent>

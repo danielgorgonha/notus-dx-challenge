@@ -35,7 +35,7 @@ export default function KYCPage() {
     {
       id: 1,
       name: "Nível 1", 
-      status: parseInt(realKYCLevel) >= 1 ? "completed" : (kycPhase0Completed ? "pending" : "locked"),
+      status: kycPhase1Completed ? "completed" : (kycPhase0Completed ? "pending" : "locked"),
       limit: "Até R$ 2.000,00 mensais",
       requirements: [
         "Nome Completo",
@@ -48,7 +48,7 @@ export default function KYCPage() {
     {
       id: 2,
       name: "Nível 2",
-      status: parseInt(realKYCLevel) >= 2 ? "completed" : (parseInt(realKYCLevel) >= 1 ? "pending" : "locked"),
+      status: kycPhase2Completed ? "completed" : (kycPhase1Completed ? "pending" : "locked"),
       limit: "Até R$ 50.000,00 mensais", 
       requirements: [
         "Documento de Identificação (ID Nacional, CNH ou RNM)",
@@ -138,6 +138,7 @@ export default function KYCPage() {
               </div>
             </CardContent>
           </Card>
+
 
           {/* Levels */}
           <div className="space-y-4">
