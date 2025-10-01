@@ -16,6 +16,70 @@ export default function DashboardPage() {
   const [totalBalance, setTotalBalance] = useState(0);
   const [portfolioData, setPortfolioData] = useState<any>(null);
   const [transactionHistory, setTransactionHistory] = useState<any>(null);
+  const [currency, setCurrency] = useState<'USD' | 'BRL'>('BRL');
+  const [exchangeRate, setExchangeRate] = useState(5.32); // Taxa USD -> BRL (exemplo)
+
+  // Função para formatar saldo de token (converte wei para unidade real)
+  const formatTokenBalance = (balance: string | number, decimals: number = 18) => {
+    const num = parseFloat(balance.toString());
+    
+    if (num === 0) return '0';
+    
+    // Converter de wei para unidade real (dividir por 10^decimals)
+    const realValue = num / Math.pow(10, decimals);
+    
+    // Se o valor é muito pequeno, mostrar com mais decimais
+    if (realValue < 0.0001) {
+      return realValue.toFixed(8);
+    }
+    
+    // Se o valor é muito grande, usar notação científica
+    if (realValue >= 1e9) {
+      return realValue.toExponential(2);
+    }
+    
+    // Para valores normais, mostrar com 2-4 decimais
+    if (realValue >= 1) {
+      return realValue.toFixed(2);
+    } else {
+      return realValue.toFixed(4);
+    }
+  };
+
+  // Função para formatar valor em reais (formato brasileiro)
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  // Função para formatar valor em dólares
+  const formatUSD = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(value);
+  };
+
+  // Função para converter valores
+  const convertCurrency = (value: number) => {
+    if (currency === 'BRL') {
+      return value * exchangeRate; // USD -> BRL
+    }
+    return value; // Já está em USD
+  };
+
+  // Função para formatar valor baseado na moeda selecionada
+  const formatValue = (value: number) => {
+    const convertedValue = convertCurrency(value);
+    return currency === 'BRL' ? formatCurrency(convertedValue) : formatUSD(convertedValue);
+  };
+
+  // Função para alternar moeda
+  const toggleCurrency = () => {
+    setCurrency(currency === 'BRL' ? 'USD' : 'BRL');
+  };
 
   // Usar accountAbstractionAddress do useSmartWallet hook
   const accountAbstractionAddress = wallet?.accountAbstraction;
@@ -87,9 +151,22 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-slate-400 text-sm">Status</div>
-            <div className="text-green-400 font-semibold">✓ Seguro</div>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={toggleCurrency}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg transition-colors border border-slate-600/50"
+            >
+              <span className="text-white font-semibold">
+                {currency === 'BRL' ? 'R$' : '$'}
+              </span>
+              <span className="text-slate-300 text-sm">
+                {currency === 'BRL' ? 'Real' : 'Dólar'}
+              </span>
+            </button>
+            <div className="text-right">
+              <div className="text-slate-400 text-sm">Status</div>
+              <div className="text-green-400 font-semibold">✓ Seguro</div>
+            </div>
           </div>
         </div>
       </div>
@@ -104,12 +181,12 @@ export default function DashboardPage() {
             {portfolioLoading ? (
               <Loader2 className="h-6 w-6 animate-spin mx-auto" />
             ) : (
-              `$${totalBalance.toFixed(2)}`
+              formatValue(totalBalance)
             )}
           </div>
           <div className="text-slate-300 text-sm mb-1">Total na Carteira</div>
           <div className="text-yellow-400 text-sm">
-            {portfolioLoading ? 'Carregando...' : `$${totalBalance.toFixed(2)}`}
+            {portfolioLoading ? 'Carregando...' : formatValue(totalBalance)}
           </div>
           <div className="mt-2 text-xs text-slate-400">
             ℹ️ Seu dinheiro está seguro e só você pode movimentar
@@ -190,13 +267,13 @@ export default function DashboardPage() {
                     <div>
                       <div className="font-semibold text-white">{token.name || 'Token Desconhecido'}</div>
                       <div className="text-slate-400 text-sm">
-                        {parseFloat(token.balance || '0').toFixed(4)} {token.symbol || 'TOK'}
+                        {formatTokenBalance(token.balance || '0')} {token.symbol || 'TOK'}
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="font-semibold text-white">
-                      ${parseFloat(token.balanceUsd || '0').toFixed(2)}
+                      {formatValue(parseFloat(token.balanceUsd || '0'))}
                     </div>
                     <div className="text-yellow-400 text-sm">
                       {token.symbol || 'TOK'}
