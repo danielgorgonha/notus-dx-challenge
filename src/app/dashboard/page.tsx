@@ -7,8 +7,9 @@ import { useSmartWallet } from "@/hooks/use-smart-wallet";
 import { usePrivy } from "@privy-io/react-auth";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useQuery } from "@tanstack/react-query";
-import { clientWalletActions, clientBlockchainActions } from "@/lib/api/client-side";
 import { useState, useEffect } from "react";
+import { walletActions } from "@/lib/actions/wallet";
+import { blockchainActions } from "@/lib/actions/blockchain";
 
 export default function DashboardPage() {
   const { user } = usePrivy();
@@ -88,7 +89,7 @@ export default function DashboardPage() {
   // Query para buscar portfolio da wallet
   const { data: portfolio, isLoading: portfolioLoading, error: portfolioError } = useQuery({
     queryKey: ['portfolio', accountAbstractionAddress],
-    queryFn: () => clientWalletActions.getPortfolio(accountAbstractionAddress || ''),
+    queryFn: () => walletActions.getPortfolio(accountAbstractionAddress || ''),
     enabled: !!accountAbstractionAddress,
     refetchInterval: 30000, // Refetch a cada 30 segundos
   });
@@ -96,7 +97,7 @@ export default function DashboardPage() {
   // Query para buscar histórico de transações
   const { data: history, isLoading: historyLoading, error: historyError } = useQuery({
     queryKey: ['history', accountAbstractionAddress],
-    queryFn: () => clientWalletActions.getHistory(accountAbstractionAddress || '', { take: 10 }),
+    queryFn: () => walletActions.getHistory(accountAbstractionAddress || '', { take: 10 }),
     enabled: !!accountAbstractionAddress,
     refetchInterval: 30000, // Refetch a cada 30 segundos
   });
@@ -104,7 +105,7 @@ export default function DashboardPage() {
   // Query para buscar tokens suportados
   const { data: tokens, isLoading: tokensLoading } = useQuery({
     queryKey: ['tokens'],
-    queryFn: () => clientBlockchainActions.listTokens(1, 50),
+    queryFn: () => blockchainActions.listTokens(1, 50),
     refetchInterval: 60000, // Refetch a cada 1 minuto
   });
 

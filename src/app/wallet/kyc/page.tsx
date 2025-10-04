@@ -11,7 +11,7 @@ import { useKYC } from "@/contexts/kyc-context";
 import { useKYCManager } from "@/hooks/use-kyc-manager";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { clientWalletActions } from "@/lib/api/client-side";
+import { walletActions } from "@/lib/actions/wallet";
 
 export default function KYCPage() {
   const router = useRouter();
@@ -37,7 +37,7 @@ export default function KYCPage() {
         console.log('🔍 Usando EOA:', eoaAddress);
         
         // Buscar dados da wallet usando o EOA
-        const response = await clientWalletActions.getAddress({
+        const response = await walletActions.getAddress({
           externallyOwnedAccount: eoaAddress,
           factory: '0x7a1dbab750f12a90eb1b60d2ae3ad17d4d81effe',
           salt: '0'

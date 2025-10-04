@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { swapActions } from '@/lib/actions';
+import { swapActions } from '@/lib/actions/swap';
 
 export async function POST(request: NextRequest) {
   try {

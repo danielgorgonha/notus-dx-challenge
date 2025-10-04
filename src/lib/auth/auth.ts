@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
-import { AuthUser } from "../client";
 import { privy } from "./server";
-import { walletActions } from "../actions";
+import { AuthUser } from "@/types";
+import { walletActions } from "../actions/wallet";
 
 
 // Server-side authentication function that handles Privy auth and smart wallet setup

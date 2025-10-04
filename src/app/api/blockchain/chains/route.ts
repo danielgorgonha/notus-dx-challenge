@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { blockchainActions } from '@/lib/actions';
+import { blockchainActions } from '@/lib/actions/blockchain';
 
 export async function GET(request: NextRequest) {
   try {

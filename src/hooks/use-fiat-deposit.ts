@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { clientFiatActions } from '@/lib/api/client-side';
 import { FiatDepositQuote, FiatDepositOrder } from '@/types/fiat';
 import { useKYCManager } from './use-kyc-manager';
 import { useSmartWallet } from './use-smart-wallet';
+import { fiatActions } from '@/lib/actions/fiat';
 
 export interface DepositParams {
   amount: string;
@@ -60,7 +60,7 @@ export function useFiatDeposit() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const quote = await clientFiatActions.createDepositQuote({
+      const quote = await fiatActions.createDepositQuote({
         amount: params.amount,
         receiveCryptoCurrency: params.receiveCryptoCurrency,
         chainId: params.chainId,
@@ -90,7 +90,7 @@ export function useFiatDeposit() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const order = await clientFiatActions.createDepositOrder({
+      const order = await fiatActions.createDepositOrder({
         quoteId,
         individualId,
         chainId,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { walletActions } from '@/lib/actions';
+import { walletActions } from '@/lib/actions/wallet';
 
 export async function PATCH(
   request: NextRequest,

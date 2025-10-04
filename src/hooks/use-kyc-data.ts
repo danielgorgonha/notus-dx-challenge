@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSmartWallet } from './use-smart-wallet';
-import { clientWalletActions } from '@/lib/api/client-side';
+import { walletActions } from '@/lib/actions/wallet';
 
 export interface KYCData {
   fullName: string;
@@ -88,7 +88,7 @@ export function useKYCData(): UseKYCDataReturn {
 
     try {
       // A API Notus espera metadados como strings, não objetos
-      await clientWalletActions.updateMetadata(wallet.accountAbstraction, {
+      await walletActions.updateMetadata(wallet.accountAbstraction, {
         kycData: JSON.stringify(data) // Serializar para string
       });
       

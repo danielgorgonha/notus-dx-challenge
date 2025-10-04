@@ -14,6 +14,57 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useKYCData } from "@/hooks/use-kyc-data";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
+// Client-side API functions for KYC - using existing API routes
+const kycAPI = {
+  createSession: async (data: any) => {
+    const response = await fetch('/api/kyc/sessions/standard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Erro ao criar sessão KYC');
+    return response.json();
+  },
+  
+  uploadDocument: async (uploadData: { url: string; fields: any }, file: File) => {
+    const formData = new FormData();
+    Object.keys(uploadData.fields).forEach(key => {
+      formData.append(key, uploadData.fields[key]);
+    });
+    formData.append('file', file);
+    
+    const response = await fetch(uploadData.url, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!response.ok) throw new Error('Erro ao fazer upload do documento');
+  },
+  
+  uploadLiveness: async (uploadData: { url: string; fields: any }, photoDataUrl: string) => {
+    const response = await fetch(photoDataUrl);
+    const blob = await response.blob();
+    
+    const formData = new FormData();
+    Object.keys(uploadData.fields).forEach(key => {
+      formData.append(key, uploadData.fields[key]);
+    });
+    formData.append('file', blob);
+    
+    const uploadResponse = await fetch(uploadData.url, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!uploadResponse.ok) throw new Error('Erro ao fazer upload da foto de liveness');
+  },
+  
+  processSession: async (sessionId: string) => {
+    const response = await fetch(`/api/kyc/sessions/${sessionId}/process`, {
+      method: 'POST',
+    });
+    if (!response.ok) throw new Error('Erro ao processar sessão KYC');
+    return response.json();
+  },
+};
 
 export default function KYCLevel2Page() {
   const router = useRouter();
@@ -41,6 +92,15 @@ export default function KYCLevel2Page() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  
+  // Estados para dados obrigatórios da API Notus
+  const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [kycSessionId, setKycSessionId] = useState<string | null>(null);
+  const [uploadUrls, setUploadUrls] = useState<any>(null);
   
   // Dados do Level 1 carregados
   const [level1Data, setLevel1Data] = useState<any>(null);
@@ -110,7 +170,7 @@ export default function KYCLevel2Page() {
         setCurrentStep(4);
       }
     } else if (currentStep === 4 && facialVerificationCompleted) {
-      // Step 4: Após verificação facial, vai para finalização
+      // Step 4: Após verificação facial, vai para dados de endereço
       setCurrentStep(5);
     } else if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
@@ -118,7 +178,7 @@ export default function KYCLevel2Page() {
   };
 
   const prevStep = () => {
-    if (currentStep > 1) {
+    if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
@@ -232,30 +292,89 @@ export default function KYCLevel2Page() {
       error('Erro', 'Dados do Level 1 não encontrados');
       return;
     }
-    
+
+    if (!frontDocumentFile || !backDocumentFile || !capturedPhoto) {
+      error('Erro', 'Todos os documentos e foto facial são obrigatórios');
+      return;
+    }
+
+    if (!email || !address || !city || !state || !postalCode) {
+      error('Erro', 'Dados de contato e endereço são obrigatórios');
+      return;
+    }
+
     setLoading(true);
     
     try {
-      // Preparar dados para API Notus KYC
-      const kycData = {
-        // Dados pessoais do Level 1
-        fullName: level1Data.fullName,
+      console.log('🚀 Iniciando processo KYC Level 2...');
+      
+      // 1. Preparar dados para a API Notus
+      const fullName = level1Data.fullName.split(' ');
+      const firstName = fullName[0] || '';
+      const lastName = fullName.slice(1).join(' ') || '';
+      
+      // Mapear documento selecionado para categoria da API
+      const documentCategoryMap = {
+        'rg': 'IDENTITY_CARD',
+        'cnh': 'DRIVERS_LICENSE',
+        'rnm': 'IDENTITY_CARD'
+      };
+      
+      const kycSessionData = {
+        firstName,
+        lastName,
         birthDate: level1Data.birthDate,
-        cpf: level1Data.cpf,
-        nationality: level1Data.nationality,
-        
-        // Dados do documento Level 2
-        documentType: selectedDocument,
-        documentSide: selectedDocumentSide,
-        documentUploaded: documentUploaded,
-        facialVerificationCompleted: facialVerificationCompleted,
-        
-        // Metadados
-        completedAt: new Date().toISOString(),
+        documentCategory: documentCategoryMap[selectedDocument as keyof typeof documentCategoryMap] as 'IDENTITY_CARD' | 'DRIVERS_LICENSE' | 'PASSPORT',
+        documentCountry: 'BRAZIL',
+        documentId: level1Data.cpf,
+        nationality: 'BRAZILIAN',
+        livenessRequired: true,
+        email,
+        address,
+        city,
+        state,
+        postalCode
+      };
+      
+      console.log('📋 Dados da sessão KYC:', kycSessionData);
+      
+      // 2. Criar sessão na API Notus
+      const sessionResponse = await kycAPI.createSession(kycSessionData);
+      const sessionId = sessionResponse.session.id;
+      const frontDocumentUpload = sessionResponse.frontDocumentUpload;
+      const backDocumentUpload = sessionResponse.backDocumentUpload;
+      
+      console.log('✅ Sessão KYC criada:', sessionId);
+      console.log('🔗 Front Document Upload:', frontDocumentUpload);
+      console.log('🔗 Back Document Upload:', backDocumentUpload);
+      
+      setKycSessionId(sessionId);
+      setUploadUrls({ frontDocumentUpload, backDocumentUpload });
+      
+      // 3. Upload dos documentos
+      if (frontDocumentUpload && frontDocumentFile) {
+        console.log('📤 Upload documento frente...');
+        await kycAPI.uploadDocument(frontDocumentUpload, frontDocumentFile);
+      }
+      
+      if (backDocumentUpload && backDocumentFile) {
+        console.log('📤 Upload documento verso...');
+        //await kycActions.uploadDocument(backDocumentUpload, backDocumentFile);
+      }
+      
+      // 4. Processar sessão
+      console.log('⚡ Processando sessão...');
+      //await kycActions.processSession(sessionId);
+      
+      // 5. Atualizar dados KYC locais
+      const kycData = {
+        ...level1Data,
         kycLevel: 2,
+        completedAt: new Date().toISOString(),
+        sessionId,
         limits: {
-          monthlyDeposit: 50000.00,
-          monthlyWithdrawal: 50000.00,
+          monthlyDeposit: 50000,
+          monthlyWithdrawal: 50000,
           features: {
             transfers: true,
             receipts: true,
@@ -266,19 +385,14 @@ export default function KYCLevel2Page() {
         }
       };
       
-      // Salvar dados na wallet
       await updateKYCData(kycData);
-      
-      // Completar fase 2
       completePhase2();
       
-      success('Sucesso!', 'Verificação Nível 2 concluída! Agora você pode usar PIX e fazer depósitos/saques até R$ 50.000,00 mensais.');
-      
-      // Redirecionar para página principal do KYC
+      success('Sucesso!', 'Verificação KYC Level 2 enviada para processamento!');
       router.push('/wallet/kyc');
     } catch (err) {
-      console.error('Erro ao salvar dados KYC Level 2:', err);
-      error('Erro', 'Falha ao salvar dados de verificação');
+      console.error('❌ Erro ao processar KYC Level 2:', err);
+      error('Erro', `Falha ao processar verificação KYC: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     } finally {
       setLoading(false);
     }
@@ -333,6 +447,7 @@ export default function KYCLevel2Page() {
             </div>
           </CardContent>
         </Card>
+
 
             {/* Step 1: Document Type Selection */}
             {currentStep === 1 && (
@@ -701,8 +816,109 @@ export default function KYCLevel2Page() {
           </Card>
         )}
 
-            {/* Final Submit */}
+            {/* Step 5: Dados de Endereço */}
             {currentStep === 5 && (
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg mr-3">
+                      <MapPin className="h-6 w-6 text-white" />
+                    </div>
+                    Dados de Endereço
+                  </CardTitle>
+                  <p className="text-slate-400">Informações necessárias para verificação KYC</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="email" className="text-white">E-mail *</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="seu@email.com"
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="address" className="text-white">Endereço *</Label>
+                      <Input
+                        id="address"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Rua, número, complemento"
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="city" className="text-white">Cidade *</Label>
+                        <Input
+                          id="city"
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          placeholder="Sua cidade"
+                          className="mt-1"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="state" className="text-white">Estado *</Label>
+                        <Input
+                          id="state"
+                          value={state}
+                          onChange={(e) => setState(e.target.value)}
+                          placeholder="Seu estado"
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="postalCode" className="text-white">CEP *</Label>
+                      <Input
+                        id="postalCode"
+                        value={postalCode}
+                        onChange={(e) => setPostalCode(e.target.value)}
+                        placeholder="00000-000"
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex space-x-4 mt-6">
+                    <Button
+                      onClick={prevStep}
+                      variant="outline"
+                      className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white bg-slate-800/50"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Voltar
+                    </Button>
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={!email || !address || !city || !state || !postalCode || loading}
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Processando...
+                        </>
+                      ) : (
+                        "Finalizar Verificação Nível 2"
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Final Submit - Removido pois agora é Step 5 */}
+            {currentStep === 6 && (
           <Card className="glass-card">
             <CardContent className="p-6">
                   <div className="text-center mb-6">

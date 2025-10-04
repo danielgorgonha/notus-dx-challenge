@@ -3,6 +3,7 @@
  * Usando ky para melhor experiência de desenvolvimento
  */
 
+import 'server-only';
 import ky from 'ky';
 
 export class NotusAPIError extends Error {

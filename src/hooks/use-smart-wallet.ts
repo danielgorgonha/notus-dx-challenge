@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { clientWalletActions } from '@/lib/api/client-side';
 import { usePrivy } from '@privy-io/react-auth';
+import { walletActions } from '@/lib/actions/wallet';
 
 // Tipos simplificados
 export interface NotusWallet {
@@ -83,7 +83,7 @@ export function useSmartWallet() {
 
     try {
       // Verificar se a wallet está registrada
-      const walletData = await clientWalletActions.getAddress({ externallyOwnedAccount: walletAddress }) as any;
+      const walletData = await walletActions.getAddress({ externallyOwnedAccount: walletAddress }) as any;
       
       // Verificar se accountAbstraction está em walletData ou walletData.wallet
       const accountAbstraction = walletData.accountAbstraction || walletData.wallet?.accountAbstraction;
@@ -138,7 +138,7 @@ export function useSmartWallet() {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      await clientWalletActions.register({
+      await walletActions.register({
         externallyOwnedAccount: walletAddress,
         metadata: {
           name: 'Notus DX Challenge Wallet',
@@ -163,7 +163,7 @@ export function useSmartWallet() {
     if (!walletAddress || !state.wallet) return;
 
     try {
-      const portfolio = await clientWalletActions.getPortfolio(state.wallet.accountAbstraction);
+      const portfolio = await walletActions.getPortfolio(state.wallet.accountAbstraction);
       setState(prev => ({ ...prev, portfolio: portfolio as unknown as Portfolio }));
     } catch (error) {
       console.error('Failed to load portfolio:', error);
@@ -175,7 +175,7 @@ export function useSmartWallet() {
     if (!walletAddress || !state.wallet) return;
 
     try {
-      const history = await clientWalletActions.getHistory(state.wallet.accountAbstraction, { take: limit });
+      const history = await walletActions.getHistory(state.wallet.accountAbstraction, { take: limit });
       setState(prev => ({ ...prev, history: history as unknown as WalletHistory }));
     } catch (error) {
       console.error('Failed to load history:', error);
@@ -189,7 +189,7 @@ export function useSmartWallet() {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      await clientWalletActions.updateMetadata(state.wallet.accountAbstraction, metadata);
+      await walletActions.updateMetadata(state.wallet.accountAbstraction, metadata);
       setState(prev => ({ ...prev, loading: false }));
     } catch (error) {
       console.error('Failed to update metadata:', error);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fiatActions } from '@/lib/actions';
+import { fiatActions } from '@/lib/actions/fiat';
 
 export async function POST(request: NextRequest) {
   try {
