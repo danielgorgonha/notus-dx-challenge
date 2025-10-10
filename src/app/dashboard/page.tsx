@@ -8,8 +8,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { walletActions } from "@/lib/actions/wallet";
-import { blockchainActions } from "@/lib/actions/blockchain";
+import { getPortfolio, getHistory, listTokens } from "@/lib/actions/dashboard";
 
 export default function DashboardPage() {
   const { user } = usePrivy();
@@ -89,7 +88,7 @@ export default function DashboardPage() {
   // Query para buscar portfolio da wallet
   const { data: portfolio, isLoading: portfolioLoading, error: portfolioError } = useQuery({
     queryKey: ['portfolio', accountAbstractionAddress],
-    queryFn: () => walletActions.getPortfolio(accountAbstractionAddress || ''),
+    queryFn: () => getPortfolio(accountAbstractionAddress || ''),
     enabled: !!accountAbstractionAddress,
     refetchInterval: 30000, // Refetch a cada 30 segundos
   });
@@ -97,7 +96,7 @@ export default function DashboardPage() {
   // Query para buscar histórico de transações
   const { data: history, isLoading: historyLoading, error: historyError } = useQuery({
     queryKey: ['history', accountAbstractionAddress],
-    queryFn: () => walletActions.getHistory(accountAbstractionAddress || '', { take: 10 }),
+    queryFn: () => getHistory(accountAbstractionAddress || '', { take: 10 }),
     enabled: !!accountAbstractionAddress,
     refetchInterval: 30000, // Refetch a cada 30 segundos
   });
@@ -105,7 +104,7 @@ export default function DashboardPage() {
   // Query para buscar tokens suportados
   const { data: tokens, isLoading: tokensLoading } = useQuery({
     queryKey: ['tokens'],
-    queryFn: () => blockchainActions.listTokens(1, 50),
+    queryFn: () => listTokens(1, 50),
     refetchInterval: 60000, // Refetch a cada 1 minuto
   });
 

@@ -1,9 +1,11 @@
 /**
  * Cliente unificado da API Notus
  * Usando ky para melhor experiência de desenvolvimento
+ * 
+ * NOTA: Este arquivo é usado tanto no servidor quanto no cliente
+ * Removido 'server-only' para permitir uso em Client Components
  */
 
-import 'server-only';
 import ky from 'ky';
 
 export class NotusAPIError extends Error {
@@ -22,7 +24,7 @@ export class NotusAPIError extends Error {
 export const notusAPI = ky.create({
   prefixUrl: process.env.NEXT_PUBLIC_NOTUS_API_URL || 'https://api.notus.team/api/v1',
   headers: {
-    'x-api-key': process.env.NOTUS_API_KEY || '',
+    'x-api-key': process.env.NEXT_PUBLIC_NOTUS_API_KEY || process.env.NOTUS_API_KEY || '',
   },
   hooks: {
     beforeRequest: [
@@ -31,7 +33,7 @@ export const notusAPI = ky.create({
           url: request.url,
           method: request.method,
           headers: {
-            'x-api-key': `${process.env.NOTUS_API_KEY?.slice(0, 20)}...`,
+            'x-api-key': `${(process.env.NEXT_PUBLIC_NOTUS_API_KEY || process.env.NOTUS_API_KEY)?.slice(0, 20)}...`,
           },
         });
       },
@@ -82,6 +84,6 @@ export const notusAPI = ky.create({
 // Log da configuração da API
 console.log('🔧 Notus API Client Config:', {
   baseURL: process.env.NEXT_PUBLIC_NOTUS_API_URL || 'https://api.notus.team/api/v1',
-  hasApiKey: !!process.env.NOTUS_API_KEY,
-  apiKeyLength: process.env.NOTUS_API_KEY?.length || 0
+  hasApiKey: !!(process.env.NEXT_PUBLIC_NOTUS_API_KEY || process.env.NOTUS_API_KEY),
+  apiKeyLength: (process.env.NEXT_PUBLIC_NOTUS_API_KEY || process.env.NOTUS_API_KEY)?.length || 0
 });
