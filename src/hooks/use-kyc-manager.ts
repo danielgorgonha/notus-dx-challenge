@@ -11,7 +11,7 @@ import {
   WalletKYCMetadata,
   KYCSessionStatus
 } from '@/types/kyc';
-import { kycActions } from '@/lib/actions/kyc';
+import { createStandardSession, getSessionResult, processSession } from '@/lib/actions/kyc';
 
 interface UseKYCManagerReturn {
   // Estado
@@ -53,7 +53,7 @@ export function useKYCManager(walletAddress: string): UseKYCManagerReturn {
     setError(null);
 
     try {
-      const sessionResponse = await kycActions.createStandardSession({
+      const sessionResponse = await createStandardSession({
         firstName: data.stage1Data?.firstName || '',
         lastName: data.stage1Data?.lastName || '',
         birthDate: data.stage1Data?.birthDate || '',
@@ -86,7 +86,7 @@ export function useKYCManager(walletAddress: string): UseKYCManagerReturn {
     setError(null);
 
     try {
-      const sessionData = await kycActions.getSessionResult(sessionId);
+      const sessionData = await getSessionResult(sessionId);
       return { success: true, data: sessionData as KYCSessionResponse };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao consultar status da sessão';
@@ -104,7 +104,7 @@ export function useKYCManager(walletAddress: string): UseKYCManagerReturn {
     setError(null);
 
     try {
-      await kycActions.processSession(sessionId);
+      await processSession(sessionId);
       return { success: true };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao processar sessão KYC';

@@ -106,6 +106,15 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     });
   };
 
+  const isParentActive = (item: any) => {
+    // Para Smart Wallet, não deve estar ativo quando submenus estão ativos
+    if (item.name === 'Smart Wallet') {
+      return false; // Nunca marcar o parent como ativo
+    }
+    return pathname === item.href;
+  };
+
+
   return (
     <>
       {/* Overlay para mobile */}
@@ -150,7 +159,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       <nav className="p-6">
         <div className="space-y-2">
           {navigation.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = isParentActive(item);
             const hasSubmenu = item.submenu && item.submenu.length > 0;
             const isExpanded = expandedItems.includes(item.name);
             const isSubmenuItemActive = hasSubmenu ? isSubmenuActive(item.submenu) : false;
@@ -183,7 +192,14 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                   {isExpanded && (
                     <div className="ml-6 mt-2 space-y-1">
                       {item.submenu.map((subItem) => {
-                        const isSubActive = pathname === subItem.href;
+                        // Para KYC, verificar se está em qualquer rota que comece com /wallet/kyc
+                        let isSubActive = false;
+                        if (subItem.href === '/wallet/kyc') {
+                          isSubActive = pathname.startsWith('/wallet/kyc');
+                        } else {
+                          isSubActive = pathname === subItem.href;
+                        }
+                        
                         return (
                           <Link
                             key={subItem.name}
