@@ -8,9 +8,10 @@
 
 import { notusAPI } from '../api/client';
 import type { KYCSessionResponse } from '@/types/kyc';
+import { walletActions } from './wallet';
 
 /**
- * Cria sessão KYC Standard Individual
+ * Cria sessão KYC Standard Individual - Passo 3 do fluxo
  * POST /kyc/individual-verification-sessions/standard
  */
 export async function createStandardSession(params: {
@@ -29,11 +30,16 @@ export async function createStandardSession(params: {
   postalCode?: string;
 }) {
   try {
-    return await notusAPI.post("kyc/individual-verification-sessions/standard", {
+    console.log('🚀 Criando sessão KYC com dados:', params);
+    
+    const response = await notusAPI.post("kyc/individual-verification-sessions/standard", {
       json: params,
     }).json();
+    
+    console.log('✅ Sessão KYC criada:', response);
+    return response;
   } catch (error) {
-    console.error('Error creating KYC session:', error);
+    console.error('❌ Erro ao criar sessão KYC:', error);
     throw error;
   }
 }
@@ -52,14 +58,52 @@ export async function getSessionResult(sessionId: string) {
 }
 
 /**
- * Processa sessão KYC (finaliza verificação)
+ * Salva sessionId na metadata da wallet - Passo 3 do fluxo
+ */
+export async function saveKYCSessionId(sessionId: string, kycData: any, walletAddress: string) {
+  try {
+    console.log('💾 Salvando sessionId na metadata:', sessionId);
+    
+    const updatedKycData = {
+      ...kycData,
+      sessionId,
+      kycLevel: 1, // Manter como Level 1 até validação real
+      status: 'PENDING',
+      createdAt: new Date().toISOString()
+    };
+    
+    await walletActions.updateMetadata(walletAddress, { kycData: JSON.stringify(updatedKycData) });
+    
+    console.log('✅ SessionId salvo na metadata');
+    return updatedKycData;
+  } catch (error) {
+    console.error('❌ Erro ao salvar sessionId:', error);
+    throw error;
+  }
+}
+
+/**
+ * Processa sessão KYC (finaliza verificação) - Passo 5 do fluxo
  * POST /kyc/individual-verification-sessions/standard/{session_id}/process
  */
 export async function processSession(sessionId: string) {
   try {
-    return await notusAPI.post(`kyc/individual-verification-sessions/standard/${sessionId}/process`).json();
+    console.log('⚡ Processando sessão KYC:', sessionId);
+    
+    const response = await notusAPI.post(`kyc/individual-verification-sessions/standard/${sessionId}/process`);
+    
+    // Status 204 (No Content) é esperado para este endpoint
+    if (response.status === 204) {
+      console.log('✅ Sessão KYC processada com sucesso (204 No Content)');
+      return { success: true, status: 204 };
+    }
+    
+    // Se houver conteúdo, tentar fazer parse
+    const responseData = await response.json();
+    console.log('✅ Sessão KYC processada:', responseData);
+    return responseData;
   } catch (error) {
-    console.error('Error processing KYC session:', error);
+    console.error('❌ Erro ao processar sessão KYC:', error);
     throw error;
   }
 }

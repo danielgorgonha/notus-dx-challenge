@@ -536,6 +536,124 @@
             "description": "Processa uma sessão de verificação individual padrão após o upload dos documentos. Este endpoint aciona o processo de verificação real usando as imagens de documentos carregadas e as informações pessoais fornecidas durante a criação da sessão."
           },
           "response": []
+        },
+        {
+          "name": "Upload Document to S3",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "bucket",
+                  "value": "notus-api-kyc-9c95327",
+                  "type": "text",
+                  "description": "Nome do bucket S3"
+                },
+                {
+                  "key": "X-Amz-Algorithm",
+                  "value": "AWS4-HMAC-SHA256",
+                  "type": "text",
+                  "description": "Algoritmo de assinatura AWS"
+                },
+                {
+                  "key": "X-Amz-Credential",
+                  "value": "AKIA2AWK2XB6LPBVUHFR/20251011/us-east-1/s3/aws4_request",
+                  "type": "text",
+                  "description": "Credenciais AWS (substitua pela data atual)"
+                },
+                {
+                  "key": "X-Amz-Date",
+                  "value": "20251011T001748Z",
+                  "type": "text",
+                  "description": "Data e hora da requisição (substitua pela data atual)"
+                },
+                {
+                  "key": "key",
+                  "value": "documents/0199d0a1-7f9e-760b-ac68-d3f77fabee32",
+                  "type": "text",
+                  "description": "Chave do arquivo no S3 (obtida da resposta da criação da sessão)"
+                },
+                {
+                  "key": "Policy",
+                  "value": "eyJleHBpcmF0aW9uIjoiMjAyNS0xMC0xMVQwMDoyNzo0OFoiLCJjb25kaXRpb25zIjpbWyJjb250ZW50LWxlbmd0aC1yYW5nZSIsMCwyNjIxNDQwMF0sWyJzdGFydHMtd2l0aCIsIiRrZXkiLCJkb2N1bWVudHMvMDE5OWQwYTEtN2Y5ZS03NjBiLWFjNjgtZDNmNzdmYWJlZTMyIl0seyJidWNrZXQiOiJub3R1cy1hcGkta3ljLTljOTUzMjcifSx7IlgtQW16LUFsZ29yaXRobSI6IkFXUzQtSE1BQy1TSEEyNTYifSx7IlgtQW16LUNyZWRlbnRpYWwiOiJBS0lBMkFXSzJYQjZMUEJWVUhGUi8yMDI1MTAxMS91cy1lYXN0LTEvczMvYXdzNF9yZXF1ZXN0In0seyJYLUFtei1EYXRlIjoiMjAyNTEwMTFUMDAxNzQ4WiJ9LHsia2V5IjoiZG9jdW1lbnRzLzAxOTlkMGExLTdmOWUtNzYwYi1hYzY4LWQzZjc3ZmFiZWUzMiJ9XX0=",
+                  "type": "text",
+                  "description": "Política de upload (obtida da resposta da criação da sessão)"
+                },
+                {
+                  "key": "X-Amz-Signature",
+                  "value": "0e86df94ec10a67f0bd24287d2d095412002f30dd73e329aebe2c98e9bbbce3a",
+                  "type": "text",
+                  "description": "Assinatura AWS (obtida da resposta da criação da sessão)"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Arquivo de documento (frente ou verso) - selecione um arquivo de imagem"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://s3.us-east-1.amazonaws.com/notus-api-kyc-9c95327",
+              "protocol": "https",
+              "host": ["s3", "us-east-1", "amazonaws", "com"],
+              "path": ["notus-api-kyc-9c95327"]
+            },
+            "description": "Faz upload de um documento (frente ou verso) para o S3 usando URLs pré-assinadas retornadas pela criação da sessão KYC. Use os dados de 'frontDocumentUpload' ou 'backDocumentUpload' da resposta da criação da sessão. IMPORTANTE: Substitua todos os valores pelos dados reais retornados pela API ao criar a sessão."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "https://s3.us-east-1.amazonaws.com/notus-api-kyc-9c95327",
+                  "protocol": "https",
+                  "host": ["s3", "us-east-1", "amazonaws", "com"],
+                  "path": ["notus-api-kyc-9c95327"]
+                }
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "x-amz-id-2",
+                  "value": "Uuag1LuByRx9e6j5Onimru9pO4ZVKnJ2Qz7/C1NPcfTWAtRPfTaOFg=="
+                },
+                {
+                  "key": "x-amz-request-id",
+                  "value": "318BC8BC148832E5"
+                },
+                {
+                  "key": "Date",
+                  "value": "Wed, 11 Oct 2025 00:17:48 GMT"
+                },
+                {
+                  "key": "ETag",
+                  "value": "\"9bb58f26192e4ba00fbb89fc1e1ca0f1\""
+                },
+                {
+                  "key": "Server",
+                  "value": "AmazonS3"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            }
+          ]
         }
       ]
     },

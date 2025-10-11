@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
-import { getWalletAddress, registerWallet, getPortfolio, getHistory, updateMetadata } from '@/lib/actions/dashboard';
+import { getWalletAddress, registerWallet, getPortfolio, getHistory } from '@/lib/actions/dashboard';
+import { walletActions } from '@/lib/actions/wallet';
 
 // Tipos simplificados
 export interface NotusWallet {
@@ -187,7 +188,7 @@ export function useSmartWallet() {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      await updateMetadata(state.wallet.accountAbstraction, metadata);
+      await walletActions.updateMetadata(state.wallet.accountAbstraction, metadata);
       setState(prev => ({ ...prev, loading: false }));
     } catch (error) {
       console.error('Failed to update metadata:', error);

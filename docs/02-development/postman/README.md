@@ -106,11 +106,12 @@ O environment inclui **42 variáveis** pré-configuradas:
 - Update Wallet Metadata
 - Update Transaction Metadata
 
-### 🆔 KYC (4 endpoints)
+### 🆔 KYC (5 endpoints)
 - Create Standard Individual Session (Level 1)
 - Create Standard Individual Session (Level 2)
 - Get KYC Session Result
 - Process KYC Session
+- Upload Document to S3
 
 ### 💰 Fiat Operations (4 endpoints)
 - Create Fiat Deposit Quote
@@ -185,6 +186,8 @@ A coleção inclui testes automatizados que verificam:
 2. Get KYC Session Result
 3. Process KYC Session
 4. Create Standard Individual Session (Level 2)
+5. Upload Document to S3 (frente e verso)
+6. Process KYC Session (após upload)
 
 ### 3. Fluxo Fiat Operations
 1. Create Fiat Deposit Quote
@@ -203,6 +206,38 @@ A coleção inclui testes automatizados que verificam:
 1. Create Batch Operation
 2. Execute User Operation
 3. Get User Operation
+
+## 📤 Upload de Documentos S3
+
+### Como Usar o Endpoint de Upload
+
+O endpoint **"Upload Document to S3"** permite fazer upload de documentos (frente e verso) para o S3 usando URLs pré-assinadas retornadas pela criação da sessão KYC.
+
+#### Passos para Upload:
+
+1. **Criar Sessão KYC Level 2** - Use o endpoint "Create Standard Individual Session (Level 2)"
+2. **Copiar Dados de Upload** - Da resposta, copie os dados de `frontDocumentUpload` ou `backDocumentUpload`
+3. **Configurar Upload** - No endpoint "Upload Document to S3":
+   - Substitua a URL pela URL retornada
+   - Substitua todos os campos `formdata` pelos valores retornados
+   - Selecione o arquivo de imagem no campo `file`
+4. **Executar Upload** - Envie a requisição
+5. **Repetir para Outro Lado** - Faça o mesmo para o verso do documento
+6. **Processar Sessão** - Use "Process KYC Session" após ambos os uploads
+
+#### Campos Obrigatórios:
+- `bucket` - Nome do bucket S3
+- `X-Amz-Algorithm` - Algoritmo de assinatura AWS
+- `X-Amz-Credential` - Credenciais AWS
+- `X-Amz-Date` - Data e hora da requisição
+- `key` - Chave do arquivo no S3
+- `Policy` - Política de upload
+- `X-Amz-Signature` - Assinatura AWS
+- `file` - Arquivo de imagem (frente ou verso)
+
+#### Resposta Esperada:
+- **Status 204** - Upload realizado com sucesso
+- **Headers S3** - ETag, Request ID, etc.
 
 ## ⚠️ Observações Importantes
 

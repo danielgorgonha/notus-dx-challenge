@@ -71,11 +71,12 @@ export async function registerWallet(params: { externallyOwnedAccount: string; f
 /**
  * Atualiza metadata da wallet
  */
-export async function updateMetadata(walletAddress: string, metadata: Record<string, any>) {
+export async function updateWalletMetadata(walletAddress: string, metadata: Record<string, any>) {
   try {
     return await walletActions.updateMetadata(walletAddress, metadata);
   } catch (error) {
-    console.error('Error updating metadata:', error);
+    console.error('Error updating wallet metadata:', error);
     throw error;
   }
 }
+

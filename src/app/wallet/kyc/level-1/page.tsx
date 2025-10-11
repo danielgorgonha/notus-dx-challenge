@@ -8,24 +8,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Calendar, CreditCard, Globe, Loader2 } from "lucide-react";
+import { User, Calendar, CreditCard, Globe, Loader2, MapPin, Home, Building } from "lucide-react";
 import { useKYC } from "@/contexts/kyc-context";
 import { useToast } from "@/hooks/use-toast";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { validateLevel1Data, formatCPF, formatDate } from "@/lib/validation/personal-data";
-import { useKYCData } from "@/hooks/use-kyc-data";
+import { updateWalletMetadata } from "@/lib/actions/dashboard";
+import { useSmartWallet } from "@/hooks/use-smart-wallet";
 
 export default function KYCLevel1Page() {
   const router = useRouter();
   const { completePhase1 } = useKYC();
   const { success, error } = useToast();
-  const { updateKYCData } = useKYCData();
+  const { wallet } = useSmartWallet();
   
   const [formData, setFormData] = useState({
     fullName: "",
     birthDate: "",
     cpf: "",
-    nationality: "Brasil"
+    nationality: "Brasil",
+    address: "",
+    city: "",
+    state: "",
+    postalCode: ""
   });
   
   const [loading, setLoading] = useState(false);
@@ -46,7 +51,32 @@ export default function KYCLevel1Page() {
     }
   };
 
-  // Funções de formatação movidas para lib/validation/personal-data.ts
+  // Funções auxiliares para formatação de dados
+  const splitFullName = (fullName: string) => {
+    const nameParts = fullName.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+    return { firstName, lastName };
+  };
+
+  const convertDateFormat = (date: string) => {
+    // Converte de DD/MM/YYYY para YYYY-MM-DD
+    const [day, month, year] = date.split('/');
+    return `${year}-${month}-${day}`;
+  };
+
+  const mapNationalityToCountry = (nationality: string) => {
+    const nationalityMap: Record<string, string> = {
+      'Brasil': 'BRAZIL',
+      'Brazil': 'BRAZIL',
+      'Argentina': 'ARGENTINA',
+      'Chile': 'CHILE',
+      'Colômbia': 'COLOMBIA',
+      'Peru': 'PERU',
+      'Uruguai': 'URUGUAY'
+    };
+    return nationalityMap[nationality] || 'BRAZIL';
+  };
 
   const validateForm = () => {
     const validation = validateLevel1Data(formData);
@@ -82,12 +112,28 @@ export default function KYCLevel1Page() {
     setLoading(true);
     
     try {
-      // Preparar dados do Nível 1
+      // Separar nome completo em primeiro e último nome
+      const { firstName, lastName } = splitFullName(formData.fullName);
+      
+      // Preparar dados do Nível 1 com todos os campos necessários
       const level1Data = {
+        // Dados pessoais básicos
         fullName: formData.fullName.trim(),
+        firstName,
+        lastName,
         birthDate: formData.birthDate,
+        birthDateFormatted: convertDateFormat(formData.birthDate), // Formato YYYY-MM-DD para API
         cpf: formData.cpf.replace(/\D/g, ''), // Salvar apenas números
         nationality: formData.nationality,
+        documentCountry: mapNationalityToCountry(formData.nationality), // Mapear para formato da API
+        
+        // Dados de endereço
+        address: formData.address.trim(),
+        city: formData.city.trim(),
+        state: formData.state.trim(),
+        postalCode: formData.postalCode.replace(/\D/g, ''), // Apenas números
+        
+        // Metadados
         completedAt: new Date().toISOString(),
         kycLevel: 1,
         limits: {
@@ -103,11 +149,16 @@ export default function KYCLevel1Page() {
         }
       };
       
+      // Salvar dados na metadata da wallet usando Server Action
+      const saveResult = await updateWalletMetadata(
+        wallet?.accountAbstraction || '',
+        {
+          kycData: JSON.stringify(level1Data)
+        }
+      );
+      
       // Simular delay mínimo para feedback visual
-      const [saveResult] = await Promise.all([
-        updateKYCData(level1Data),
-        new Promise(resolve => setTimeout(resolve, 1000)) // Mínimo 1 segundo
-      ]);
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Completar fase 1 (contexto local)
       completePhase1();
@@ -285,6 +336,94 @@ export default function KYCLevel1Page() {
                   <SelectItem value="Uruguai" className="text-white hover:bg-slate-700">Uruguai</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+
+            {/* Endereço */}
+            <div className="space-y-2">
+              <Label htmlFor="address" className="text-slate-300 flex items-center">
+                <MapPin className="h-4 w-4 mr-2" />
+                Endereço Completo
+              </Label>
+              <Input
+                id="address"
+                value={formData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                placeholder="Rua, número, complemento"
+                className={`bg-slate-800/50 border-slate-600 text-white placeholder-slate-400 ${
+                  fieldErrors.address ? 'border-red-500 focus:border-red-500' : ''
+                }`}
+                disabled={loading}
+              />
+              {fieldErrors.address && (
+                <p className="text-red-400 text-sm">{fieldErrors.address}</p>
+              )}
+            </div>
+
+            {/* Cidade e Estado */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city" className="text-slate-300 flex items-center">
+                  <Home className="h-4 w-4 mr-2" />
+                  Cidade
+                </Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => handleInputChange('city', e.target.value)}
+                  placeholder="Sua cidade"
+                  className={`bg-slate-800/50 border-slate-600 text-white placeholder-slate-400 ${
+                    fieldErrors.city ? 'border-red-500 focus:border-red-500' : ''
+                  }`}
+                  disabled={loading}
+                />
+                {fieldErrors.city && (
+                  <p className="text-red-400 text-sm">{fieldErrors.city}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="state" className="text-slate-300 flex items-center">
+                  <Building className="h-4 w-4 mr-2" />
+                  Estado
+                </Label>
+                <Input
+                  id="state"
+                  value={formData.state}
+                  onChange={(e) => handleInputChange('state', e.target.value)}
+                  placeholder="UF (ex: SP, RJ)"
+                  maxLength={2}
+                  className={`bg-slate-800/50 border-slate-600 text-white placeholder-slate-400 ${
+                    fieldErrors.state ? 'border-red-500 focus:border-red-500' : ''
+                  }`}
+                  disabled={loading}
+                />
+                {fieldErrors.state && (
+                  <p className="text-red-400 text-sm">{fieldErrors.state}</p>
+                )}
+              </div>
+            </div>
+
+            {/* CEP */}
+            <div className="space-y-2">
+              <Label htmlFor="postalCode" className="text-slate-300 flex items-center">
+                <MapPin className="h-4 w-4 mr-2" />
+                CEP
+              </Label>
+              <Input
+                id="postalCode"
+                value={formData.postalCode}
+                onChange={(e) => handleInputChange('postalCode', e.target.value.replace(/\D/g, '').replace(/(\d{5})(\d{3})/, '$1-$2'))}
+                placeholder="00000-000"
+                maxLength={9}
+                className={`bg-slate-800/50 border-slate-600 text-white placeholder-slate-400 ${
+                  fieldErrors.postalCode ? 'border-red-500 focus:border-red-500' : ''
+                }`}
+                disabled={loading}
+              />
+              {fieldErrors.postalCode && (
+                <p className="text-red-400 text-sm">{fieldErrors.postalCode}</p>
+              )}
             </div>
 
             {/* Submit Button */}

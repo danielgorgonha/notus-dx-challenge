@@ -12,6 +12,7 @@ import { useKYCManager } from "@/hooks/use-kyc-manager";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { getWalletAddress } from "@/lib/actions/dashboard";
+import { getSessionResult } from "@/lib/actions/kyc";
 
 export default function KYCPage() {
   const router = useRouter();
@@ -24,12 +25,19 @@ export default function KYCPage() {
   // Estado para dados KYC carregados da API
   const [kycData, setKycData] = useState<any>(null);
   const [isLoadingKYC, setIsLoadingKYC] = useState(true);
+  const [kycLevel2Failed, setKycLevel2Failed] = useState(false);
+
+  // Função para resetar o estado de falha
+  const resetKycFailure = () => {
+    setKycLevel2Failed(false);
+  };
 
   // Carregar dados KYC da wallet quando a página carrega
   useEffect(() => {
     const loadKYCData = async () => {
       try {
         console.log('🔍 Carregando dados KYC...');
+        setIsLoadingKYC(true);
         
         // Usar o EOA (externally owned account) que sabemos que existe
         const eoaAddress = '0x7092C791436f7047956c42ABbD2aC67dedD7C511';
@@ -37,27 +45,91 @@ export default function KYCPage() {
         console.log('🔍 Usando EOA:', eoaAddress);
         
         // Buscar dados da wallet usando o EOA
-        const response = await getWalletAddress({
-          externallyOwnedAccount: eoaAddress
-        });
+        const response = await getWalletAddress({ externallyOwnedAccount: eoaAddress });
         
         console.log('🔍 Resposta da API:', response);
         console.log('🔍 Wallet metadata:', response.wallet?.metadata);
         console.log('🔍 KYC Data string:', response.wallet?.metadata?.kycData);
         
         if (response.wallet?.metadata?.kycData) {
-          const parsedData = JSON.parse(response.wallet.metadata.kycData);
+          const parsedData = JSON.parse(response.wallet.metadata.kycData as string);
           console.log('🔍 Dados KYC encontrados:', parsedData);
-          setKycData(parsedData);
           
-          // Atualizar contexto baseado nos dados reais
+          // Verificar Level 1 primeiro
           if (parsedData.kycLevel >= 1) {
             console.log('🔍 Marcando Nível 1 como completo');
             completePhase1();
           }
-          if (parsedData.kycLevel >= 2) {
-            console.log('🔍 Marcando Nível 2 como completo');
-            completePhase2();
+          
+          // Verificar Level 2 se houver sessionId
+          if (parsedData.sessionId) {
+            console.log('🔍 Validando Level 2 com sessionId:', parsedData.sessionId);
+            
+            try {
+              const sessionResult = await getSessionResult(parsedData.sessionId) as any;
+              console.log('🔍 Resultado da sessão KYC:', sessionResult);
+              
+              // Verificar o status da sessão KYC
+              const sessionStatus = sessionResult.session?.status;
+              console.log('🔍 Status da sessão KYC:', sessionStatus);
+              
+              if (sessionStatus === 'COMPLETED') {
+                console.log('✅ Level 2 aprovado pela API Notus');
+                completePhase2();
+                // Definir dados com status aprovado
+                setKycData({
+                  ...parsedData,
+                  kycLevel: 2,
+                  status: 'APPROVED',
+                  individualId: sessionResult.session?.individualId
+                });
+              } else if (sessionStatus === 'PENDING' || sessionStatus === 'PROCESSING' || sessionStatus === 'VERIFYING') {
+                console.log('⏳ Level 2 ainda em processamento na API Notus:', sessionStatus);
+                // Manter como Level 1 com status de processamento
+                setKycData({
+                  ...parsedData,
+                  kycLevel: 1,
+                  status: sessionStatus,
+                  processingMessage: 'Documentos em análise pela Notus'
+                });
+              } else if (sessionStatus === 'FAILED') {
+                console.log('❌ Level 2 falhou na API Notus - documentos rejeitados');
+                // Resetar para permitir nova tentativa
+                setKycData({
+                  ...parsedData,
+                  kycLevel: 1,
+                  status: 'FAILED'
+                });
+                setKycLevel2Failed(true);
+              } else if (sessionStatus === 'EXPIRED') {
+                console.log('⏰ Level 2 expirado na API Notus');
+                // Resetar para permitir nova tentativa
+                setKycData({
+                  ...parsedData,
+                  kycLevel: 1,
+                  status: 'EXPIRED'
+                });
+                setKycLevel2Failed(true);
+              } else {
+                console.log('⚠️ Status desconhecido da sessão KYC:', sessionStatus);
+                // Para status desconhecidos, manter dados originais
+                setKycData(parsedData);
+              }
+            } catch (error) {
+              console.error('🔍 Erro ao validar sessão KYC:', error);
+              // Se houver erro, usar dados locais como fallback
+              setKycData(parsedData);
+              if (parsedData.kycLevel >= 2) {
+                completePhase2();
+              }
+            }
+          } else {
+            // Sem sessionId, usar dados locais
+            setKycData(parsedData);
+            if (parsedData.kycLevel >= 2) {
+              console.log('🔍 Marcando Nível 2 como completo (dados locais)');
+              completePhase2();
+            }
           }
         } else {
           console.log('🔍 Nenhum dado KYC encontrado');
@@ -68,6 +140,7 @@ export default function KYCPage() {
         console.error('🔍 Erro ao carregar dados KYC:', error);
         setKycData(null);
       } finally {
+        console.log('✅ Carregamento KYC concluído');
         setIsLoadingKYC(false);
       }
     };
@@ -162,6 +235,40 @@ export default function KYCPage() {
     }
   };
 
+  // Loading screen melhorado
+  if (isLoadingKYC) {
+    return (
+      <ProtectedRoute>
+        <AppLayout 
+          title="Verificação KYC"
+          description="Complete sua verificação de identidade para aumentar limites"
+        >
+          <div className="flex justify-center items-center min-h-[400px]">
+            <div className="text-center space-y-4">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-8 h-8 bg-blue-600 rounded-full animate-pulse"></div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-white">Verificando Status KYC</h3>
+                <p className="text-slate-400 text-sm">
+                  Carregando dados da verificação e validando com a Notus...
+                </p>
+                <div className="flex justify-center space-x-1 mt-4">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </AppLayout>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <AppLayout 
@@ -210,7 +317,7 @@ export default function KYCPage() {
           </Card>
 
           {/* Success Message for Level 1 */}
-          {isLevel1Completed && !isLevel2Completed && (
+          {isLevel1Completed && !isLevel2Completed && !kycLevel2Failed && (
             <Card className="glass-card bg-gradient-to-r from-green-600/20 to-emerald-600/20 border-green-500/30">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3">
@@ -224,6 +331,34 @@ export default function KYCPage() {
                       Continue para o Nível 2 para liberar PIX e depósitos.
                     </p>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Error Message for Level 2 Failed */}
+          {kycLevel2Failed && (
+            <Card className="glass-card bg-gradient-to-r from-red-600/20 to-orange-600/20 border-red-500/30">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-red-500/20 rounded-lg">
+                      <AlertCircle className="h-6 w-6 text-red-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-semibold">Verificação Nível 2 Falhou</h3>
+                      <p className="text-slate-300 text-sm">
+                        Sua verificação de documentos foi rejeitada. Verifique se os documentos estão legíveis e tente novamente.
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={resetKycFailure}
+                    variant="outline"
+                    className="border-red-500 text-red-400 hover:bg-red-500 hover:text-white"
+                  >
+                    Tentar Novamente
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -279,8 +414,16 @@ export default function KYCPage() {
                         </Button>
                       )}
                       {level.status === "locked" && level.id === 3 && (
-                        <Button variant="outline" disabled>
-                          Contatar Suporte
+                        <Button 
+                          onClick={() => window.open('mailto:contato@deegalabs.com.br?subject=Suporte%20KYC%20Nível%203&body=Olá,%20gostaria%20de%20solicitar%20o%20acesso%20ao%20KYC%20Nível%203.%20Por%20favor,%20entre%20em%20contato%20comigo.', '_blank')}
+                          disabled={!isLevel2Completed}
+                          className={`font-semibold px-6 py-3 rounded-lg shadow-lg transition-all duration-300 transform border-0 ${
+                            isLevel2Completed 
+                              ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white hover:shadow-xl hover:scale-105 cursor-pointer' 
+                              : 'bg-slate-600 text-slate-400 cursor-not-allowed opacity-50'
+                          }`}
+                        >
+                          {isLevel2Completed ? 'Contatar Suporte' : 'Complete o Nível 2 primeiro'}
                         </Button>
                       )}
                     </div>
