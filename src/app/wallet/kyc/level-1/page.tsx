@@ -29,24 +29,50 @@ export default function KYCLevel1Page() {
   });
   
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+    
+    // Limpar erro do campo quando usuário começar a digitar
+    if (fieldErrors[field]) {
+      setFieldErrors(prev => ({
+        ...prev,
+        [field]: ""
+      }));
+    }
   };
 
   // Funções de formatação movidas para lib/validation/personal-data.ts
 
   const validateForm = () => {
     const validation = validateLevel1Data(formData);
+    const newFieldErrors: Record<string, string> = {};
     
     if (!validation.valid) {
-      validation.errors.forEach(err => error('Erro', err));
+      // Mapear erros para campos específicos
+      validation.errors.forEach(err => {
+        if (err.includes('Nome completo')) {
+          newFieldErrors.fullName = err;
+        } else if (err.includes('idade') || err.includes('nascimento')) {
+          newFieldErrors.birthDate = err;
+        } else if (err.includes('CPF')) {
+          newFieldErrors.cpf = err;
+        } else if (err.includes('Nacionalidade')) {
+          newFieldErrors.nationality = err;
+        } else {
+          error('Erro', err);
+        }
+      });
+      
+      setFieldErrors(newFieldErrors);
       return false;
     }
     
+    setFieldErrors({});
     return true;
   };
 
@@ -182,9 +208,14 @@ export default function KYCLevel1Page() {
                 value={formData.fullName}
                 onChange={(e) => handleInputChange('fullName', e.target.value)}
                 placeholder="Digite seu nome completo"
-                className="bg-slate-800/50 border-slate-600 text-white placeholder-slate-400"
+                className={`bg-slate-800/50 border-slate-600 text-white placeholder-slate-400 ${
+                  fieldErrors.fullName ? 'border-red-500 focus:border-red-500' : ''
+                }`}
                 disabled={loading}
               />
+              {fieldErrors.fullName && (
+                <p className="text-red-400 text-sm">{fieldErrors.fullName}</p>
+              )}
             </div>
 
             {/* Data de Nascimento */}
@@ -199,9 +230,14 @@ export default function KYCLevel1Page() {
                 onChange={(e) => handleInputChange('birthDate', formatDate(e.target.value))}
                 placeholder="DD/MM/AAAA"
                 maxLength={10}
-                className="bg-slate-800/50 border-slate-600 text-white placeholder-slate-400"
+                className={`bg-slate-800/50 border-slate-600 text-white placeholder-slate-400 ${
+                  fieldErrors.birthDate ? 'border-red-500 focus:border-red-500' : ''
+                }`}
                 disabled={loading}
               />
+              {fieldErrors.birthDate && (
+                <p className="text-red-400 text-sm">{fieldErrors.birthDate}</p>
+              )}
             </div>
 
             {/* CPF */}
@@ -216,9 +252,14 @@ export default function KYCLevel1Page() {
                 onChange={(e) => handleInputChange('cpf', formatCPF(e.target.value))}
                 placeholder="000.000.000-00"
                 maxLength={14}
-                className="bg-slate-800/50 border-slate-600 text-white placeholder-slate-400"
+                className={`bg-slate-800/50 border-slate-600 text-white placeholder-slate-400 ${
+                  fieldErrors.cpf ? 'border-red-500 focus:border-red-500' : ''
+                }`}
                 disabled={loading}
               />
+              {fieldErrors.cpf && (
+                <p className="text-red-400 text-sm">{fieldErrors.cpf}</p>
+              )}
             </div>
 
             {/* Nacionalidade */}

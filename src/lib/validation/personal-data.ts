@@ -41,8 +41,24 @@ export function validateCPF(cpf: string): boolean {
  * Valida se a data de nascimento indica idade mínima de 18 anos
  */
 export function validateAge(birthDate: string): boolean {
+  // Validar formato da data primeiro
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(birthDate)) {
+    return false;
+  }
+  
   const today = new Date();
-  const birth = new Date(birthDate.split('/').reverse().join('-'));
+  const [day, month, year] = birthDate.split('/').map(Number);
+  
+  // Validar se a data é válida
+  const birth = new Date(year, month - 1, day);
+  if (birth.getDate() !== day || birth.getMonth() !== month - 1 || birth.getFullYear() !== year) {
+    return false;
+  }
+  
+  // Verificar se não é data futura
+  if (birth > today) {
+    return false;
+  }
   
   // Calcula idade
   let age = today.getFullYear() - birth.getFullYear();
@@ -60,9 +76,20 @@ export function validateAge(birthDate: string): boolean {
  */
 export function validateFullName(fullName: string): boolean {
   const trimmedName = fullName.trim();
+  
+  // Verificar se não está vazio
+  if (!trimmedName) return false;
+  
+  // Verificar se tem pelo menos 2 caracteres
+  if (trimmedName.length < 2) return false;
+  
   const words = trimmedName.split(/\s+/);
   
-  return words.length >= 2 && words.every(word => word.length > 0);
+  // Verificar se tem pelo menos 2 palavras
+  if (words.length < 2) return false;
+  
+  // Verificar se cada palavra tem pelo menos 2 caracteres
+  return words.every(word => word.length >= 2);
 }
 
 /**
