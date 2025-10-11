@@ -15,10 +15,16 @@ import { useKYCManager } from "@/hooks/use-kyc-manager";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { SUPPORTED_CHAINS } from "@/lib/client";
+import { isFeatureEnabled } from "@/lib/config/feature-flags";
+import { FeatureFlagIndicator } from "@/components/dev/feature-flag-indicator";
 
 export default function DepositPage() {
   const router = useRouter();
   const { wallet } = useSmartWallet();
+  
+  // Feature flags
+  const isKYCEnabled = isFeatureEnabled('ENABLE_KYC_INTEGRATION');
+  const isDepositKYCValidationEnabled = isFeatureEnabled('ENABLE_DEPOSIT_KYC_VALIDATION');
   
   const walletAddress = wallet?.accountAbstraction;
   const kycManager = useKYCManager(walletAddress || '');
@@ -39,8 +45,13 @@ export default function DepositPage() {
   const [currentStep, setCurrentStep] = useState<"amount" | "confirm" | "pix">("amount");
   const [availableLimit, setAvailableLimit] = useState(0);
 
-  // Limites baseados no nível de KYC
+  // Limites baseados no nível de KYC (se habilitado)
   const getAvailableLimit = () => {
+    // Se KYC não está habilitado, permitir valores altos para desenvolvimento
+    if (!isKYCEnabled || !isDepositKYCValidationEnabled) {
+      return 100000.00; // Limite alto para desenvolvimento
+    }
+    
     const level = kycManager.getCurrentStage();
     if (level === '2') return 50000.00; // Nível 2 - R$ 50.000,00
     if (level === '1') return 2000.00;  // Nível 1 - R$ 2.000,00
@@ -97,28 +108,39 @@ export default function DepositPage() {
   };
 
   const handleConfirm = async () => {
-    if (!kycManager.kycMetadata?.userData?.individualId) {
-      alert('Individual ID não encontrado. Por favor, complete o KYC primeiro.');
-      router.push('/wallet/kyc');
-      return;
-    }
+    // Validação KYC apenas se habilitada
+    if (isKYCEnabled && isDepositKYCValidationEnabled) {
+      // Verificar individualId no metadata KYC
+      const individualId = kycManager.kycMetadata?.userData?.individualId;
+      
+      if (!individualId) {
+        alert('Individual ID não encontrado. Por favor, complete o KYC primeiro.');
+        router.push('/wallet/kyc');
+        return;
+      }
 
-    // Verificar se o valor está dentro do limite do nível atual
-    const numAmount = parseFloat(amount);
-    const level = kycManager.getCurrentStage();
-    
-    if (level === '1' && numAmount > 2000) {
-      alert('Valor acima do limite do Nível 1. Complete o KYC Nível 2 para valores acima de R$ 2.000.');
-      router.push('/wallet/kyc');
-      return;
+      // Verificar se o valor está dentro do limite do nível atual
+      const numAmount = parseFloat(amount);
+      const level = kycManager.getCurrentStage();
+      
+      if (level === '1' && numAmount > 2000) {
+        alert('Valor acima do limite do Nível 1. Complete o KYC Nível 2 para valores acima de R$ 2.000.');
+        router.push('/wallet/kyc');
+        return;
+      }
     }
 
     try {
+      // Obter individualId do metadata KYC se disponível
+      const individualId = kycManager.kycMetadata?.userData?.individualId;
+      
       await createDeposit({
         amount,
         receiveCryptoCurrency,
         chainId,
-        individualId: kycManager.kycMetadata?.userData?.individualId || ''
+        individualId: isKYCEnabled && isDepositKYCValidationEnabled 
+          ? individualId || ''
+          : 'dev-individual-id' // ID mock para desenvolvimento
       });
 
       setCurrentStep("pix");
@@ -150,6 +172,25 @@ export default function DepositPage() {
           <h1 className="text-3xl font-bold text-white mb-2">Depósito PIX</h1>
           <p className="text-slate-300">Complete sua verificação para fazer depósitos</p>
         </div>
+
+        {/* Feature Flag Info */}
+        {!isKYCEnabled && (
+          <Card className="glass-card bg-blue-600/20 border-blue-500/30">
+            <CardContent className="p-4">
+              <div className="flex items-start space-x-3">
+                <div className="p-2 bg-blue-500/20 rounded-full">
+                  <Shield className="h-4 w-4 text-blue-400" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-white mb-1">Modo Desenvolvimento</h4>
+                  <p className="text-slate-300 text-sm">
+                    KYC está desabilitado para desenvolvimento. Você pode fazer depósitos sem verificação.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="glass-card bg-yellow-600/20 border-yellow-500/30">
           <CardContent className="p-6">
@@ -217,6 +258,16 @@ export default function DepositPage() {
       <div className="text-center">
         <h1 className="text-3xl font-bold text-white mb-2">Quanto você quer depositar?</h1>
         <p className="text-slate-300">Limite disponível: <span className="text-yellow-400 font-semibold">{formatCurrency(availableLimit)}</span></p>
+        
+        {/* Feature Flag Status */}
+        {!isKYCEnabled && (
+          <div className="mt-2">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
+              <Shield className="h-3 w-3 mr-1" />
+              Modo Desenvolvimento - KYC Desabilitado
+            </span>
+          </div>
+        )}
       </div>
 
       <Card className="glass-card">
@@ -633,7 +684,7 @@ export default function DepositPage() {
       <div className="flex justify-center">
         <div className="w-full max-w-2xl space-y-6">
           {/* Content */}
-          {kycManager.getCurrentStage() === '0' ? (
+          {isKYCEnabled && isDepositKYCValidationEnabled && kycManager.getCurrentStage() === '0' ? (
             renderKYCBlock()
           ) : (
             <>
@@ -644,6 +695,9 @@ export default function DepositPage() {
           )}
         </div>
       </div>
+      
+      {/* Feature Flag Indicator - apenas em desenvolvimento */}
+      <FeatureFlagIndicator showDetails={true} />
       </AppLayout>
     </ProtectedRoute>
   );

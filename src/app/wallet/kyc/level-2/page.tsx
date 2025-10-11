@@ -468,11 +468,11 @@ export default function KYCLevel2Page() {
       console.log('🔗 Front Document Upload:', frontDocumentUpload);
       console.log('🔗 Back Document Upload:', backDocumentUpload);
       
-      // Salvar sessionId na metadata da wallet
-      console.log('📝 PASSO 4: Salvando sessionId na metadata da wallet');
+      // Salvar sessionId e individualId na metadata da wallet
+      console.log('📝 PASSO 4: Salvando sessionId e individualId na metadata da wallet');
       console.log('🔄 Chamando saveKYCSessionId...');
-      const updatedKycData = await saveKYCSessionId(sessionId, level1Data, wallet?.accountAbstraction || '');
-      console.log('✅ SessionId salvo na metadata:', updatedKycData);
+      const updatedKycData = await saveKYCSessionId(sessionId, sessionResponse.session?.individualId || null, level1Data, wallet?.accountAbstraction || '');
+      console.log('✅ SessionId e individualId salvos na metadata:', updatedKycData);
       
       setKycSessionId(sessionId);
       setUploadUrls({ frontDocumentUpload, backDocumentUpload });

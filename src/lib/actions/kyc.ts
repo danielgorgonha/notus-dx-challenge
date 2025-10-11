@@ -58,15 +58,16 @@ export async function getSessionResult(sessionId: string) {
 }
 
 /**
- * Salva sessionId na metadata da wallet - Passo 3 do fluxo
+ * Salva sessionId e individualId na metadata da wallet - Passo 3 do fluxo
  */
-export async function saveKYCSessionId(sessionId: string, kycData: any, walletAddress: string) {
+export async function saveKYCSessionId(sessionId: string, individualId: string | null, kycData: any, walletAddress: string) {
   try {
-    console.log('💾 Salvando sessionId na metadata:', sessionId);
+    console.log('💾 Salvando sessionId e individualId na metadata:', { sessionId, individualId });
     
     const updatedKycData = {
       ...kycData,
       sessionId,
+      individualId,
       kycLevel: 1, // Manter como Level 1 até validação real
       status: 'PENDING',
       createdAt: new Date().toISOString()
@@ -74,10 +75,10 @@ export async function saveKYCSessionId(sessionId: string, kycData: any, walletAd
     
     await walletActions.updateMetadata(walletAddress, { kycData: JSON.stringify(updatedKycData) });
     
-    console.log('✅ SessionId salvo na metadata');
+    console.log('✅ SessionId e individualId salvos na metadata');
     return updatedKycData;
   } catch (error) {
-    console.error('❌ Erro ao salvar sessionId:', error);
+    console.error('❌ Erro ao salvar sessionId e individualId:', error);
     throw error;
   }
 }
