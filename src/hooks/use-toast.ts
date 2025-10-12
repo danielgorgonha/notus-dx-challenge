@@ -1,44 +1,50 @@
-"use client";
+import { useToast as useToastContext } from '@/contexts/toast-context';
 
-import { useState, useCallback } from 'react';
-import { ToastProps } from '@/components/ui/toast';
+export const useToast = () => {
+  const { addToast, removeToast, clearAllToasts } = useToastContext();
 
-export function useToast() {
-  const [toasts, setToasts] = useState<ToastProps[]>([]);
+  const success = (title: string, description?: string, duration?: number) => {
+    addToast({
+      type: 'success',
+      title,
+      description,
+      duration,
+    });
+  };
 
-  const addToast = useCallback((toast: Omit<ToastProps, 'id' | 'onClose'>) => {
-    const id = Math.random().toString(36).substr(2, 9);
-    const newToast: ToastProps = {
-      ...toast,
-      id,
-      onClose: removeToast,
-    };
-    
-    setToasts(prev => [...prev, newToast]);
-  }, []);
+  const error = (title: string, description?: string, duration?: number) => {
+    addToast({
+      type: 'error',
+      title,
+      description,
+      duration,
+    });
+  };
 
-  const removeToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  }, []);
+  const warning = (title: string, description?: string, duration?: number) => {
+    addToast({
+      type: 'warning',
+      title,
+      description,
+      duration,
+    });
+  };
 
-  const success = useCallback((title: string, description?: string) => {
-    addToast({ type: 'success', title, description });
-  }, [addToast]);
-
-  const error = useCallback((title: string, description?: string) => {
-    addToast({ type: 'error', title, description });
-  }, [addToast]);
-
-  const info = useCallback((title: string, description?: string) => {
-    addToast({ type: 'info', title, description });
-  }, [addToast]);
+  const info = (title: string, description?: string, duration?: number) => {
+    addToast({
+      type: 'info',
+      title,
+      description,
+      duration,
+    });
+  };
 
   return {
-    toasts,
-    addToast,
-    removeToast,
     success,
     error,
+    warning,
     info,
+    removeToast,
+    clearAllToasts,
   };
-}
+};

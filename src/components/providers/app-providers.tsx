@@ -3,6 +3,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PrivyClientConfig, PrivyProvider } from '@privy-io/react-auth'
 import { KYCProvider } from '@/contexts/kyc-context'
+import { ToastProvider } from '@/contexts/toast-context'
+import { ToastContainer } from '@/components/ui/toast-container'
 import { useState, useEffect } from 'react'
 
 const config = {
@@ -51,9 +53,12 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   if (!isClient) {
     return (
       <QueryClientProvider client={queryClient}>
-        <KYCProvider>
-          {children}
-        </KYCProvider>
+        <ToastProvider>
+          <KYCProvider>
+            {children}
+            <ToastContainer />
+          </KYCProvider>
+        </ToastProvider>
       </QueryClientProvider>
     );
   }
@@ -77,14 +82,17 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <PrivyProvider
-        appId={privyAppId}
-        config={config}
-      >
-        <KYCProvider>
-          {children}
-        </KYCProvider>
-      </PrivyProvider>
+      <ToastProvider>
+        <PrivyProvider
+          appId={privyAppId}
+          config={config}
+        >
+          <KYCProvider>
+            {children}
+            <ToastContainer />
+          </KYCProvider>
+        </PrivyProvider>
+      </ToastProvider>
     </QueryClientProvider>
   )
 }

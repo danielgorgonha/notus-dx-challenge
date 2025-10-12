@@ -13,6 +13,7 @@ import { useKYC } from "@/contexts/kyc-context";
 import { useFiatDeposit } from "@/hooks/use-fiat-deposit";
 import { useKYCManager } from "@/hooks/use-kyc-manager";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
+import { useToast } from "@/hooks/use-toast";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { SUPPORTED_CHAINS } from "@/lib/client";
 import { isFeatureEnabled } from "@/lib/config/feature-flags";
@@ -21,6 +22,7 @@ import { FeatureFlagIndicator } from "@/components/dev/feature-flag-indicator";
 export default function DepositPage() {
   const router = useRouter();
   const { wallet } = useSmartWallet();
+  const toast = useToast();
   
   // Feature flags
   const isKYCEnabled = isFeatureEnabled('ENABLE_KYC_INTEGRATION');
@@ -71,7 +73,18 @@ export default function DepositPage() {
     // Simular variação de preço entre 0.98 e 1.02
     const variation = (Math.random() - 0.5) * 0.04; // ±2%
     const newPrice = Math.max(0.98, Math.min(1.02, 1.00 + variation));
+    const oldPrice = currentPrice;
     setCurrentPrice(Number(newPrice.toFixed(2)));
+    
+    // Toast informativo sobre atualização de preço
+    if (Math.abs(newPrice - oldPrice) > 0.01) {
+      const direction = newPrice > oldPrice ? 'subiu' : 'desceu';
+      toast.info(
+        'Preço Atualizado',
+        `O preço do ${receiveCryptoCurrency} ${direction} para ${newPrice.toFixed(2)} ${sendFiatCurrency}`,
+        3000
+      );
+    }
   };
 
   // Formatar timer em MM:SS
@@ -105,6 +118,15 @@ export default function DepositPage() {
     const numAmount = parseFloat(amount);
     if (numAmount >= minAmount && numAmount <= availableLimit) {
       setCurrentStep("confirm");
+      toast.success(
+        'Valor Confirmado',
+        `Depósito de ${formatCurrency(numAmount, sendFiatCurrency)} processado com sucesso`
+      );
+    } else {
+      toast.error(
+        'Valor Inválido',
+        `O valor deve estar entre ${formatCurrency(minAmount, sendFiatCurrency)} e ${formatCurrency(availableLimit, sendFiatCurrency)}`
+      );
     }
   };
 
@@ -150,7 +172,10 @@ export default function DepositPage() {
       const individualId = kycManager.kycMetadata?.userData?.individualId;
       
       if (!individualId) {
-        alert('Individual ID não encontrado. Por favor, complete o KYC primeiro.');
+        toast.error(
+          'KYC Necessário',
+          'Individual ID não encontrado. Por favor, complete o KYC primeiro.'
+        );
         router.push('/wallet/kyc');
         return;
       }
@@ -160,7 +185,10 @@ export default function DepositPage() {
       const level = kycManager.getCurrentStage();
       
       if (level === '1' && numAmount > 2000) {
-        alert('Valor acima do limite do Nível 1. Complete o KYC Nível 2 para valores acima de R$ 2.000.');
+        toast.warning(
+          'Limite Excedido',
+          'Valor acima do limite do Nível 1. Complete o KYC Nível 2 para valores acima de R$ 2.000.'
+        );
         router.push('/wallet/kyc');
         return;
       }
@@ -181,15 +209,26 @@ export default function DepositPage() {
       });
 
       setCurrentStep("pix");
+      toast.success(
+        'Depósito Criado',
+        'Instruções de pagamento PIX geradas com sucesso!'
+      );
     } catch (error) {
       console.error("Erro ao criar depósito:", error);
+      toast.error(
+        'Erro no Depósito',
+        'Não foi possível criar o depósito. Tente novamente.'
+      );
     }
   };
 
   const copyPixKey = () => {
     if (order?.paymentInstructions?.pixKey) {
       navigator.clipboard.writeText(order.paymentInstructions.pixKey);
-      // Mostrar toast de sucesso
+      toast.success(
+        'Chave PIX Copiada',
+        'A chave PIX foi copiada para a área de transferência'
+      );
     }
   };
 

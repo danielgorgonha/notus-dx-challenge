@@ -10,6 +10,7 @@ import { CheckCircle, Clock, AlertCircle, User, FileText, Camera, Shield } from 
 import { useKYC } from "@/contexts/kyc-context";
 import { useKYCManager } from "@/hooks/use-kyc-manager";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
+import { useToast } from "@/hooks/use-toast";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { getWalletAddress } from "@/lib/actions/dashboard";
 import { getSessionResult } from "@/lib/actions/kyc";
@@ -18,6 +19,7 @@ export default function KYCPage() {
   const router = useRouter();
   const { currentLevel, kycPhase0Completed, kycPhase1Completed, kycPhase2Completed, completePhase1, completePhase2 } = useKYC();
   const { wallet } = useSmartWallet();
+  const toast = useToast();
   
   const walletAddress = wallet?.accountAbstraction;
   const kycManager = useKYCManager(walletAddress || '');
@@ -59,6 +61,10 @@ export default function KYCPage() {
           if (parsedData.kycLevel >= 1) {
             console.log('🔍 Marcando Nível 1 como completo');
             completePhase1();
+            toast.success(
+              'KYC Nível 1 Aprovado',
+              'Sua verificação de identidade básica foi aprovada'
+            );
           }
           
           // Verificar Level 2 se houver sessionId
@@ -76,6 +82,10 @@ export default function KYCPage() {
               if (sessionStatus === 'COMPLETED') {
                 console.log('✅ Level 2 aprovado pela API Notus');
                 completePhase2();
+                toast.success(
+                  'KYC Nível 2 Aprovado',
+                  'Sua verificação de identidade completa foi aprovada!'
+                );
                 // Definir dados com status aprovado
                 setKycData({
                   ...parsedData,
@@ -85,6 +95,10 @@ export default function KYCPage() {
                 });
               } else if (sessionStatus === 'PENDING' || sessionStatus === 'PROCESSING' || sessionStatus === 'VERIFYING') {
                 console.log('⏳ Level 2 ainda em processamento na API Notus:', sessionStatus);
+                toast.info(
+                  'KYC em Análise',
+                  'Seus documentos estão sendo analisados pela Notus'
+                );
                 // Manter como Level 1 com status de processamento
                 setKycData({
                   ...parsedData,
@@ -94,6 +108,10 @@ export default function KYCPage() {
                 });
               } else if (sessionStatus === 'FAILED') {
                 console.log('❌ Level 2 falhou na API Notus - documentos rejeitados');
+                toast.error(
+                  'KYC Rejeitado',
+                  'Seus documentos foram rejeitados. Por favor, tente novamente.'
+                );
                 // Resetar para permitir nova tentativa
                 setKycData({
                   ...parsedData,
