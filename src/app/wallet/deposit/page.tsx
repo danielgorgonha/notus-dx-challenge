@@ -40,10 +40,46 @@ export default function DepositPage() {
   } = useFiatDeposit();
   
   const [amount, setAmount] = useState("");
+  const [sendFiatCurrency, setSendFiatCurrency] = useState<"BRL" | "USD">("BRL");
   const [receiveCryptoCurrency, setReceiveCryptoCurrency] = useState<"USDC" | "BRZ">("USDC");
   const [chainId, setChainId] = useState(SUPPORTED_CHAINS.POLYGON);
-  const [currentStep, setCurrentStep] = useState<"amount" | "confirm" | "pix">("amount");
+  const [currentStep, setCurrentStep] = useState<"currency" | "amount" | "confirm" | "pix">("currency");
   const [availableLimit, setAvailableLimit] = useState(0);
+  const [priceUpdateTimer, setPriceUpdateTimer] = useState(355); // 5:55 em segundos
+  const [currentPrice, setCurrentPrice] = useState(1.00); // Preço atual do ativo
+
+  // Timer para atualização de preços
+  useEffect(() => {
+    if (currentStep === "amount" && priceUpdateTimer > 0) {
+      const interval = setInterval(() => {
+        setPriceUpdateTimer((prev) => {
+          if (prev <= 1) {
+            // Timer chegou a zero, atualizar preço
+            updatePrice();
+            return 355; // Resetar para 5:55
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [currentStep, priceUpdateTimer]);
+
+  // Função para atualizar o preço (simular variação)
+  const updatePrice = () => {
+    // Simular variação de preço entre 0.98 e 1.02
+    const variation = (Math.random() - 0.5) * 0.04; // ±2%
+    const newPrice = Math.max(0.98, Math.min(1.02, 1.00 + variation));
+    setCurrentPrice(Number(newPrice.toFixed(2)));
+  };
+
+  // Formatar timer em MM:SS
+  const formatTimer = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   // Limites baseados no nível de KYC (se habilitado)
   const getAvailableLimit = () => {
@@ -136,6 +172,7 @@ export default function DepositPage() {
       
       await createDeposit({
         amount,
+        sendFiatCurrency,
         receiveCryptoCurrency,
         chainId,
         individualId: isKYCEnabled && isDepositKYCValidationEnabled 
@@ -156,10 +193,11 @@ export default function DepositPage() {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
+  const formatCurrency = (value: number, currency: 'BRL' | 'USD' = 'BRL') => {
+    const locale = currency === 'BRL' ? 'pt-BR' : 'en-US';
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: 'BRL'
+      currency: currency
     }).format(value);
   };
 
@@ -253,11 +291,90 @@ export default function DepositPage() {
     );
   };
 
+  const renderCurrencyStep = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-white mb-2">Qual moeda você quer depositar?</h1>
+        <p className="text-slate-300">Escolha a criptomoeda que deseja receber</p>
+      </div>
+
+      <div className="space-y-4">
+        {/* BRZ - Real Brasileiro */}
+        <button
+          onClick={() => {
+            setReceiveCryptoCurrency("BRZ");
+            setSendFiatCurrency("BRL"); // BRZ recebe BRL
+            setCurrentStep("amount");
+          }}
+          className="w-full p-6 rounded-xl border-2 border-white/20 bg-white/5 hover:bg-white/10 hover:border-green-500/50 transition-all group"
+        >
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-yellow-400 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-lg">R</span>
+            </div>
+            <div className="text-left flex-1">
+              <h3 className="text-white font-semibold text-lg">Real Brasileiro</h3>
+              <p className="text-slate-400">BRZ</p>
+            </div>
+            <div className="text-slate-400 group-hover:text-white transition-colors">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        </button>
+
+        {/* USDC - Dólar Americano */}
+        <button
+          onClick={() => {
+            setReceiveCryptoCurrency("USDC");
+            setSendFiatCurrency("USD"); // USDC recebe USD
+            setCurrentStep("amount");
+          }}
+          className="w-full p-6 rounded-xl border-2 border-white/20 bg-white/5 hover:bg-white/10 hover:border-blue-500/50 transition-all group"
+        >
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-lg">$</span>
+            </div>
+            <div className="text-left flex-1">
+              <h3 className="text-white font-semibold text-lg">Dólar Americano</h3>
+              <p className="text-slate-400">USDC</p>
+            </div>
+            <div className="text-slate-400 group-hover:text-white transition-colors">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {/* Mensagem de Aviso */}
+      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+        <div className="flex items-start space-x-3">
+          <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span className="text-white text-sm font-bold">!</span>
+          </div>
+          <div>
+            <p className="text-yellow-400 text-sm font-medium">
+              A Notus DX só aceita depósitos de contas da sua própria titularidade.
+            </p>
+            <p className="text-yellow-300 text-sm mt-1">
+              Depósitos de terceiros não serão processados.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderAmountStep = () => (
     <div className="space-y-6">
       <div className="text-center">
         <h1 className="text-3xl font-bold text-white mb-2">Quanto você quer depositar?</h1>
-        <p className="text-slate-300">Limite disponível: <span className="text-yellow-400 font-semibold">{formatCurrency(availableLimit)}</span></p>
+        <p className="text-slate-300">Limite disponível: <span className="text-yellow-400 font-semibold">{formatCurrency(availableLimit, sendFiatCurrency)}</span></p>
+        
         
         {/* Feature Flag Status */}
         {!isKYCEnabled && (
@@ -285,13 +402,13 @@ export default function DepositPage() {
                   className="bg-slate-800 border-slate-600 text-white text-2xl text-center py-4"
                 />
                 <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <span className="text-slate-400">R$</span>
+                  <span className="text-slate-400">{sendFiatCurrency === "BRL" ? "R$" : "$"}</span>
                 </div>
               </div>
               {amount && parseFloat(amount) < minAmount && (
                 <p className="text-red-400 text-sm flex items-center space-x-1">
                   <AlertCircle className="h-4 w-4" />
-                  <span>O depósito mínimo é de {formatCurrency(minAmount)}</span>
+                  <span>O depósito mínimo é de {formatCurrency(minAmount, sendFiatCurrency)}</span>
                 </p>
               )}
             </div>
@@ -299,41 +416,59 @@ export default function DepositPage() {
             <div className="bg-slate-800/50 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">B</span>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    receiveCryptoCurrency === "USDC" ? "bg-blue-500" : "bg-gradient-to-r from-green-500 to-yellow-500"
+                  }`}>
+                    <span className="text-white text-sm font-bold">
+                      {receiveCryptoCurrency === "USDC" ? "U" : "B"}
+                    </span>
                   </div>
                   <div>
-                    <p className="text-white font-semibold">BRZ</p>
-                    <p className="text-slate-400 text-sm">Brazilian Real Token</p>
+                    <p className="text-white font-semibold">{receiveCryptoCurrency}</p>
+                    <p className="text-slate-400 text-sm">
+                      {receiveCryptoCurrency === "USDC" ? "USD Coin" : "Brazilian Real Token"}
+                    </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-white font-semibold">{amount || "0,00"} BRZ</p>
-                  <p className="text-slate-400 text-sm">~{formatCurrency(parseFloat(amount) || 0)}</p>
+                  <p className="text-white font-semibold">{amount || "0,00"} {receiveCryptoCurrency}</p>
+                  <p className="text-slate-400 text-sm">~{formatCurrency((parseFloat(amount) || 0) / currentPrice, sendFiatCurrency)}</p>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-400">O preço efetivo será atualizado em:</span>
-              <span className="text-yellow-400 font-semibold">05:55</span>
+              <span className="text-yellow-400 font-semibold">{formatTimer(priceUpdateTimer)}</span>
+            </div>
+            
+            {/* Preço efetivo */}
+            <div className="bg-slate-800/30 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-sm">Preço efetivo</span>
+                <span className="text-white font-semibold">1 {receiveCryptoCurrency} = {currentPrice.toFixed(2)} {sendFiatCurrency}</span>
+              </div>
             </div>
 
-            <div className="text-center">
-              <p className="text-slate-400 text-sm mb-2">Preço efetivo</p>
-              <p className="text-white font-semibold">1 BRZ = {exchangeRate.toFixed(2)} BRL</p>
-            </div>
           </div>
         </CardContent>
       </Card>
 
-      <Button
-        onClick={handleAmountSubmit}
-        disabled={!amount || parseFloat(amount) < minAmount || parseFloat(amount) > availableLimit}
-        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 disabled:opacity-50"
-      >
-        Continuar
-      </Button>
+      <div className="flex space-x-4">
+        <Button
+          onClick={() => setCurrentStep("currency")}
+          className="flex-1 bg-white text-slate-600 hover:bg-gray-100 font-semibold py-4 rounded-xl transition-all duration-200"
+        >
+          Voltar
+        </Button>
+        <Button
+          onClick={handleAmountSubmit}
+          disabled={!amount || parseFloat(amount) < minAmount || parseFloat(amount) > availableLimit}
+          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Continuar
+        </Button>
+      </div>
     </div>
   );
 
@@ -347,46 +482,28 @@ export default function DepositPage() {
       <Card className="glass-card">
         <CardContent className="p-6">
           <div className="space-y-6">
-            {/* Seleção de Criptomoeda */}
-            <div className="space-y-3">
-              <Label className="text-white">Criptomoeda a receber</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setReceiveCryptoCurrency("USDC")}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    receiveCryptoCurrency === "USDC"
-                      ? 'border-blue-500 bg-blue-500/10'
-                      : 'border-white/20 bg-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-bold">U</span>
-                    </div>
-                    <div className="text-left">
-                      <p className="text-white font-semibold">USDC</p>
-                      <p className="text-slate-400 text-sm">USD Coin</p>
-                    </div>
+            {/* Informações da Moeda Selecionada */}
+            <div className="bg-slate-800/50 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    receiveCryptoCurrency === "USDC" ? "bg-blue-500" : "bg-green-500"
+                  }`}>
+                    <span className="text-white font-bold">
+                      {receiveCryptoCurrency === "USDC" ? "U" : "B"}
+                    </span>
                   </div>
-                </button>
-                <button
-                  onClick={() => setReceiveCryptoCurrency("BRZ")}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    receiveCryptoCurrency === "BRZ"
-                      ? 'border-green-500 bg-green-500/10'
-                      : 'border-white/20 bg-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-bold">B</span>
-                    </div>
-                    <div className="text-left">
-                      <p className="text-white font-semibold">BRZ</p>
-                      <p className="text-slate-400 text-sm">Brazilian Real Token</p>
-                    </div>
+                  <div>
+                    <p className="text-white font-semibold">{receiveCryptoCurrency}</p>
+                    <p className="text-slate-400 text-sm">
+                      {receiveCryptoCurrency === "USDC" ? "USD Coin" : "Brazilian Real Token"}
+                    </p>
                   </div>
-                </button>
+                </div>
+                <div className="text-right">
+                  <p className="text-white font-semibold">{amount || "0,00"} {receiveCryptoCurrency}</p>
+                  <p className="text-slate-400 text-sm">~{formatCurrency((parseFloat(amount) || 0) / currentPrice, sendFiatCurrency)}</p>
+                </div>
               </div>
             </div>
 
@@ -417,12 +534,16 @@ export default function DepositPage() {
 
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold">R$</span>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  sendFiatCurrency === "BRL" ? "bg-green-500" : "bg-blue-500"
+                }`}>
+                  <span className="text-white font-bold">
+                    {sendFiatCurrency === "BRL" ? "R$" : "$"}
+                  </span>
                 </div>
                 <div>
                   <p className="text-slate-400 text-sm">Você pagará</p>
-                  <p className="text-white font-bold text-xl">{formatCurrency(parseFloat(amount))}</p>
+                  <p className="text-white font-bold text-xl">{formatCurrency(parseFloat(amount), sendFiatCurrency)}</p>
                 </div>
               </div>
             </div>
@@ -439,7 +560,7 @@ export default function DepositPage() {
                 <div>
                   <p className="text-slate-400 text-sm">Você receberá</p>
                   <p className="text-white font-bold text-xl">{amount} {receiveCryptoCurrency}</p>
-                  <p className="text-slate-400 text-sm">~{formatCurrency(parseFloat(amount))}</p>
+                  <p className="text-slate-400 text-sm">~{formatCurrency(parseFloat(amount), sendFiatCurrency)}</p>
                 </div>
               </div>
             </div>
@@ -620,7 +741,7 @@ export default function DepositPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Total a pagar</span>
-                  <span className="text-white font-semibold">{formatCurrency(parseFloat(amount))}</span>
+                  <span className="text-white font-semibold">{formatCurrency(parseFloat(amount), sendFiatCurrency)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Você vai receber</span>
@@ -688,6 +809,7 @@ export default function DepositPage() {
             renderKYCBlock()
           ) : (
             <>
+              {currentStep === "currency" && renderCurrencyStep()}
               {currentStep === "amount" && renderAmountStep()}
               {currentStep === "confirm" && renderConfirmStep()}
               {currentStep === "pix" && renderPixStep()}

@@ -3,6 +3,17 @@
  * Tipos para operações de depósito e saque fiat
  */
 
+// Moedas disponíveis para depósito
+export interface DepositCurrency {
+  code: string;
+  name: string;
+  symbol: string;
+  icon: string;
+  available: boolean;
+  minAmount: string;
+  maxAmount: string;
+}
+
 // Fiat Deposit Quote
 export interface FiatDepositQuote {
   quoteId: string;
@@ -14,18 +25,47 @@ export interface FiatDepositQuote {
   exchangeRate: string;
   fees: string;
   totalAmount: string;
+  estimatedTime: string;
+  provider: string;
+  operation: string;
 }
 
 // Fiat Deposit Order
 export interface FiatDepositOrder {
   orderId: string;
   quoteId: string;
-  status: string;
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED';
   paymentInstructions: {
     pixKey: string;
     amount: string;
     expiresAt: string;
   };
+}
+
+// Detalhes PIX para depósito
+export interface PixDepositDetails {
+  orderId: string;
+  qrCodeUrl: string;
+  pixCopyPaste: string;
+  amount: string;
+  expiresAt: string;
+  validFor: string; // "04:57" format
+  paymentInstructions: {
+    pixKey: string;
+    amount: string;
+    expiresAt: string;
+  };
+}
+
+// Status do depósito
+export interface DepositStatus {
+  orderId: string;
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED';
+  amount: string;
+  receivedAmount: string;
+  transactionHash?: string;
+  completedAt?: string;
+  errorMessage?: string;
 }
 
 // Fiat Withdraw Quote

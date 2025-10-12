@@ -1,24 +1,34 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { FiatDepositQuote, FiatDepositOrder } from '@/types/fiat';
+import { 
+  FiatDepositQuote, 
+  FiatDepositOrder, 
+  PixDepositDetails, 
+  DepositStatus,
+  DepositCurrency 
+} from '@/types/fiat';
 import { useKYCManager } from './use-kyc-manager';
 import { useSmartWallet } from './use-smart-wallet';
 import { fiatActions } from '@/lib/actions/fiat';
 
 export interface DepositParams {
   amount: string;
+  sendFiatCurrency: 'BRL' | 'USD';
   receiveCryptoCurrency: 'USDC' | 'BRZ';
   chainId: number;
   individualId: string;
 }
 
 export interface DepositState {
+  currencies: DepositCurrency[];
   quote: FiatDepositQuote | null;
   order: FiatDepositOrder | null;
+  pixDetails: PixDepositDetails | null;
+  status: DepositStatus | null;
   isLoading: boolean;
   error: string | null;
-  step: 'idle' | 'quote' | 'order' | 'completed' | 'error';
+  step: 'idle' | 'currencies' | 'quote' | 'order' | 'pix' | 'completed' | 'error';
 }
 
 export function useFiatDeposit() {
@@ -26,8 +36,11 @@ export function useFiatDeposit() {
   const walletAddress = wallet?.accountAbstraction;
   const kycManager = useKYCManager(walletAddress || '');
   const [state, setState] = useState<DepositState>({
+    currencies: [],
     quote: null,
     order: null,
+    pixDetails: null,
+    status: null,
     isLoading: false,
     error: null,
     step: 'idle'
@@ -55,19 +68,46 @@ export function useFiatDeposit() {
     return { canDeposit: true, reason: null };
   }, [walletAddress, kycManager]);
 
+  // Carregar moedas disponíveis
+  const loadCurrencies = useCallback(async (): Promise<DepositCurrency[]> => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+    try {
+      const currencies = await fiatActions.getDepositCurrencies() as DepositCurrency[];
+      setState(prev => ({ ...prev, currencies, step: 'currencies', isLoading: false }));
+      return currencies;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar moedas';
+      setState(prev => ({
+        ...prev,
+        error: errorMessage,
+        isLoading: false,
+        step: 'error'
+      }));
+      throw error;
+    }
+  }, []);
+
   // Criar cotação de depósito
   const createQuote = useCallback(async (params: DepositParams): Promise<FiatDepositQuote | null> => {
+    if (!walletAddress) {
+      throw new Error('Carteira não conectada');
+    }
+
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const quote = await fiatActions.createDepositQuote({
-        amount: params.amount,
+        paymentMethodToSend: 'PIX',
+        amountToSendInFiatCurrency: params.amount,
+        sendFiatCurrency: params.sendFiatCurrency,
         receiveCryptoCurrency: params.receiveCryptoCurrency,
-        chainId: params.chainId,
         individualId: params.individualId,
+        chainId: params.chainId,
+        walletAddress: walletAddress,
       }) as FiatDepositQuote;
       
-      setState(prev => ({ ...prev, quote, step: 'quote' }));
+      setState(prev => ({ ...prev, quote, step: 'quote', isLoading: false }));
       return quote;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao criar cotação';
@@ -79,25 +119,18 @@ export function useFiatDeposit() {
       }));
       throw error;
     }
-  }, [walletAddress, canDeposit]);
+  }, [walletAddress]);
 
   // Criar ordem de depósito
-  const createOrder = useCallback(async (quoteId: string, individualId: string, chainId: number) => {
-    if (!walletAddress) {
-      throw new Error('Carteira não conectada');
-    }
-
+  const createOrder = useCallback(async (quoteId: string) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const order = await fiatActions.createDepositOrder({
         quoteId,
-        individualId,
-        chainId,
-        walletAddress,
       }) as FiatDepositOrder;
       
-      setState(prev => ({ ...prev, order, step: 'order' }));
+      setState(prev => ({ ...prev, order, step: 'order', isLoading: false }));
       return order;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao criar ordem';
@@ -109,7 +142,39 @@ export function useFiatDeposit() {
       }));
       throw error;
     }
-  }, [walletAddress]);
+  }, []);
+
+  // Obter detalhes PIX
+  const getPixDetails = useCallback(async (orderId: string): Promise<PixDepositDetails | null> => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+    try {
+      const pixDetails = await fiatActions.getDepositPixDetails(orderId) as PixDepositDetails;
+      setState(prev => ({ ...prev, pixDetails, step: 'pix', isLoading: false }));
+      return pixDetails;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao obter detalhes PIX';
+      setState(prev => ({
+        ...prev,
+        error: errorMessage,
+        isLoading: false,
+        step: 'error'
+      }));
+      throw error;
+    }
+  }, []);
+
+  // Verificar status do depósito
+  const checkDepositStatus = useCallback(async (orderId: string): Promise<DepositStatus | null> => {
+    try {
+      const status = await fiatActions.getDepositStatus(orderId) as DepositStatus;
+      setState(prev => ({ ...prev, status }));
+      return status;
+    } catch (error) {
+      console.error('Erro ao verificar status:', error);
+      return null;
+    }
+  }, []);
 
   // Fluxo completo de depósito
   const createDeposit = useCallback(async (params: DepositParams) => {
@@ -119,22 +184,29 @@ export function useFiatDeposit() {
       if (!quote) return null;
 
       // 2. Criar ordem
-      const order = await createOrder(quote.quoteId, params.individualId, params.chainId);
+      const order = await createOrder(quote.quoteId);
+      if (!order) return null;
+
+      // 3. Obter detalhes PIX
+      const pixDetails = await getPixDetails(order.orderId);
       
       setState(prev => ({ ...prev, step: 'completed' }));
       
-      return { quote, order };
+      return { quote, order, pixDetails };
     } catch (error) {
       console.error('Erro no fluxo de depósito:', error);
       throw error;
     }
-  }, [createQuote, createOrder]);
+  }, [createQuote, createOrder, getPixDetails]);
 
   // Reset do estado
   const reset = useCallback(() => {
     setState({
+      currencies: [],
       quote: null,
       order: null,
+      pixDetails: null,
+      status: null,
       isLoading: false,
       error: null,
       step: 'idle'
@@ -144,8 +216,11 @@ export function useFiatDeposit() {
   return {
     ...state,
     canDeposit,
+    loadCurrencies,
     createQuote,
     createOrder,
+    getPixDetails,
+    checkDepositStatus,
     createDeposit,
     reset
   };
