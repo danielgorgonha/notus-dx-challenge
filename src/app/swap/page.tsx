@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,36 +29,32 @@ import { SUPPORTED_CHAINS } from "@/lib/client";
 import { createSwapQuote } from "@/lib/actions/swap";
 import { executeUserOperation } from "@/lib/actions/user-operation";
 import { usePrivy } from "@privy-io/react-auth";
-import { Copy } from "lucide-react";
+import { Copy, ChevronDown } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getPortfolio } from "@/lib/actions/dashboard";
 
-// Mock data - será substituído por dados reais da API
-const MOCK_TOKENS = [
+// Tokens padrão para seleção inicial
+const DEFAULT_TOKENS = [
   {
     symbol: "USDC",
     name: "USD Coin",
     address: "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-    balance: "1250.00",
     decimals: 6,
-    icon: "💙",
-    price: 1.00
+    icon: "💙"
   },
   {
     symbol: "BRZ",
-    name: "Brazilian Real Token",
+    name: "Brazilian Real Token", 
     address: "0x4e15361fd6b4bb609fa63c81a2be19d873717870",
-    balance: "5000.00",
     decimals: 18,
-    icon: "🇧🇷",
-    price: 0.20
+    icon: "🇧🇷"
   },
   {
     symbol: "ETH",
     name: "Ethereum",
     address: "0x0000000000000000000000000000000000000000",
-    balance: "0.875",
     decimals: 18,
-    icon: "💎",
-    price: 2500.00
+    icon: "💎"
   }
 ];
 
@@ -69,8 +65,8 @@ export default function SwapPage() {
   const toast = useToast();
   
   const [currentStep, setCurrentStep] = useState<"form" | "preview" | "executing" | "success">("form");
-  const [fromToken, setFromToken] = useState(MOCK_TOKENS[0]);
-  const [toToken, setToToken] = useState(MOCK_TOKENS[2]);
+  const [fromToken, setFromToken] = useState(DEFAULT_TOKENS[0]);
+  const [toToken, setToToken] = useState(DEFAULT_TOKENS[2]);
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("");
   const [slippage, setSlippage] = useState(0.5);
@@ -78,20 +74,57 @@ export default function SwapPage() {
   const [quote, setQuote] = useState<any>(null);
   const [transactionHash, setTransactionHash] = useState("");
   const [userOperationHash, setUserOperationHash] = useState("");
+  const [showFromTokenSelector, setShowFromTokenSelector] = useState(false);
+  const [showToTokenSelector, setShowToTokenSelector] = useState(false);
 
   const walletAddress = wallet?.accountAbstraction;
 
-  // Calcular taxa de câmbio
-  const exchangeRate = toToken.price / fromToken.price;
-  const calculatedToAmount = fromAmount ? (parseFloat(fromAmount) * exchangeRate).toFixed(6) : "";
+  // Buscar portfolio real da carteira
+  const { data: portfolio, isLoading: portfolioLoading } = useQuery({
+    queryKey: ['portfolio', walletAddress],
+    queryFn: () => getPortfolio(walletAddress || ''),
+    enabled: !!walletAddress,
+    refetchInterval: 30000,
+  });
 
-  // Validações
+  // Criar lista de tokens com saldos reais
+  const availableTokens = React.useMemo(() => {
+    if (!portfolio?.tokens) return DEFAULT_TOKENS;
+    
+    return DEFAULT_TOKENS.map(defaultToken => {
+      const portfolioToken = portfolio.tokens.find((t: any) => 
+        t.symbol === defaultToken.symbol || t.address === defaultToken.address
+      );
+      
+      return {
+        ...defaultToken,
+        balance: portfolioToken?.balance || "0",
+        balanceUsd: portfolioToken?.balanceUsd || "0",
+        price: portfolioToken?.price || 0
+      };
+    });
+  }, [portfolio]);
+
+  // Atualizar tokens selecionados com dados reais
+  const currentFromToken = availableTokens.find(t => t.symbol === fromToken.symbol) || fromToken;
+  const currentToToken = availableTokens.find(t => t.symbol === toToken.symbol) || toToken;
+
+  // Calcular taxa de câmbio (só se ambos tokens têm preço)
+  const exchangeRate = currentFromToken.price && currentToToken.price 
+    ? currentToToken.price / currentFromToken.price 
+    : 0;
+  const calculatedToAmount = fromAmount && exchangeRate > 0 
+    ? (parseFloat(fromAmount) * exchangeRate).toFixed(6) 
+    : "";
+
+  // Validações com dados reais
   const isValidAmount = (amount: string) => {
     const numAmount = parseFloat(amount);
-    return numAmount > 0 && numAmount <= parseFloat(fromToken.balance);
+    const tokenBalance = parseFloat(currentFromToken.balance || "0");
+    return numAmount > 0 && numAmount <= tokenBalance;
   };
 
-  const canProceed = fromAmount && isValidAmount(fromAmount) && fromToken.symbol !== toToken.symbol;
+  const canProceed = fromAmount && isValidAmount(fromAmount) && currentFromToken.symbol !== currentToToken.symbol;
 
   const handleSwapTokens = () => {
     const tempToken = fromToken;
@@ -120,13 +153,13 @@ export default function SwapPage() {
         amountIn: fromAmount,
         chainIdIn: SUPPORTED_CHAINS.POLYGON, // Polygon
         chainIdOut: SUPPORTED_CHAINS.POLYGON, // Polygon (mesmo chain)
-        tokenIn: fromToken.address,
-        tokenOut: toToken.address,
+        tokenIn: currentFromToken.address,
+        tokenOut: currentToToken.address,
         walletAddress: walletAddress,
         toAddress: walletAddress,
         slippage: slippage,
         gasFeePaymentMethod: 'ADD_TO_AMOUNT',
-        payGasFeeToken: fromToken.address
+        payGasFeeToken: currentFromToken.address
       });
 
       console.log('✅ Cotação obtida:', swapQuote);
@@ -236,29 +269,35 @@ export default function SwapPage() {
         <p className="text-slate-300">Troque tokens instantaneamente</p>
       </div>
 
-      <Card className="glass-card">
+        <Card className="glass-card">
         <CardContent className="p-6 space-y-6">
-          {/* From Token */}
+            {/* From Token */}
           <div className="space-y-3">
             <Label className="text-white text-lg">De</Label>
             <div className="bg-slate-800/50 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="text-2xl">{fromToken.icon}</div>
-                  <div>
-                    <p className="text-white font-semibold">{fromToken.symbol}</p>
-                    <p className="text-slate-400 text-sm">{fromToken.name}</p>
+                <button
+                  onClick={() => setShowFromTokenSelector(!showFromTokenSelector)}
+                  className="flex items-center space-x-3 hover:bg-slate-700/50 rounded-lg p-2 transition-colors"
+                >
+                  <div className="text-2xl">{currentFromToken.icon}</div>
+                  <div className="text-left">
+                    <p className="text-white font-semibold">{currentFromToken.symbol}</p>
+                    <p className="text-slate-400 text-sm">{currentFromToken.name}</p>
                   </div>
-                </div>
+                  <ChevronDown className="h-4 w-4 text-slate-400" />
+                </button>
                 <div className="text-right">
                   <p className="text-slate-400 text-sm">Saldo</p>
-                  <p className="text-white font-semibold">{fromToken.balance}</p>
+                  <p className="text-white font-semibold">
+                    {portfolioLoading ? "..." : currentFromToken.balance}
+                  </p>
                 </div>
               </div>
               <div className="relative">
-                <Input
+                <Input 
                   type="number"
-                  placeholder="0.0"
+                  placeholder="0.0" 
                   value={fromAmount}
                   onChange={(e) => {
                     setFromAmount(e.target.value);
@@ -267,8 +306,8 @@ export default function SwapPage() {
                   className="bg-slate-700 border-slate-600 text-white text-2xl text-right py-4 pr-16"
                 />
                 <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <span className="text-slate-400">{fromToken.symbol}</span>
-                </div>
+                  <span className="text-slate-400">{currentFromToken.symbol}</span>
+              </div>
               </div>
               {fromAmount && !isValidAmount(fromAmount) && (
                 <p className="text-red-400 text-sm flex items-center space-x-1 mt-2">
@@ -276,41 +315,47 @@ export default function SwapPage() {
                   <span>Saldo insuficiente</span>
                 </p>
               )}
+              </div>
             </div>
-          </div>
 
-          {/* Swap Arrow */}
-          <div className="flex justify-center">
+            {/* Swap Arrow */}
+            <div className="flex justify-center">
             <Button
               onClick={handleSwapTokens}
               size="sm"
               className="bg-white/10 hover:bg-white/20 border-2 border-white/20 hover:border-white/40 transition-all duration-200"
             >
               <ArrowUpDown className="h-4 w-4" />
-            </Button>
-          </div>
+              </Button>
+            </div>
 
-          {/* To Token */}
+            {/* To Token */}
           <div className="space-y-3">
             <Label className="text-white text-lg">Para</Label>
             <div className="bg-slate-800/50 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="text-2xl">{toToken.icon}</div>
-                  <div>
-                    <p className="text-white font-semibold">{toToken.symbol}</p>
-                    <p className="text-slate-400 text-sm">{toToken.name}</p>
+                <button
+                  onClick={() => setShowToTokenSelector(!showToTokenSelector)}
+                  className="flex items-center space-x-3 hover:bg-slate-700/50 rounded-lg p-2 transition-colors"
+                >
+                  <div className="text-2xl">{currentToToken.icon}</div>
+                  <div className="text-left">
+                    <p className="text-white font-semibold">{currentToToken.symbol}</p>
+                    <p className="text-slate-400 text-sm">{currentToToken.name}</p>
                   </div>
-                </div>
+                  <ChevronDown className="h-4 w-4 text-slate-400" />
+                </button>
                 <div className="text-right">
                   <p className="text-slate-400 text-sm">Saldo</p>
-                  <p className="text-white font-semibold">{toToken.balance}</p>
+                  <p className="text-white font-semibold">
+                    {portfolioLoading ? "..." : currentToToken.balance}
+                  </p>
                 </div>
               </div>
               <div className="relative">
-                <Input
+                <Input 
                   type="number"
-                  placeholder="0.0"
+                  placeholder="0.0" 
                   value={toAmount}
                   onChange={(e) => {
                     setToAmount(e.target.value);
@@ -319,7 +364,7 @@ export default function SwapPage() {
                   className="bg-slate-700 border-slate-600 text-white text-2xl text-right py-4 pr-16"
                 />
                 <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <span className="text-slate-400">{toToken.symbol}</span>
+                  <span className="text-slate-400">{currentToToken.symbol}</span>
                 </div>
               </div>
             </div>
@@ -330,7 +375,9 @@ export default function SwapPage() {
             <div className="bg-slate-800/30 rounded-lg p-3">
               <div className="flex items-center justify-between">
                 <span className="text-slate-400 text-sm">Taxa de câmbio</span>
-                <span className="text-white font-semibold">1 {fromToken.symbol} = {exchangeRate.toFixed(6)} {toToken.symbol}</span>
+                <span className="text-white font-semibold">
+                  1 {currentFromToken.symbol} = {exchangeRate > 0 ? exchangeRate.toFixed(6) : "..."} {currentToToken.symbol}
+                </span>
               </div>
             </div>
           )}
@@ -378,7 +425,7 @@ export default function SwapPage() {
       <div className="text-center">
         <h1 className="text-3xl font-bold text-white mb-2">Revisar Swap</h1>
         <p className="text-slate-300">Confirme os detalhes antes de executar</p>
-      </div>
+            </div>
 
       <Card className="glass-card">
         <CardContent className="p-6 space-y-6">
@@ -476,7 +523,7 @@ export default function SwapPage() {
               <span>Executar Swap</span>
             </div>
           )}
-        </Button>
+            </Button>
       </div>
     </div>
   );
@@ -505,8 +552,8 @@ export default function SwapPage() {
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
     </div>
   );
 
@@ -576,12 +623,12 @@ export default function SwapPage() {
           </div>
         </Button>
         <Button
-          onClick={() => router.push('/wallet')}
+          onClick={() => router.push('/dashboard')}
           className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 transition-all duration-200"
         >
           <div className="flex items-center space-x-2">
             <Wallet className="h-4 w-4" />
-            <span>Voltar para Carteira</span>
+            <span>Voltar para Dashboard</span>
           </div>
         </Button>
       </div>
@@ -600,9 +647,9 @@ export default function SwapPage() {
             {currentStep === "preview" && renderPreviewStep()}
             {currentStep === "executing" && renderExecutingStep()}
             {currentStep === "success" && renderSuccessStep()}
-          </div>
-        </div>
-      </AppLayout>
+      </div>
+      </div>
+    </AppLayout>
     </ProtectedRoute>
   );
 }
