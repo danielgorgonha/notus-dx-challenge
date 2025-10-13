@@ -285,7 +285,7 @@ export function TokenSelector({
             ) : (
               filteredTokens.map((token) => (
                 <button
-                  key={`${token.address}-${token.chainId}`}
+                  key={`${token.address}-${token.chainId || 'unknown'}-${token.symbol}`}
                   onClick={() => handleTokenSelect(token)}
                   className="w-full flex items-center justify-between p-3 hover:bg-slate-700/50 transition-colors"
                 >
