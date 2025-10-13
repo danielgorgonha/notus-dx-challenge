@@ -156,9 +156,35 @@ export function TokenSelector({
       }));
     
     
-    // 3. Combinar e ordenar por saldo (tokens com saldo primeiro)
+    // 3. Combinar e remover duplicatas
     const allTokens = [...supportedWithBalances, ...portfolioOnlyTokens];
-    return allTokens.sort((a, b) => {
+    
+    // 4. Remover duplicatas por símbolo (manter o token com maior saldo)
+    const uniqueTokens = allTokens.reduce((acc: any[], current: any) => {
+      const existingIndex = acc.findIndex(token => 
+        token.symbol.toLowerCase() === current.symbol.toLowerCase() && 
+        token.chainId === current.chainId
+      );
+      
+      if (existingIndex === -1) {
+        // Token não existe, adicionar
+        acc.push(current);
+      } else {
+        // Token existe, manter o que tem maior saldo
+        const existing = acc[existingIndex];
+        const currentBalance = parseFloat(current.balance || "0");
+        const existingBalance = parseFloat(existing.balance || "0");
+        
+        if (currentBalance > existingBalance) {
+          acc[existingIndex] = current;
+        }
+      }
+      
+      return acc;
+    }, []);
+    
+    // 5. Ordenar por saldo (tokens com saldo primeiro)
+    return uniqueTokens.sort((a, b) => {
       const balanceA = parseFloat(a.balance || "0");
       const balanceB = parseFloat(b.balance || "0");
       return balanceB - balanceA; // Maior saldo primeiro
