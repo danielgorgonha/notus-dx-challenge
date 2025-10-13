@@ -3,22 +3,102 @@
  * Endpoints para consultar chains e tokens suportados
  */
 
+'use server';
+
 import { notusAPI } from '../api/client';
 
-export const blockchainActions = {
-  /**
-   * Lista todas as chains suportadas
-   */
-  listChains: (page: number = 1, perPage: number = 20) =>
-    notusAPI.get("crypto/chains", {
-      searchParams: { page, perPage },
-    }).json(),
+interface Chain {
+  id: number;
+  name: string;
+  symbol: string;
+  rpcUrl: string;
+  blockExplorerUrl: string;
+  nativeCurrency: {
+    name: string;
+    symbol: string;
+    decimals: number;
+  };
+  isTestnet: boolean;
+}
 
-  /**
-   * Lista todos os tokens suportados
-   */
-  listTokens: (page: number = 1, perPage: number = 20) =>
-    notusAPI.get("crypto/tokens", {
+interface Token {
+  address: string;
+  symbol: string;
+  name: string;
+  decimals: number;
+  chainId: number;
+  logoUrl?: string;
+  price?: number;
+  isNative: boolean;
+}
+
+interface ChainsResponse {
+  chains: Chain[];
+  total: number;
+  page: number;
+  perPage: number;
+}
+
+interface TokensResponse {
+  tokens: Token[];
+  total: number;
+  page: number;
+  perPage: number;
+}
+
+/**
+ * Lista todas as chains suportadas
+ */
+export async function listChains(page: number = 1, perPage: number = 50): Promise<ChainsResponse> {
+  try {
+    console.log('🌐 Listando chains suportadas...');
+    
+    const response = await notusAPI.get("crypto/chains", {
       searchParams: { page, perPage },
-    }).json(),
-};
+    }).json<ChainsResponse>();
+
+    console.log('✅ Chains listadas:', response.chains.length);
+    return response;
+  } catch (error) {
+    console.error('❌ Erro ao listar chains:', error);
+    throw error;
+  }
+}
+
+/**
+ * Lista todos os tokens suportados
+ */
+export async function listTokens(page: number = 1, perPage: number = 100): Promise<TokensResponse> {
+  try {
+    console.log('🪙 Listando tokens suportados...');
+    
+    const response = await notusAPI.get("crypto/tokens", {
+      searchParams: { page, perPage },
+    }).json<TokensResponse>();
+
+    console.log('✅ Tokens listados:', response.tokens.length);
+    return response;
+  } catch (error) {
+    console.error('❌ Erro ao listar tokens:', error);
+    throw error;
+  }
+}
+
+/**
+ * Lista tokens por chain específica
+ */
+export async function listTokensByChain(chainId: number, page: number = 1, perPage: number = 100): Promise<TokensResponse> {
+  try {
+    console.log(`🪙 Listando tokens para chain ${chainId}...`);
+    
+    const response = await notusAPI.get("crypto/tokens", {
+      searchParams: { chainId, page, perPage },
+    }).json<TokensResponse>();
+
+    console.log(`✅ Tokens listados para chain ${chainId}:`, response.tokens.length);
+    return response;
+  } catch (error) {
+    console.error(`❌ Erro ao listar tokens para chain ${chainId}:`, error);
+    throw error;
+  }
+}

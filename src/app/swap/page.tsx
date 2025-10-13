@@ -32,6 +32,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { Copy, ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getPortfolio } from "@/lib/actions/dashboard";
+import { TokenSelector } from "@/components/ui/token-selector";
 
 // Tokens padrão para seleção inicial
 const DEFAULT_TOKENS = [
@@ -65,8 +66,8 @@ export default function SwapPage() {
   const toast = useToast();
   
   const [currentStep, setCurrentStep] = useState<"form" | "preview" | "executing" | "success">("form");
-  const [fromToken, setFromToken] = useState(DEFAULT_TOKENS[0]);
-  const [toToken, setToToken] = useState(DEFAULT_TOKENS[2]);
+  const [fromToken, setFromToken] = useState<any>(null);
+  const [toToken, setToToken] = useState<any>(null);
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("");
   const [slippage, setSlippage] = useState(0.5);
@@ -74,43 +75,15 @@ export default function SwapPage() {
   const [quote, setQuote] = useState<any>(null);
   const [transactionHash, setTransactionHash] = useState("");
   const [userOperationHash, setUserOperationHash] = useState("");
-  const [showFromTokenSelector, setShowFromTokenSelector] = useState(false);
-  const [showToTokenSelector, setShowToTokenSelector] = useState(false);
 
   const walletAddress = wallet?.accountAbstraction;
 
-  // Buscar portfolio real da carteira
-  const { data: portfolio, isLoading: portfolioLoading } = useQuery({
-    queryKey: ['portfolio', walletAddress],
-    queryFn: () => getPortfolio(walletAddress || ''),
-    enabled: !!walletAddress,
-    refetchInterval: 30000,
-  });
-
-  // Criar lista de tokens com saldos reais
-  const availableTokens = React.useMemo(() => {
-    if (!portfolio?.tokens) return DEFAULT_TOKENS;
-    
-    return DEFAULT_TOKENS.map(defaultToken => {
-      const portfolioToken = portfolio.tokens.find((t: any) => 
-        t.symbol === defaultToken.symbol || t.address === defaultToken.address
-      );
-      
-      return {
-        ...defaultToken,
-        balance: portfolioToken?.balance || "0",
-        balanceUsd: portfolioToken?.balanceUsd || "0",
-        price: portfolioToken?.price || 0
-      };
-    });
-  }, [portfolio]);
-
   // Atualizar tokens selecionados com dados reais
-  const currentFromToken = availableTokens.find(t => t.symbol === fromToken.symbol) || fromToken;
-  const currentToToken = availableTokens.find(t => t.symbol === toToken.symbol) || toToken;
+  const currentFromToken = fromToken;
+  const currentToToken = toToken;
 
   // Calcular taxa de câmbio (só se ambos tokens têm preço)
-  const exchangeRate = currentFromToken.price && currentToToken.price 
+  const exchangeRate = currentFromToken?.price && currentToToken?.price 
     ? currentToToken.price / currentFromToken.price 
     : 0;
   const calculatedToAmount = fromAmount && exchangeRate > 0 
@@ -119,12 +92,14 @@ export default function SwapPage() {
 
   // Validações com dados reais
   const isValidAmount = (amount: string) => {
+    if (!currentFromToken) return false;
     const numAmount = parseFloat(amount);
     const tokenBalance = parseFloat(currentFromToken.balance || "0");
     return numAmount > 0 && numAmount <= tokenBalance;
   };
 
-  const canProceed = fromAmount && isValidAmount(fromAmount) && currentFromToken.symbol !== currentToToken.symbol;
+  const canProceed = fromAmount && currentFromToken && currentToToken && 
+    isValidAmount(fromAmount) && currentFromToken.symbol !== currentToToken.symbol;
 
   const handleSwapTokens = () => {
     const tempToken = fromToken;
@@ -271,52 +246,46 @@ export default function SwapPage() {
 
         <Card className="glass-card">
         <CardContent className="p-6 space-y-6">
-            {/* From Token */}
+          {/* From Token */}
           <div className="space-y-3">
             <Label className="text-white text-lg">De</Label>
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <button
-                  onClick={() => setShowFromTokenSelector(!showFromTokenSelector)}
-                  className="flex items-center space-x-3 hover:bg-slate-700/50 rounded-lg p-2 transition-colors"
-                >
-                  <div className="text-2xl">{currentFromToken.icon}</div>
-                  <div className="text-left">
-                    <p className="text-white font-semibold">{currentFromToken.symbol}</p>
-                    <p className="text-slate-400 text-sm">{currentFromToken.name}</p>
-                  </div>
-                  <ChevronDown className="h-4 w-4 text-slate-400" />
-                </button>
-                <div className="text-right">
-                  <p className="text-slate-400 text-sm">Saldo</p>
-                  <p className="text-white font-semibold">
-                    {portfolioLoading ? "..." : currentFromToken.balance}
-                  </p>
-                </div>
-              </div>
+            <div className="bg-slate-800/50 rounded-lg p-4 space-y-4">
+              <TokenSelector
+                selectedToken={currentFromToken}
+                onTokenSelect={setFromToken}
+                chainId={SUPPORTED_CHAINS.POLYGON}
+                walletAddress={walletAddress}
+                placeholder="Selecionar token de origem"
+                showBalance={true}
+              />
+              
               <div className="relative">
-                <Input 
+                <Input
                   type="number"
-                  placeholder="0.0" 
+                  placeholder="0.0"
                   value={fromAmount}
                   onChange={(e) => {
                     setFromAmount(e.target.value);
                     setToAmount(calculatedToAmount);
                   }}
                   className="bg-slate-700 border-slate-600 text-white text-2xl text-right py-4 pr-16"
+                  disabled={!currentFromToken}
                 />
                 <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <span className="text-slate-400">{currentFromToken.symbol}</span>
+                  <span className="text-slate-400">
+                    {currentFromToken?.symbol || "TOKEN"}
+                  </span>
+                </div>
               </div>
-              </div>
+              
               {fromAmount && !isValidAmount(fromAmount) && (
-                <p className="text-red-400 text-sm flex items-center space-x-1 mt-2">
+                <p className="text-red-400 text-sm flex items-center space-x-1">
                   <AlertCircle className="h-4 w-4" />
                   <span>Saldo insuficiente</span>
                 </p>
               )}
-              </div>
             </div>
+          </div>
 
             {/* Swap Arrow */}
             <div className="flex justify-center">
@@ -329,49 +298,42 @@ export default function SwapPage() {
               </Button>
             </div>
 
-            {/* To Token */}
+          {/* To Token */}
           <div className="space-y-3">
             <Label className="text-white text-lg">Para</Label>
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <button
-                  onClick={() => setShowToTokenSelector(!showToTokenSelector)}
-                  className="flex items-center space-x-3 hover:bg-slate-700/50 rounded-lg p-2 transition-colors"
-                >
-                  <div className="text-2xl">{currentToToken.icon}</div>
-                  <div className="text-left">
-                    <p className="text-white font-semibold">{currentToToken.symbol}</p>
-                    <p className="text-slate-400 text-sm">{currentToToken.name}</p>
-                  </div>
-                  <ChevronDown className="h-4 w-4 text-slate-400" />
-                </button>
-                <div className="text-right">
-                  <p className="text-slate-400 text-sm">Saldo</p>
-                  <p className="text-white font-semibold">
-                    {portfolioLoading ? "..." : currentToToken.balance}
-                  </p>
-                </div>
-              </div>
+            <div className="bg-slate-800/50 rounded-lg p-4 space-y-4">
+              <TokenSelector
+                selectedToken={currentToToken}
+                onTokenSelect={setToToken}
+                chainId={SUPPORTED_CHAINS.POLYGON}
+                walletAddress={walletAddress}
+                placeholder="Selecionar token de destino"
+                showBalance={true}
+              />
+              
               <div className="relative">
-                <Input 
+                <Input
                   type="number"
-                  placeholder="0.0" 
+                  placeholder="0.0"
                   value={toAmount}
                   onChange={(e) => {
                     setToAmount(e.target.value);
                     setFromAmount(e.target.value ? (parseFloat(e.target.value) / exchangeRate).toFixed(6) : "");
                   }}
                   className="bg-slate-700 border-slate-600 text-white text-2xl text-right py-4 pr-16"
+                  disabled={!currentToToken}
                 />
                 <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <span className="text-slate-400">{currentToToken.symbol}</span>
+                  <span className="text-slate-400">
+                    {currentToToken?.symbol || "TOKEN"}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Exchange Rate */}
-          {fromAmount && toAmount && (
+          {fromAmount && toAmount && currentFromToken && currentToToken && (
             <div className="bg-slate-800/30 rounded-lg p-3">
               <div className="flex items-center justify-between">
                 <span className="text-slate-400 text-sm">Taxa de câmbio</span>
