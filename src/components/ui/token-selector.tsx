@@ -104,17 +104,12 @@ export function TokenSelector({
     refetchInterval: 30000,
   });
 
-  console.log("TokenSelector - walletAddress:", walletAddress);
-  console.log("TokenSelector - portfolioData:", portfolioData);
-  console.log("TokenSelector - portfolioError:", portfolioError);
 
   // Combinar tokens suportados com saldos do portfolio + tokens do portfolio que não estão na lista suportada
   const tokensWithBalances = React.useMemo(() => {
     const supportedTokens = tokensData?.tokens || [];
     const portfolioTokens = portfolioData?.tokens || [];
     
-    console.log("TokenSelector - supportedTokens:", supportedTokens.length);
-    console.log("TokenSelector - portfolioTokens:", portfolioTokens.length);
     
     // 1. Mapear tokens suportados com saldos do portfolio
     const supportedWithBalances = supportedTokens.map((token: any) => {
@@ -123,9 +118,6 @@ export function TokenSelector({
         pt.chainId === token.chainId
       );
       
-      if (portfolioToken) {
-        console.log(`TokenSelector - Found portfolio token for ${token.symbol}:`, portfolioToken);
-      }
       
       return {
         address: token.address,
@@ -163,7 +155,6 @@ export function TokenSelector({
         balanceUsd: pt.balanceUsd || "0"
       }));
     
-    console.log("TokenSelector - portfolioOnlyTokens:", portfolioOnlyTokens.length);
     
     // 3. Combinar e ordenar por saldo (tokens com saldo primeiro)
     const allTokens = [...supportedWithBalances, ...portfolioOnlyTokens];

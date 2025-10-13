@@ -47,7 +47,6 @@ export default function TransferPage() {
   const [userOperationHash, setUserOperationHash] = useState("");
 
   const walletAddress = wallet?.accountAbstraction;
-  console.log("TransferPage - walletAddress:", walletAddress);
 
   // Validações
   const isValidAddress = (address: string) => {
