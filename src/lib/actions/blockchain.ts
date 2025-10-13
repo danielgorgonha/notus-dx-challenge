@@ -68,12 +68,26 @@ export async function listChains(page: number = 1, perPage: number = 50): Promis
 /**
  * Lista todos os tokens suportados
  */
-export async function listTokens(page: number = 1, perPage: number = 100): Promise<TokensResponse> {
+export async function listTokens(
+  page: number = 1, 
+  perPage: number = 100,
+  projectId: string = 'fdf973e5-3523-4077-903d-bacfc0d0c2dd',
+  filterWhitelist: boolean = false,
+  orderBy: 'marketCap' | 'chainId' = 'marketCap',
+  orderDir: 'asc' | 'desc' = 'desc'
+): Promise<TokensResponse> {
   try {
     console.log('🪙 Listando tokens suportados...');
     
     const response = await notusAPI.get("crypto/tokens", {
-      searchParams: { page, perPage },
+      searchParams: { 
+        page, 
+        perPage,
+        projectId,
+        filterWhitelist,
+        orderBy,
+        orderDir
+      },
     }).json<TokensResponse>();
 
     console.log('✅ Tokens listados:', response.tokens.length);
@@ -87,12 +101,28 @@ export async function listTokens(page: number = 1, perPage: number = 100): Promi
 /**
  * Lista tokens por chain específica
  */
-export async function listTokensByChain(chainId: number, page: number = 1, perPage: number = 100): Promise<TokensResponse> {
+export async function listTokensByChain(
+  chainId: number, 
+  page: number = 1, 
+  perPage: number = 100,
+  projectId: string = 'fdf973e5-3523-4077-903d-bacfc0d0c2dd',
+  filterWhitelist: boolean = false,
+  orderBy: 'marketCap' | 'chainId' = 'marketCap',
+  orderDir: 'asc' | 'desc' = 'desc'
+): Promise<TokensResponse> {
   try {
     console.log(`🪙 Listando tokens para chain ${chainId}...`);
     
     const response = await notusAPI.get("crypto/tokens", {
-      searchParams: { chainId, page, perPage },
+      searchParams: { 
+        chainId, 
+        page, 
+        perPage,
+        projectId,
+        filterWhitelist,
+        orderBy,
+        orderDir
+      },
     }).json<TokensResponse>();
 
     console.log(`✅ Tokens listados para chain ${chainId}:`, response.tokens.length);

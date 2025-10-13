@@ -27,6 +27,7 @@ import { SUPPORTED_CHAINS } from "@/lib/client";
 import { createTransferQuote } from "@/lib/actions/transfer";
 import { executeUserOperation } from "@/lib/actions/user-operation";
 import { usePrivy } from "@privy-io/react-auth";
+import { TokenSelector } from "@/components/ui/token-selector";
 
 // Mock data - será substituído por dados reais da API
 const MOCK_TOKENS = [
@@ -63,7 +64,7 @@ export default function TransferPage() {
   const toast = useToast();
   
   const [currentStep, setCurrentStep] = useState<"form" | "preview" | "executing" | "success">("form");
-  const [selectedToken, setSelectedToken] = useState(MOCK_TOKENS[0]);
+  const [selectedToken, setSelectedToken] = useState<any>(null);
   const [toAddress, setToAddress] = useState("");
   const [amount, setAmount] = useState("");
   const [memo, setMemo] = useState("");
@@ -80,11 +81,13 @@ export default function TransferPage() {
   };
 
   const isValidAmount = (amount: string) => {
+    if (!selectedToken) return false;
     const numAmount = parseFloat(amount);
-    return numAmount > 0 && numAmount <= parseFloat(selectedToken.balance);
+    const tokenBalance = parseFloat(selectedToken.balance || "0");
+    return numAmount > 0 && numAmount <= tokenBalance;
   };
 
-  const canProceed = toAddress && amount && isValidAddress(toAddress) && isValidAmount(amount);
+  const canProceed = toAddress && amount && selectedToken && isValidAddress(toAddress) && isValidAmount(amount);
 
   const handleGetQuote = async () => {
     if (!canProceed || !walletAddress) {
@@ -230,33 +233,14 @@ export default function TransferPage() {
           {/* Seleção de Token */}
           <div className="space-y-3">
             <Label className="text-white text-lg">Token a transferir</Label>
-            <div className="grid grid-cols-1 gap-3">
-              {MOCK_TOKENS.map((token) => (
-                <button
-                  key={token.symbol}
-                  onClick={() => setSelectedToken(token)}
-                  className={`p-4 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
-                    selectedToken.symbol === token.symbol
-                      ? 'border-blue-500 bg-blue-500/10'
-                      : 'border-white/20 bg-white/5 hover:bg-white/10 hover:border-blue-500/30'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="text-2xl">{token.icon}</div>
-                      <div className="text-left">
-                        <p className="text-white font-semibold">{token.symbol}</p>
-                        <p className="text-slate-400 text-sm">{token.name}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-white font-semibold">{token.balance}</p>
-                      <p className="text-slate-400 text-sm">Disponível</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+            <TokenSelector
+              selectedToken={selectedToken}
+              onTokenSelect={setSelectedToken}
+              chainId={SUPPORTED_CHAINS.POLYGON}
+              walletAddress={walletAddress}
+              placeholder="Selecionar token para transferir"
+              showBalance={true}
+            />
           </div>
 
           {/* Endereço de Destino */}

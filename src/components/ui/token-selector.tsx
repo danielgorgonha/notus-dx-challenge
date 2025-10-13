@@ -49,37 +49,86 @@ export function TokenSelector({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Buscar tokens disponíveis na chain
+  // Tokens padrão para fallback quando API não retorna tokens
+  const DEFAULT_TOKENS = [
+    {
+      address: "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+      symbol: "USDC",
+      name: "USD Coin",
+      decimals: 6,
+      chainId: 137,
+      isNative: false,
+      price: 1.00
+    },
+    {
+      address: "0x4e15361fd6b4bb609fa63c81a2be19d873717870",
+      symbol: "BRZ",
+      name: "Brazilian Real Token",
+      decimals: 18,
+      chainId: 137,
+      isNative: false,
+      price: 0.20
+    },
+    {
+      address: "0x0000000000000000000000000000000000000000",
+      symbol: "MATIC",
+      name: "Polygon",
+      decimals: 18,
+      chainId: 137,
+      isNative: true,
+      price: 0.80
+    },
+    {
+      address: "0x7ceb23fd6fc0ad59bb62c01bdb4a4c4e96f73b4e",
+      symbol: "WETH",
+      name: "Wrapped Ethereum",
+      decimals: 18,
+      chainId: 137,
+      isNative: false,
+      price: 2500.00
+    }
+  ];
+
+  // Buscar tokens suportados da API Notus
   const { data: tokensData, isLoading: tokensLoading, error: tokensError } = useQuery({
     queryKey: ['tokens', chainId],
-    queryFn: () => listTokensByChain(chainId, 1, 100),
-    enabled: !!chainId,
+    queryFn: () => listTokensByChain(chainId, 1, 100, 'fdf973e5-3523-4077-903d-bacfc0d0c2dd', false, 'marketCap', 'desc'),
+    refetchInterval: 300000, // 5 minutos
   });
 
-  // Buscar portfolio para mostrar saldos
-  const { data: portfolio } = useQuery({
+  // Buscar portfolio do usuário para obter saldos
+  const { data: portfolioData } = useQuery({
     queryKey: ['portfolio', walletAddress],
     queryFn: () => getPortfolio(walletAddress || ''),
-    enabled: !!walletAddress && showBalance,
+    enabled: !!walletAddress,
     refetchInterval: 30000,
   });
 
-  // Combinar tokens com saldos do portfolio
+  // Combinar tokens suportados com saldos do portfolio
   const tokensWithBalances = React.useMemo(() => {
-    if (!tokensData?.tokens) return [];
+    if (!tokensData?.tokens) return DEFAULT_TOKENS;
     
-    return tokensData.tokens.map(token => {
-      const portfolioToken = portfolio?.tokens?.find((t: any) => 
-        t.symbol === token.symbol || t.address === token.address
+    return tokensData.tokens.map((token: any) => {
+      // Buscar saldo no portfolio
+      const portfolioToken = portfolioData?.tokens?.find((pt: any) => 
+        pt.address.toLowerCase() === token.address.toLowerCase() && 
+        pt.chainId === token.chainId
       );
       
       return {
-        ...token,
-        balance: portfolioToken?.balance || "0",
+        address: token.address,
+        symbol: token.symbol,
+        name: token.name,
+        decimals: token.decimals,
+        chainId: token.chainId,
+        logoUrl: token.logo,
+        price: token.marketCap ? token.marketCap / 1000000 : undefined, // Aproximação
+        isNative: token.address === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        balance: portfolioToken?.balanceFormatted || portfolioToken?.balance || "0",
         balanceUsd: portfolioToken?.balanceUsd || "0"
       };
     });
-  }, [tokensData, portfolio]);
+  }, [tokensData, portfolioData]);
 
   // Filtrar tokens por busca
   const filteredTokens = React.useMemo(() => {
@@ -119,10 +168,14 @@ export function TokenSelector({
           {selectedToken ? (
             <>
               <div className="text-lg">
-                {selectedToken.symbol === 'USDC' ? '💙' : 
-                 selectedToken.symbol === 'BRZ' ? '🇧🇷' :
-                 selectedToken.symbol === 'ETH' ? '💎' :
-                 selectedToken.symbol === 'MATIC' ? '🟣' : '🪙'}
+                {selectedToken.logoUrl ? (
+                  <img src={selectedToken.logoUrl} alt={selectedToken.symbol} className="w-6 h-6 rounded-full" />
+                ) : (
+                  selectedToken.symbol === 'USDC' ? '💙' : 
+                  selectedToken.symbol === 'BRZ' ? '🇧🇷' :
+                  selectedToken.symbol === 'ETH' ? '💎' :
+                  selectedToken.symbol === 'MATIC' ? '🟣' : '🪙'
+                )}
               </div>
               <div className="text-left">
                 <div className="text-white font-semibold">{selectedToken.symbol}</div>
@@ -177,10 +230,14 @@ export function TokenSelector({
                 >
                   <div className="flex items-center space-x-3">
                     <div className="text-lg">
-                      {token.symbol === 'USDC' ? '💙' : 
-                       token.symbol === 'BRZ' ? '🇧🇷' :
-                       token.symbol === 'ETH' ? '💎' :
-                       token.symbol === 'MATIC' ? '🟣' : '🪙'}
+                      {token.logoUrl ? (
+                        <img src={token.logoUrl} alt={token.symbol} className="w-6 h-6 rounded-full" />
+                      ) : (
+                        token.symbol === 'USDC' ? '💙' : 
+                        token.symbol === 'BRZ' ? '🇧🇷' :
+                        token.symbol === 'ETH' ? '💎' :
+                        token.symbol === 'MATIC' ? '🟣' : '🪙'
+                      )}
                     </div>
                     <div className="text-left">
                       <div className="text-white font-semibold">{token.symbol}</div>
