@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { blockchainActions } from '@/lib/actions/blockchain';
+import { listChains } from '@/lib/actions/blockchain';
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const perPage = parseInt(searchParams.get('perPage') || '20');
 
-    const response = await blockchainActions.listChains(page, perPage);
+    const response = await listChains(page, perPage);
     return NextResponse.json(response);
   } catch (error) {
     console.error('Error listing chains:', error);

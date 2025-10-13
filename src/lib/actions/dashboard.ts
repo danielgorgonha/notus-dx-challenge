@@ -6,7 +6,7 @@
 'use server';
 
 import { walletActions } from './wallet';
-import { blockchainActions } from './blockchain';
+import { listTokens } from './blockchain';
 
 /**
  * Busca portfolio da wallet
@@ -35,9 +35,9 @@ export async function getHistory(walletAddress: string, params?: { take?: number
 /**
  * Lista tokens suportados
  */
-export async function listTokens(page: number = 1, perPage: number = 50) {
+export async function listSupportedTokens(page: number = 1, perPage: number = 50) {
   try {
-    return await blockchainActions.listTokens(page, perPage);
+    return await listTokens(page, perPage);
   } catch (error) {
     console.error('Error listing tokens:', error);
     throw error;
