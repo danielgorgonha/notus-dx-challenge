@@ -24,6 +24,9 @@ import { useSmartWallet } from "@/hooks/use-smart-wallet";
 import { useToast } from "@/hooks/use-toast";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { SUPPORTED_CHAINS } from "@/lib/client";
+import { createTransferQuote } from "@/lib/actions/transfer";
+import { executeUserOperation } from "@/lib/actions/user-operation";
+import { usePrivy } from "@privy-io/react-auth";
 
 // Mock data - será substituído por dados reais da API
 const MOCK_TOKENS = [
@@ -56,6 +59,7 @@ const MOCK_TOKENS = [
 export default function TransferPage() {
   const router = useRouter();
   const { wallet } = useSmartWallet();
+  const { signMessage } = usePrivy();
   const toast = useToast();
   
   const [currentStep, setCurrentStep] = useState<"form" | "preview" | "executing" | "success">("form");
@@ -66,6 +70,7 @@ export default function TransferPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [quote, setQuote] = useState<any>(null);
   const [transactionHash, setTransactionHash] = useState("");
+  const [userOperationHash, setUserOperationHash] = useState("");
 
   const walletAddress = wallet?.accountAbstraction;
 
@@ -82,38 +87,57 @@ export default function TransferPage() {
   const canProceed = toAddress && amount && isValidAddress(toAddress) && isValidAmount(amount);
 
   const handleGetQuote = async () => {
-    if (!canProceed) return;
+    if (!canProceed || !walletAddress) {
+      toast.error(
+        'Erro',
+        'Carteira não conectada ou dados inválidos.',
+        3000
+      );
+      return;
+    }
 
     setIsLoading(true);
     try {
-      // Simular chamada para API de cotação
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('💸 Obtendo cotação de transferência...');
       
-      const mockQuote = {
-        quoteId: `quote_${Date.now()}`,
+      const transferQuote = await createTransferQuote({
+        amount: amount,
+        chainId: SUPPORTED_CHAINS.POLYGON, // Polygon
+        gasFeePaymentMethod: 'ADD_TO_AMOUNT',
+        payGasFeeToken: selectedToken.address,
+        token: selectedToken.address,
+        walletAddress: walletAddress,
+        toAddress: toAddress,
+        metadata: memo ? { memo } : undefined
+      });
+
+      console.log('✅ Cotação obtida:', transferQuote);
+      
+      const quoteData = {
+        ...transferQuote.transfer,
         fromToken: selectedToken,
         toAddress,
-        amount,
-        estimatedGasFee: "0.002",
-        gasFeeToken: "ETH",
-        totalCost: (parseFloat(amount) + 0.002).toFixed(6),
+        amount: transferQuote.transfer.amountToSend,
+        estimatedGasFee: transferQuote.transfer.estimatedGasFees.gasFeeTokenAmount,
+        gasFeeToken: selectedToken.symbol,
+        totalCost: transferQuote.transfer.amountToSend,
         estimatedTime: "~2 minutes",
-        networkFee: "0.001",
-        transactionFee: "0.0005"
       };
       
-      setQuote(mockQuote);
+      setQuote(quoteData);
+      setUserOperationHash(transferQuote.transfer.userOperationHash);
       setCurrentStep("preview");
+      
       toast.success(
         'Cotação Gerada',
         'Cotação de transferência criada com sucesso!',
         3000
       );
     } catch (error) {
-      console.error("Erro ao obter cotação:", error);
+      console.error("❌ Erro ao obter cotação:", error);
       toast.error(
         'Erro na Cotação',
-        'Não foi possível obter a cotação. Tente novamente.',
+        error instanceof Error ? error.message : 'Não foi possível obter a cotação. Tente novamente.',
         5000
       );
     } finally {
@@ -122,15 +146,39 @@ export default function TransferPage() {
   };
 
   const handleExecuteTransfer = async () => {
+    if (!userOperationHash) {
+      toast.error(
+        'Erro',
+        'Cotação não encontrada. Obtenha uma nova cotação.',
+        3000
+      );
+      return;
+    }
+
     setIsLoading(true);
     setCurrentStep("executing");
     
     try {
-      // Simular execução da transação
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      console.log('⚙️ Assinando User Operation...');
       
-      const mockHash = `0x${Math.random().toString(16).substring(2, 66)}`;
-      setTransactionHash(mockHash);
+      // Assinar a User Operation
+      const signature = await signMessage(userOperationHash);
+      
+      if (!signature) {
+        throw new Error('Assinatura cancelada pelo usuário');
+      }
+
+      console.log('✅ Assinatura obtida, executando transferência...');
+      
+      // Executar a User Operation
+      const result = await executeUserOperation({
+        userOperationHash,
+        signature
+      });
+
+      console.log('✅ Transferência executada:', result);
+      
+      setTransactionHash(result.userOperationHash);
       setCurrentStep("success");
       
       toast.success(
@@ -139,10 +187,10 @@ export default function TransferPage() {
         5000
       );
     } catch (error) {
-      console.error("Erro ao executar transferência:", error);
+      console.error("❌ Erro ao executar transferência:", error);
       toast.error(
         'Erro na Transferência',
-        'Não foi possível executar a transferência. Tente novamente.',
+        error instanceof Error ? error.message : 'Não foi possível executar a transferência. Tente novamente.',
         5000
       );
       setCurrentStep("preview");
@@ -167,6 +215,7 @@ export default function TransferPage() {
     setMemo("");
     setQuote(null);
     setTransactionHash("");
+    setUserOperationHash("");
   };
 
   const renderFormStep = () => (
