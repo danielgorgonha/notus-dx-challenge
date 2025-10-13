@@ -348,7 +348,7 @@ export default function DepositPage() {
             setSendFiatCurrency("BRL"); // BRZ recebe BRL
             setCurrentStep("amount");
           }}
-          className="w-full p-6 rounded-xl border-2 border-white/20 bg-white/5 hover:bg-white/10 hover:border-green-500/50 transition-all group"
+          className="w-full p-6 rounded-xl border-2 border-white/20 bg-white/5 hover:bg-white/10 hover:border-green-500/50 transition-all group focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50"
         >
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-yellow-400 rounded-full flex items-center justify-center">
@@ -373,7 +373,7 @@ export default function DepositPage() {
             setSendFiatCurrency("USD"); // USDC recebe USD
             setCurrentStep("amount");
           }}
-          className="w-full p-6 rounded-xl border-2 border-white/20 bg-white/5 hover:bg-white/10 hover:border-blue-500/50 transition-all group"
+          className="w-full p-6 rounded-xl border-2 border-white/20 bg-white/5 hover:bg-white/10 hover:border-blue-500/50 transition-all group focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
         >
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
@@ -506,9 +506,16 @@ export default function DepositPage() {
         <Button
           onClick={handleAmountSubmit}
           disabled={!amount || parseFloat(amount) < minAmount || parseFloat(amount) > availableLimit}
-          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-slate-600 disabled:to-slate-600"
         >
-          Continuar
+          {!amount || parseFloat(amount) < minAmount || parseFloat(amount) > availableLimit ? (
+            <span className="flex items-center space-x-2">
+              <AlertCircle className="h-4 w-4" />
+              <span>Valor Inválido</span>
+            </span>
+          ) : (
+            "Continuar"
+          )}
         </Button>
       </div>
     </div>
@@ -555,10 +562,10 @@ export default function DepositPage() {
               <div className="grid grid-cols-1 gap-3">
                 <button
                   onClick={() => setChainId(SUPPORTED_CHAINS.POLYGON)}
-                  className={`p-4 rounded-lg border-2 transition-all ${
+                  className={`p-4 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500/50 ${
                     chainId === SUPPORTED_CHAINS.POLYGON
                       ? 'border-purple-500 bg-purple-500/10'
-                      : 'border-white/20 bg-white/5 hover:bg-white/10'
+                      : 'border-white/20 bg-white/5 hover:bg-white/10 hover:border-purple-500/30'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
@@ -655,7 +662,7 @@ export default function DepositPage() {
         <Button
           onClick={handleConfirm}
           disabled={isLoading}
-          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 disabled:opacity-50"
+          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-slate-600 disabled:to-slate-600 transition-all duration-200"
         >
           {isLoading ? (
             <div className="flex items-center space-x-2">
@@ -663,7 +670,10 @@ export default function DepositPage() {
               <span>Processando...</span>
             </div>
           ) : (
-            "Gerar PIX Copia e Cola"
+            <div className="flex items-center space-x-2">
+              <QrCode className="h-4 w-4" />
+              <span>Gerar PIX Copia e Cola</span>
+            </div>
           )}
         </Button>
       </div>
@@ -717,11 +727,27 @@ export default function DepositPage() {
           </Card>
           <div className="flex space-x-4">
             <Button
-              onClick={() => setCurrentStep("amount")}
+              onClick={() => {
+                setCurrentStep("currency");
+                setAmount("");
+                reset(); // Resetar estado do depósito
+              }}
               variant="outline"
-              className="flex-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+              className="flex-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:border-blue-400 hover:text-blue-300 transition-all duration-200"
             >
-              Tentar Novamente
+              <div className="flex items-center space-x-2">
+                <Plus className="h-4 w-4" />
+                <span>Tentar Novamente</span>
+              </div>
+            </Button>
+            <Button
+              onClick={() => router.push('/wallet')}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 transition-all duration-200"
+            >
+              <div className="flex items-center space-x-2">
+                <DollarSign className="h-4 w-4" />
+                <span>Voltar para Carteira</span>
+              </div>
             </Button>
           </div>
         </div>
@@ -772,7 +798,8 @@ export default function DepositPage() {
                   <Button
                     onClick={copyPixKey}
                     size="sm"
-                    className="bg-slate-700 hover:bg-slate-600"
+                    className="bg-slate-700 hover:bg-slate-600 text-white transition-all duration-200 hover:scale-105"
+                    title="Copiar chave PIX"
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -821,17 +848,27 @@ export default function DepositPage() {
 
         <div className="flex space-x-4">
           <Button
-            onClick={() => setCurrentStep("amount")}
+            onClick={() => {
+              setCurrentStep("currency");
+              setAmount("");
+              reset(); // Resetar estado do depósito
+            }}
             variant="outline"
-            className="flex-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+            className="flex-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:border-blue-400 hover:text-blue-300 transition-all duration-200"
           >
-            Novo Depósito
+            <div className="flex items-center space-x-2">
+              <Plus className="h-4 w-4" />
+              <span>Novo Depósito</span>
+            </div>
           </Button>
           <Button
             onClick={() => router.push('/wallet')}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3"
+            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 transition-all duration-200"
           >
-            Voltar para Carteira
+            <div className="flex items-center space-x-2">
+              <DollarSign className="h-4 w-4" />
+              <span>Voltar para Carteira</span>
+            </div>
           </Button>
         </div>
       </div>
