@@ -97,23 +97,35 @@ export function TokenSelector({
   });
 
   // Buscar portfolio do usuário para obter saldos
-  const { data: portfolioData } = useQuery({
+  const { data: portfolioData, isLoading: portfolioLoading, error: portfolioError } = useQuery({
     queryKey: ['portfolio', walletAddress],
     queryFn: () => getPortfolio(walletAddress || ''),
     enabled: !!walletAddress,
     refetchInterval: 30000,
   });
 
-  // Combinar tokens suportados com saldos do portfolio
+  console.log("TokenSelector - walletAddress:", walletAddress);
+  console.log("TokenSelector - portfolioData:", portfolioData);
+  console.log("TokenSelector - portfolioError:", portfolioError);
+
+  // Combinar tokens suportados com saldos do portfolio + tokens do portfolio que não estão na lista suportada
   const tokensWithBalances = React.useMemo(() => {
-    if (!tokensData?.tokens) return DEFAULT_TOKENS;
+    const supportedTokens = tokensData?.tokens || [];
+    const portfolioTokens = portfolioData?.tokens || [];
     
-    return tokensData.tokens.map((token: any) => {
-      // Buscar saldo no portfolio
-      const portfolioToken = portfolioData?.tokens?.find((pt: any) => 
+    console.log("TokenSelector - supportedTokens:", supportedTokens.length);
+    console.log("TokenSelector - portfolioTokens:", portfolioTokens.length);
+    
+    // 1. Mapear tokens suportados com saldos do portfolio
+    const supportedWithBalances = supportedTokens.map((token: any) => {
+      const portfolioToken = portfolioTokens.find((pt: any) => 
         pt.address.toLowerCase() === token.address.toLowerCase() && 
         pt.chainId === token.chainId
       );
+      
+      if (portfolioToken) {
+        console.log(`TokenSelector - Found portfolio token for ${token.symbol}:`, portfolioToken);
+      }
       
       return {
         address: token.address,
@@ -122,11 +134,43 @@ export function TokenSelector({
         decimals: token.decimals,
         chainId: token.chainId,
         logoUrl: token.logo,
-        price: token.marketCap ? token.marketCap / 1000000 : undefined, // Aproximação
+        price: token.marketCap ? token.marketCap / 1000000 : undefined,
         isNative: token.address === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         balance: portfolioToken?.balanceFormatted || portfolioToken?.balance || "0",
         balanceUsd: portfolioToken?.balanceUsd || "0"
       };
+    });
+    
+    // 2. Adicionar tokens do portfolio que não estão na lista suportada
+    const portfolioOnlyTokens = portfolioTokens
+      .filter((pt: any) => {
+        // Verificar se este token do portfolio NÃO está na lista suportada
+        return !supportedTokens.some((st: any) => 
+          st.address.toLowerCase() === pt.address.toLowerCase() && 
+          st.chainId === pt.chainId
+        );
+      })
+      .map((pt: any) => ({
+        address: pt.address,
+        symbol: pt.symbol,
+        name: pt.name,
+        decimals: pt.decimals,
+        chainId: pt.chainId,
+        logoUrl: pt.logo,
+        price: pt.priceUsd ? parseFloat(pt.priceUsd) : undefined,
+        isNative: false,
+        balance: pt.balanceFormatted || pt.balance || "0",
+        balanceUsd: pt.balanceUsd || "0"
+      }));
+    
+    console.log("TokenSelector - portfolioOnlyTokens:", portfolioOnlyTokens.length);
+    
+    // 3. Combinar e ordenar por saldo (tokens com saldo primeiro)
+    const allTokens = [...supportedWithBalances, ...portfolioOnlyTokens];
+    return allTokens.sort((a, b) => {
+      const balanceA = parseFloat(a.balance || "0");
+      const balanceB = parseFloat(b.balance || "0");
+      return balanceB - balanceA; // Maior saldo primeiro
     });
   }, [tokensData, portfolioData]);
 

@@ -14,7 +14,8 @@ import {
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useState } from "react";
 
-// Mock data para pools - será substituído por dados reais da API
+// TODO: Integrar com API da Notus para pools de liquidez
+// Mock data temporário - será substituído por dados reais da API
 const MOCK_POOLS = [
   {
     id: 1,

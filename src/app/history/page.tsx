@@ -204,7 +204,10 @@ export default function HistoryPage() {
 
                       <div className="text-right ml-4">
                         <div className="font-semibold text-white">
-                          {transaction.amount ? `${transaction.amount} ${transaction.token || ''}` : 'N/A'}
+                          {transaction.amount ? 
+                            `${parseFloat(transaction.amount).toFixed(4)} ${transaction.token || ''}` : 
+                            'N/A'
+                          }
                         </div>
                         {transaction.amountUsd && (
                           <div className="text-slate-400 text-sm">
