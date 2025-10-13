@@ -68,6 +68,23 @@ export default function SwapPage() {
   const [currentStep, setCurrentStep] = useState<"form" | "preview" | "executing" | "success">("form");
   const [fromToken, setFromToken] = useState<any>(null);
   const [toToken, setToToken] = useState<any>(null);
+
+  // Funções para seleção de tokens com validação
+  const handleFromTokenSelect = (token: any) => {
+    if (toToken && token.address === toToken.address && token.chainId === toToken.chainId) {
+      // Se o token selecionado é o mesmo do "Para", limpa o "Para"
+      setToToken(null);
+    }
+    setFromToken(token);
+  };
+
+  const handleToTokenSelect = (token: any) => {
+    if (fromToken && token.address === fromToken.address && token.chainId === fromToken.chainId) {
+      // Se o token selecionado é o mesmo do "De", limpa o "De"
+      setFromToken(null);
+    }
+    setToToken(token);
+  };
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("");
   const [slippage, setSlippage] = useState(0.5);
@@ -252,7 +269,7 @@ export default function SwapPage() {
             <div className="bg-slate-800/50 rounded-lg p-4 space-y-4">
               <TokenSelector
                 selectedToken={currentFromToken}
-                onTokenSelect={setFromToken}
+                onTokenSelect={handleFromTokenSelect}
                 chainId={SUPPORTED_CHAINS.POLYGON}
                 walletAddress={walletAddress}
                 placeholder="Selecionar token de origem"
@@ -304,11 +321,11 @@ export default function SwapPage() {
             <div className="bg-slate-800/50 rounded-lg p-4 space-y-4">
               <TokenSelector
                 selectedToken={currentToToken}
-                onTokenSelect={setToToken}
+                onTokenSelect={handleToTokenSelect}
                 chainId={SUPPORTED_CHAINS.POLYGON}
                 walletAddress={walletAddress}
                 placeholder="Selecionar token de destino"
-                showBalance={true}
+                showBalance={false}
               />
               
               <div className="relative">
