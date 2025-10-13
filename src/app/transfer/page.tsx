@@ -29,33 +29,6 @@ import { executeUserOperation } from "@/lib/actions/user-operation";
 import { usePrivy } from "@privy-io/react-auth";
 import { TokenSelector } from "@/components/ui/token-selector";
 
-// Mock data - será substituído por dados reais da API
-const MOCK_TOKENS = [
-  {
-    symbol: "USDC",
-    name: "USD Coin",
-    address: "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-    balance: "1250.00",
-    decimals: 6,
-    icon: "💙"
-  },
-  {
-    symbol: "BRZ",
-    name: "Brazilian Real Token",
-    address: "0x4e15361fd6b4bb609fa63c81a2be19d873717870",
-    balance: "5000.00",
-    decimals: 18,
-    icon: "🇧🇷"
-  },
-  {
-    symbol: "ETH",
-    name: "Ethereum",
-    address: "0x0000000000000000000000000000000000000000",
-    balance: "0.875",
-    decimals: 18,
-    icon: "💎"
-  }
-];
 
 export default function TransferPage() {
   const router = useRouter();
@@ -165,7 +138,7 @@ export default function TransferPage() {
       console.log('⚙️ Assinando User Operation...');
       
       // Assinar a User Operation
-      const signature = await signMessage(userOperationHash);
+      const signature = await signMessage({ message: userOperationHash });
       
       if (!signature) {
         throw new Error('Assinatura cancelada pelo usuário');
@@ -176,7 +149,7 @@ export default function TransferPage() {
       // Executar a User Operation
       const result = await executeUserOperation({
         userOperationHash,
-        signature
+        signature: (signature as any).signature || signature
       });
 
       console.log('✅ Transferência executada:', result);
@@ -286,7 +259,7 @@ export default function TransferPage() {
                 className="bg-slate-800 border-slate-600 text-white text-2xl text-center py-4"
               />
               <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                <span className="text-slate-400">{selectedToken.symbol}</span>
+                <span className="text-slate-400">{selectedToken?.symbol || "TOKEN"}</span>
               </div>
             </div>
             {amount && !isValidAmount(amount) && (
@@ -297,7 +270,7 @@ export default function TransferPage() {
             )}
             <div className="flex justify-between text-sm">
               <span className="text-slate-400">Saldo disponível:</span>
-              <span className="text-white">{selectedToken.balance} {selectedToken.symbol}</span>
+              <span className="text-white">{selectedToken?.balance || "0.00"} {selectedToken?.symbol || "TOKEN"}</span>
             </div>
           </div>
 
@@ -349,14 +322,23 @@ export default function TransferPage() {
           <div className="bg-slate-800/50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <div className="text-2xl">{selectedToken.icon}</div>
+                <div className="text-2xl">
+                  {selectedToken?.logoUrl ? (
+                    <img src={selectedToken.logoUrl} alt={selectedToken.symbol} className="w-6 h-6 rounded-full" />
+                  ) : (
+                    selectedToken?.symbol === 'USDC' ? '💙' : 
+                    selectedToken?.symbol === 'BRZ' ? '🇧🇷' :
+                    selectedToken?.symbol === 'ETH' ? '💎' :
+                    selectedToken?.symbol === 'MATIC' ? '🟣' : '🪙'
+                  )}
+                </div>
                 <div>
-                  <p className="text-white font-semibold">{selectedToken.symbol}</p>
-                  <p className="text-slate-400 text-sm">{selectedToken.name}</p>
+                  <p className="text-white font-semibold">{selectedToken?.symbol || "TOKEN"}</p>
+                  <p className="text-slate-400 text-sm">{selectedToken?.name || "Unknown Token"}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-white font-bold text-xl">{amount} {selectedToken.symbol}</p>
+                <p className="text-white font-bold text-xl">{amount} {selectedToken?.symbol || "TOKEN"}</p>
                 <p className="text-slate-400 text-sm">Valor a transferir</p>
               </div>
             </div>
@@ -456,7 +438,7 @@ export default function TransferPage() {
             
             <div className="text-center space-y-2">
               <p className="text-slate-400 text-sm">
-                Transferindo {amount} {selectedToken.symbol} para {toAddress.slice(0, 6)}...{toAddress.slice(-4)}
+                Transferindo {amount} {selectedToken?.symbol || "TOKEN"} para {toAddress.slice(0, 6)}...{toAddress.slice(-4)}
               </p>
               <p className="text-slate-400 text-sm">
                 Isso pode levar alguns minutos
@@ -505,7 +487,7 @@ export default function TransferPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Valor transferido:</span>
-                <span className="text-white font-semibold">{amount} {selectedToken.symbol}</span>
+                <span className="text-white font-semibold">{amount} {selectedToken?.symbol || "TOKEN"}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Para:</span>
@@ -534,12 +516,12 @@ export default function TransferPage() {
           </div>
         </Button>
         <Button
-          onClick={() => router.push('/wallet')}
+          onClick={() => router.push('/dashboard')}
           className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 transition-all duration-200"
         >
           <div className="flex items-center space-x-2">
             <Wallet className="h-4 w-4" />
-            <span>Voltar para Carteira</span>
+            <span>Voltar para Dashboard</span>
           </div>
         </Button>
       </div>
