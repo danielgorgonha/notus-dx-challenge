@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,18 +28,32 @@ export default function KYCPage() {
   const [kycData, setKycData] = useState<any>(null);
   const [isLoadingKYC, setIsLoadingKYC] = useState(true);
   const [kycLevel2Failed, setKycLevel2Failed] = useState(false);
+  const toastShownRef = useRef<Set<string>>(new Set()); // Controlar toasts mostrados por sessionId
+  const isProcessingRef = useRef(false); // Evitar processamento simultâneo
 
   // Função para resetar o estado de falha
   const resetKycFailure = () => {
     setKycLevel2Failed(false);
+    toastShownRef.current.clear(); // Limpar toasts mostrados
   };
 
   // Carregar dados KYC da wallet quando a página carrega
   useEffect(() => {
+    console.log('🔍 useEffect executado - dependências:', { walletAddress, completePhase1: !!completePhase1, completePhase2: !!completePhase2 });
+    
     const loadKYCData = async () => {
+      // Evitar processamento simultâneo
+      if (isProcessingRef.current) {
+        console.log('🔍 Processamento já em andamento, pulando...');
+        return;
+      }
+      
       try {
+        isProcessingRef.current = true;
         console.log('🔍 Carregando dados KYC...');
         setIsLoadingKYC(true);
+        
+        // Não resetar aqui - queremos manter o controle por sessionId
         
         // Usar o EOA (externally owned account) que sabemos que existe
         const eoaAddress = '0x7092C791436f7047956c42ABbD2aC67dedD7C511';
@@ -61,10 +75,7 @@ export default function KYCPage() {
           if (parsedData.kycLevel >= 1) {
             console.log('🔍 Marcando Nível 1 como completo');
             completePhase1();
-            toast.success(
-              'KYC Nível 1 Aprovado',
-              'Sua verificação de identidade básica foi aprovada'
-            );
+            // Não mostrar toast no carregamento - usuário já vê o status na tela
           }
           
           // Verificar Level 2 se houver sessionId
@@ -82,10 +93,7 @@ export default function KYCPage() {
               if (sessionStatus === 'COMPLETED') {
                 console.log('✅ Level 2 aprovado pela API Notus');
                 completePhase2();
-                toast.success(
-                  'KYC Nível 2 Aprovado',
-                  'Sua verificação de identidade completa foi aprovada!'
-                );
+                // Não mostrar toast no carregamento - usuário já vê o status na tela
                 // Definir dados com status aprovado
                 setKycData({
                   ...parsedData,
@@ -95,10 +103,7 @@ export default function KYCPage() {
                 });
               } else if (sessionStatus === 'PENDING' || sessionStatus === 'PROCESSING' || sessionStatus === 'VERIFYING') {
                 console.log('⏳ Level 2 ainda em processamento na API Notus:', sessionStatus);
-                toast.info(
-                  'KYC em Análise',
-                  'Seus documentos estão sendo analisados pela Notus'
-                );
+                // Não mostrar toast no carregamento - usuário já vê o status na tela
                 // Manter como Level 1 com status de processamento
                 setKycData({
                   ...parsedData,
@@ -108,10 +113,24 @@ export default function KYCPage() {
                 });
               } else if (sessionStatus === 'FAILED') {
                 console.log('❌ Level 2 falhou na API Notus - documentos rejeitados');
-                toast.error(
-                  'KYC Rejeitado',
-                  'Seus documentos foram rejeitados. Por favor, tente novamente.'
-                );
+                
+                // Só mostrar toast se ainda não foi mostrado para esta sessão
+                const sessionId = parsedData.sessionId;
+                console.log('🔍 SessionId:', sessionId);
+                console.log('🔍 Toasts já mostrados:', Array.from(toastShownRef.current));
+                
+                if (sessionId && !toastShownRef.current.has(sessionId)) {
+                  console.log('🔍 Mostrando toast para sessionId:', sessionId);
+                  toast.error(
+                    'KYC Rejeitado',
+                    'Seus documentos foram rejeitados. Por favor, tente novamente.',
+                    6000
+                  );
+                  toastShownRef.current.add(sessionId);
+                } else {
+                  console.log('🔍 Toast já foi mostrado para esta sessão, pulando...');
+                }
+                
                 // Resetar para permitir nova tentativa
                 setKycData({
                   ...parsedData,
@@ -160,11 +179,12 @@ export default function KYCPage() {
       } finally {
         console.log('✅ Carregamento KYC concluído');
         setIsLoadingKYC(false);
+        isProcessingRef.current = false; // Liberar processamento
       }
     };
 
     loadKYCData();
-  }, [walletAddress, completePhase1, completePhase2]);
+  }, [walletAddress]); // Removendo dependências que causam re-execuções
 
   // Usar o nível real da API Notus
   const realKYCLevel = kycManager.getCurrentStage();

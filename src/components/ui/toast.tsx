@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import { Toast as ToastType } from '@/contexts/toast-context';
 
@@ -42,6 +42,24 @@ const toastStyles = {
 export const Toast: React.FC<ToastProps> = ({ toast, onRemove }) => {
   const Icon = toastIcons[toast.type];
   const styles = toastStyles[toast.type];
+
+  // Adicionar CSS animation apenas no cliente
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes shrink {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+      `;
+      document.head.appendChild(style);
+      
+      return () => {
+        document.head.removeChild(style);
+      };
+    }
+  }, []);
 
   return (
     <div
@@ -85,13 +103,3 @@ export const Toast: React.FC<ToastProps> = ({ toast, onRemove }) => {
     </div>
   );
 };
-
-// CSS animation for progress bar
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes shrink {
-    from { width: 100%; }
-    to { width: 0%; }
-  }
-`;
-document.head.appendChild(style);

@@ -40,7 +40,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newToast: Toast = {
       id,
-      duration: 5000, // 5 segundos por padrão
+      duration: 3000, // 3 segundos por padrão (mais rápido)
       ...toast,
     };
 

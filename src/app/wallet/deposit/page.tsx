@@ -76,8 +76,8 @@ export default function DepositPage() {
     const oldPrice = currentPrice;
     setCurrentPrice(Number(newPrice.toFixed(2)));
     
-    // Toast informativo sobre atualização de preço
-    if (Math.abs(newPrice - oldPrice) > 0.01) {
+    // Toast informativo sobre atualização de preço (apenas para mudanças significativas)
+    if (Math.abs(newPrice - oldPrice) > 0.02) { // Apenas mudanças > 2%
       const direction = newPrice > oldPrice ? 'subiu' : 'desceu';
       toast.info(
         'Preço Atualizado',
@@ -118,14 +118,12 @@ export default function DepositPage() {
     const numAmount = parseFloat(amount);
     if (numAmount >= minAmount && numAmount <= availableLimit) {
       setCurrentStep("confirm");
-      toast.success(
-        'Valor Confirmado',
-        `Depósito de ${formatCurrency(numAmount, sendFiatCurrency)} processado com sucesso`
-      );
+      // Não precisa de toast aqui - é apenas uma navegação entre steps
     } else {
       toast.error(
         'Valor Inválido',
-        `O valor deve estar entre ${formatCurrency(minAmount, sendFiatCurrency)} e ${formatCurrency(availableLimit, sendFiatCurrency)}`
+        `O valor deve estar entre ${formatCurrency(minAmount, sendFiatCurrency)} e ${formatCurrency(availableLimit, sendFiatCurrency)}`,
+        4000
       );
     }
   };
@@ -174,7 +172,8 @@ export default function DepositPage() {
       if (!individualId) {
         toast.error(
           'KYC Necessário',
-          'Individual ID não encontrado. Por favor, complete o KYC primeiro.'
+          'Individual ID não encontrado. Por favor, complete o KYC primeiro.',
+          5000
         );
         router.push('/wallet/kyc');
         return;
@@ -187,7 +186,8 @@ export default function DepositPage() {
       if (level === '1' && numAmount > 2000) {
         toast.warning(
           'Limite Excedido',
-          'Valor acima do limite do Nível 1. Complete o KYC Nível 2 para valores acima de R$ 2.000.'
+          'Valor acima do limite do Nível 1. Complete o KYC Nível 2 para valores acima de R$ 2.000.',
+          5000
         );
         router.push('/wallet/kyc');
         return;
@@ -211,13 +211,15 @@ export default function DepositPage() {
       setCurrentStep("pix");
       toast.success(
         'Depósito Criado',
-        'Instruções de pagamento PIX geradas com sucesso!'
+        'Instruções de pagamento PIX geradas com sucesso!',
+        4000
       );
     } catch (error) {
       console.error("Erro ao criar depósito:", error);
       toast.error(
         'Erro no Depósito',
-        'Não foi possível criar o depósito. Tente novamente.'
+        'Não foi possível criar o depósito. Tente novamente.',
+        5000
       );
     }
   };
@@ -227,7 +229,8 @@ export default function DepositPage() {
       navigator.clipboard.writeText(order.paymentInstructions.pixKey);
       toast.success(
         'Chave PIX Copiada',
-        'A chave PIX foi copiada para a área de transferência'
+        'A chave PIX foi copiada para a área de transferência',
+        2000
       );
     }
   };
