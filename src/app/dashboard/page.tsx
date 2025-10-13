@@ -8,7 +8,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { getPortfolio, getHistory, listTokens } from "@/lib/actions/dashboard";
+import { getPortfolio, getHistory, listSupportedTokens } from "@/lib/actions/dashboard";
 import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
@@ -106,7 +106,7 @@ export default function DashboardPage() {
   // Query para buscar tokens suportados
   const { data: tokens, isLoading: tokensLoading } = useQuery({
     queryKey: ['tokens'],
-    queryFn: () => listTokens(1, 50),
+    queryFn: () => listSupportedTokens(1, 50),
     refetchInterval: 60000, // Refetch a cada 1 minuto
   });
 
