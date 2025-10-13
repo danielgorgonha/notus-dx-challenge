@@ -2,24 +2,22 @@
 
 import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { 
-  ArrowRightLeft, 
-  ArrowDown, 
-  ArrowUpDown,
+  Send, 
+  ArrowRight, 
   AlertCircle, 
   Loader2, 
+  Copy, 
   CheckCircle,
   Wallet,
   Coins,
   Clock,
-  Zap,
-  TrendingUp,
-  Settings
+  Zap
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
@@ -35,8 +33,7 @@ const MOCK_TOKENS = [
     address: "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
     balance: "1250.00",
     decimals: 6,
-    icon: "💙",
-    price: 1.00
+    icon: "💙"
   },
   {
     symbol: "BRZ",
@@ -44,8 +41,7 @@ const MOCK_TOKENS = [
     address: "0x4e15361fd6b4bb609fa63c81a2be19d873717870",
     balance: "5000.00",
     decimals: 18,
-    icon: "🇧🇷",
-    price: 0.20
+    icon: "🇧🇷"
   },
   {
     symbol: "ETH",
@@ -53,48 +49,37 @@ const MOCK_TOKENS = [
     address: "0x0000000000000000000000000000000000000000",
     balance: "0.875",
     decimals: 18,
-    icon: "💎",
-    price: 2500.00
+    icon: "💎"
   }
 ];
 
-export default function SwapPage() {
+export default function TransferPage() {
   const router = useRouter();
   const { wallet } = useSmartWallet();
   const toast = useToast();
   
   const [currentStep, setCurrentStep] = useState<"form" | "preview" | "executing" | "success">("form");
-  const [fromToken, setFromToken] = useState(MOCK_TOKENS[0]);
-  const [toToken, setToToken] = useState(MOCK_TOKENS[2]);
-  const [fromAmount, setFromAmount] = useState("");
-  const [toAmount, setToAmount] = useState("");
-  const [slippage, setSlippage] = useState(0.5);
+  const [selectedToken, setSelectedToken] = useState(MOCK_TOKENS[0]);
+  const [toAddress, setToAddress] = useState("");
+  const [amount, setAmount] = useState("");
+  const [memo, setMemo] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [quote, setQuote] = useState<any>(null);
   const [transactionHash, setTransactionHash] = useState("");
 
   const walletAddress = wallet?.accountAbstraction;
 
-  // Calcular taxa de câmbio
-  const exchangeRate = toToken.price / fromToken.price;
-  const calculatedToAmount = fromAmount ? (parseFloat(fromAmount) * exchangeRate).toFixed(6) : "";
-
   // Validações
+  const isValidAddress = (address: string) => {
+    return /^0x[a-fA-F0-9]{40}$/.test(address);
+  };
+
   const isValidAmount = (amount: string) => {
     const numAmount = parseFloat(amount);
-    return numAmount > 0 && numAmount <= parseFloat(fromToken.balance);
+    return numAmount > 0 && numAmount <= parseFloat(selectedToken.balance);
   };
 
-  const canProceed = fromAmount && isValidAmount(fromAmount) && fromToken.symbol !== toToken.symbol;
-
-  const handleSwapTokens = () => {
-    const tempToken = fromToken;
-    const tempAmount = fromAmount;
-    setFromToken(toToken);
-    setToToken(tempToken);
-    setFromAmount(toAmount);
-    setToAmount(tempAmount);
-  };
+  const canProceed = toAddress && amount && isValidAddress(toAddress) && isValidAmount(amount);
 
   const handleGetQuote = async () => {
     if (!canProceed) return;
@@ -106,25 +91,22 @@ export default function SwapPage() {
       
       const mockQuote = {
         quoteId: `quote_${Date.now()}`,
-        fromToken,
-        toToken,
-        fromAmount,
-        toAmount: calculatedToAmount,
-        exchangeRate,
-        slippage,
-        estimatedGasFee: "0.005",
+        fromToken: selectedToken,
+        toAddress,
+        amount,
+        estimatedGasFee: "0.002",
         gasFeeToken: "ETH",
-        priceImpact: 0.1,
-        estimatedTime: "~3 minutes",
-        networkFee: "0.002",
-        transactionFee: "0.001"
+        totalCost: (parseFloat(amount) + 0.002).toFixed(6),
+        estimatedTime: "~2 minutes",
+        networkFee: "0.001",
+        transactionFee: "0.0005"
       };
       
       setQuote(mockQuote);
       setCurrentStep("preview");
       toast.success(
         'Cotação Gerada',
-        'Cotação de swap criada com sucesso!',
+        'Cotação de transferência criada com sucesso!',
         3000
       );
     } catch (error) {
@@ -139,28 +121,28 @@ export default function SwapPage() {
     }
   };
 
-  const handleExecuteSwap = async () => {
+  const handleExecuteTransfer = async () => {
     setIsLoading(true);
     setCurrentStep("executing");
     
     try {
       // Simular execução da transação
-      await new Promise(resolve => setTimeout(resolve, 4000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       const mockHash = `0x${Math.random().toString(16).substring(2, 66)}`;
       setTransactionHash(mockHash);
       setCurrentStep("success");
       
       toast.success(
-        'Swap Executado',
-        'Seu swap foi processado com sucesso!',
+        'Transferência Executada',
+        'Sua transferência foi processada com sucesso!',
         5000
       );
     } catch (error) {
-      console.error("Erro ao executar swap:", error);
+      console.error("Erro ao executar transferência:", error);
       toast.error(
-        'Erro no Swap',
-        'Não foi possível executar o swap. Tente novamente.',
+        'Erro na Transferência',
+        'Não foi possível executar a transferência. Tente novamente.',
         5000
       );
       setCurrentStep("preview");
@@ -169,10 +151,20 @@ export default function SwapPage() {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(
+      'Copiado!',
+      'Texto copiado para a área de transferência',
+      2000
+    );
+  };
+
   const resetForm = () => {
     setCurrentStep("form");
-    setFromAmount("");
-    setToAmount("");
+    setToAddress("");
+    setAmount("");
+    setMemo("");
     setQuote(null);
     setTransactionHash("");
   };
@@ -180,123 +172,113 @@ export default function SwapPage() {
   const renderFormStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-white mb-2">Swap de Tokens</h1>
-        <p className="text-slate-300">Troque tokens instantaneamente</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Transferir Tokens</h1>
+        <p className="text-slate-300">Envie tokens para qualquer endereço</p>
       </div>
 
       <Card className="glass-card">
         <CardContent className="p-6 space-y-6">
-          {/* From Token */}
+          {/* Seleção de Token */}
           <div className="space-y-3">
-            <Label className="text-white text-lg">De</Label>
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="text-2xl">{fromToken.icon}</div>
-                  <div>
-                    <p className="text-white font-semibold">{fromToken.symbol}</p>
-                    <p className="text-slate-400 text-sm">{fromToken.name}</p>
+            <Label className="text-white text-lg">Token a transferir</Label>
+            <div className="grid grid-cols-1 gap-3">
+              {MOCK_TOKENS.map((token) => (
+                <button
+                  key={token.symbol}
+                  onClick={() => setSelectedToken(token)}
+                  className={`p-4 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
+                    selectedToken.symbol === token.symbol
+                      ? 'border-blue-500 bg-blue-500/10'
+                      : 'border-white/20 bg-white/5 hover:bg-white/10 hover:border-blue-500/30'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="text-2xl">{token.icon}</div>
+                      <div className="text-left">
+                        <p className="text-white font-semibold">{token.symbol}</p>
+                        <p className="text-slate-400 text-sm">{token.name}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-white font-semibold">{token.balance}</p>
+                      <p className="text-slate-400 text-sm">Disponível</p>
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-slate-400 text-sm">Saldo</p>
-                  <p className="text-white font-semibold">{fromToken.balance}</p>
-                </div>
-              </div>
-              <div className="relative">
-                <Input
-                  type="number"
-                  placeholder="0.0"
-                  value={fromAmount}
-                  onChange={(e) => {
-                    setFromAmount(e.target.value);
-                    setToAmount(calculatedToAmount);
-                  }}
-                  className="bg-slate-700 border-slate-600 text-white text-2xl text-right py-4 pr-16"
-                />
-                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <span className="text-slate-400">{fromToken.symbol}</span>
-                </div>
-              </div>
-              {fromAmount && !isValidAmount(fromAmount) && (
-                <p className="text-red-400 text-sm flex items-center space-x-1 mt-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>Saldo insuficiente</span>
-                </p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Endereço de Destino */}
+          <div className="space-y-2">
+            <Label htmlFor="toAddress" className="text-white text-lg">Endereço de destino</Label>
+            <div className="relative">
+              <Input
+                id="toAddress"
+                type="text"
+                placeholder="0x..."
+                value={toAddress}
+                onChange={(e) => setToAddress(e.target.value)}
+                className="bg-slate-800 border-slate-600 text-white text-lg py-4 pr-12"
+              />
+              {toAddress && (
+                <button
+                  onClick={() => copyToClipboard(toAddress)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                  title="Copiar endereço"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
               )}
             </div>
+            {toAddress && !isValidAddress(toAddress) && (
+              <p className="text-red-400 text-sm flex items-center space-x-1">
+                <AlertCircle className="h-4 w-4" />
+                <span>Endereço inválido</span>
+              </p>
+            )}
           </div>
 
-          {/* Swap Arrow */}
-          <div className="flex justify-center">
-            <Button
-              onClick={handleSwapTokens}
-              size="sm"
-              className="bg-white/10 hover:bg-white/20 border-2 border-white/20 hover:border-white/40 transition-all duration-200"
-            >
-              <ArrowUpDown className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* To Token */}
-          <div className="space-y-3">
-            <Label className="text-white text-lg">Para</Label>
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="text-2xl">{toToken.icon}</div>
-                  <div>
-                    <p className="text-white font-semibold">{toToken.symbol}</p>
-                    <p className="text-slate-400 text-sm">{toToken.name}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-slate-400 text-sm">Saldo</p>
-                  <p className="text-white font-semibold">{toToken.balance}</p>
-                </div>
+          {/* Valor */}
+          <div className="space-y-2">
+            <Label htmlFor="amount" className="text-white text-lg">Valor</Label>
+            <div className="relative">
+              <Input
+                id="amount"
+                type="number"
+                placeholder="0.0"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="bg-slate-800 border-slate-600 text-white text-2xl text-center py-4"
+              />
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                <span className="text-slate-400">{selectedToken.symbol}</span>
               </div>
-              <div className="relative">
-                <Input
-                  type="number"
-                  placeholder="0.0"
-                  value={toAmount}
-                  onChange={(e) => {
-                    setToAmount(e.target.value);
-                    setFromAmount(e.target.value ? (parseFloat(e.target.value) / exchangeRate).toFixed(6) : "");
-                  }}
-                  className="bg-slate-700 border-slate-600 text-white text-2xl text-right py-4 pr-16"
-                />
-                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <span className="text-slate-400">{toToken.symbol}</span>
-                </div>
-              </div>
+            </div>
+            {amount && !isValidAmount(amount) && (
+              <p className="text-red-400 text-sm flex items-center space-x-1">
+                <AlertCircle className="h-4 w-4" />
+                <span>Valor inválido ou saldo insuficiente</span>
+              </p>
+            )}
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-400">Saldo disponível:</span>
+              <span className="text-white">{selectedToken.balance} {selectedToken.symbol}</span>
             </div>
           </div>
 
-          {/* Exchange Rate */}
-          {fromAmount && toAmount && (
-            <div className="bg-slate-800/30 rounded-lg p-3">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-sm">Taxa de câmbio</span>
-                <span className="text-white font-semibold">1 {fromToken.symbol} = {exchangeRate.toFixed(6)} {toToken.symbol}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Slippage Settings */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-white text-lg">Tolerância ao deslizamento</Label>
-              <Button
-                onClick={() => setSlippage(slippage === 0.5 ? 1.0 : slippage === 1.0 ? 2.0 : 0.5)}
-                variant="outline"
-                size="sm"
-                className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
-              >
-                <Settings className="h-4 w-4 mr-1" />
-                {slippage}%
-              </Button>
-            </div>
+          {/* Memo (Opcional) */}
+          <div className="space-y-2">
+            <Label htmlFor="memo" className="text-white text-lg">Memo (opcional)</Label>
+            <Input
+              id="memo"
+              type="text"
+              placeholder="Adicione uma nota..."
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              className="bg-slate-800 border-slate-600 text-white py-4"
+            />
           </div>
         </CardContent>
       </Card>
@@ -313,7 +295,7 @@ export default function SwapPage() {
           </div>
         ) : (
           <div className="flex items-center space-x-2">
-            <ArrowRightLeft className="h-5 w-5" />
+            <Send className="h-5 w-5" />
             <span>Obter Cotação</span>
           </div>
         )}
@@ -324,43 +306,25 @@ export default function SwapPage() {
   const renderPreviewStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-white mb-2">Revisar Swap</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">Revisar Transferência</h1>
         <p className="text-slate-300">Confirme os detalhes antes de executar</p>
       </div>
 
       <Card className="glass-card">
         <CardContent className="p-6 space-y-6">
-          {/* Resumo do Swap */}
+          {/* Resumo da Transferência */}
           <div className="bg-slate-800/50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <div className="text-2xl">{fromToken.icon}</div>
+                <div className="text-2xl">{selectedToken.icon}</div>
                 <div>
-                  <p className="text-white font-semibold">{fromToken.symbol}</p>
-                  <p className="text-slate-400 text-sm">{fromToken.name}</p>
+                  <p className="text-white font-semibold">{selectedToken.symbol}</p>
+                  <p className="text-slate-400 text-sm">{selectedToken.name}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-white font-bold text-xl">{fromAmount} {fromToken.symbol}</p>
-                <p className="text-slate-400 text-sm">Você envia</p>
-              </div>
-            </div>
-            
-            <div className="flex justify-center mb-4">
-              <ArrowDown className="h-5 w-5 text-slate-400" />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="text-2xl">{toToken.icon}</div>
-                <div>
-                  <p className="text-white font-semibold">{toToken.symbol}</p>
-                  <p className="text-slate-400 text-sm">{toToken.name}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-white font-bold text-xl">{toAmount} {toToken.symbol}</p>
-                <p className="text-slate-400 text-sm">Você recebe</p>
+                <p className="text-white font-bold text-xl">{amount} {selectedToken.symbol}</p>
+                <p className="text-slate-400 text-sm">Valor a transferir</p>
               </div>
             </div>
           </div>
@@ -368,13 +332,16 @@ export default function SwapPage() {
           {/* Detalhes da Transação */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Taxa de câmbio:</span>
-              <span className="text-white">1 {fromToken.symbol} = {exchangeRate.toFixed(6)} {toToken.symbol}</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400">Tolerância ao deslizamento:</span>
-              <span className="text-white">{slippage}%</span>
+              <span className="text-slate-400">Para:</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-white font-mono text-sm">{toAddress.slice(0, 6)}...{toAddress.slice(-4)}</span>
+                <button
+                  onClick={() => copyToClipboard(toAddress)}
+                  className="text-slate-400 hover:text-white transition-colors"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+              </div>
             </div>
             
             <div className="flex items-center justify-between">
@@ -388,13 +355,23 @@ export default function SwapPage() {
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Impacto no preço:</span>
-              <span className="text-white">{quote?.priceImpact}%</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
               <span className="text-slate-400">Tempo estimado:</span>
               <span className="text-white">{quote?.estimatedTime}</span>
+            </div>
+
+            {memo && (
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Memo:</span>
+                <span className="text-white">{memo}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Total */}
+          <div className="border-t border-slate-600 pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400 text-lg">Total:</span>
+              <span className="text-white font-bold text-xl">{quote?.totalCost} {quote?.gasFeeToken}</span>
             </div>
           </div>
         </CardContent>
@@ -409,7 +386,7 @@ export default function SwapPage() {
           Voltar
         </Button>
         <Button
-          onClick={handleExecuteSwap}
+          onClick={handleExecuteTransfer}
           disabled={isLoading}
           className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -421,7 +398,7 @@ export default function SwapPage() {
           ) : (
             <div className="flex items-center space-x-2">
               <Zap className="h-5 w-5" />
-              <span>Executar Swap</span>
+              <span>Executar Transferência</span>
             </div>
           )}
         </Button>
@@ -432,7 +409,7 @@ export default function SwapPage() {
   const renderExecutingStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-white mb-2">Executando Swap</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">Executando Transferência</h1>
         <p className="text-slate-300">Aguarde enquanto processamos sua transação</p>
       </div>
 
@@ -441,12 +418,12 @@ export default function SwapPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-center space-x-3">
               <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-              <span className="text-white text-lg">Processando swap...</span>
+              <span className="text-white text-lg">Processando transação...</span>
             </div>
             
             <div className="text-center space-y-2">
               <p className="text-slate-400 text-sm">
-                Trocando {fromAmount} {fromToken.symbol} por {toAmount} {toToken.symbol}
+                Transferindo {amount} {selectedToken.symbol} para {toAddress.slice(0, 6)}...{toAddress.slice(-4)}
               </p>
               <p className="text-slate-400 text-sm">
                 Isso pode levar alguns minutos
@@ -464,7 +441,7 @@ export default function SwapPage() {
         <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle className="h-8 w-8 text-green-400" />
         </div>
-        <h1 className="text-3xl font-bold text-white mb-2">Swap Concluído!</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">Transferência Concluída!</h1>
         <p className="text-slate-300">Sua transação foi processada com sucesso</p>
       </div>
 
@@ -480,7 +457,7 @@ export default function SwapPage() {
                 className="bg-slate-800 border-slate-600 text-white text-sm font-mono"
               />
               <Button
-                onClick={() => navigator.clipboard.writeText(transactionHash)}
+                onClick={() => copyToClipboard(transactionHash)}
                 size="sm"
                 className="bg-slate-700 hover:bg-slate-600 text-white transition-all duration-200 hover:scale-105"
                 title="Copiar hash"
@@ -494,12 +471,12 @@ export default function SwapPage() {
           <div className="bg-slate-800/50 rounded-lg p-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Você enviou:</span>
-                <span className="text-white font-semibold">{fromAmount} {fromToken.symbol}</span>
+                <span className="text-slate-400">Valor transferido:</span>
+                <span className="text-white font-semibold">{amount} {selectedToken.symbol}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Você recebeu:</span>
-                <span className="text-white font-semibold">{toAmount} {toToken.symbol}</span>
+                <span className="text-slate-400">Para:</span>
+                <span className="text-white font-mono text-sm">{toAddress.slice(0, 6)}...{toAddress.slice(-4)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Status:</span>
@@ -519,8 +496,8 @@ export default function SwapPage() {
           className="flex-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:border-blue-400 hover:text-blue-300 transition-all duration-200"
         >
           <div className="flex items-center space-x-2">
-            <ArrowRightLeft className="h-4 w-4" />
-            <span>Novo Swap</span>
+            <Send className="h-4 w-4" />
+            <span>Nova Transferência</span>
           </div>
         </Button>
         <Button
@@ -539,8 +516,8 @@ export default function SwapPage() {
   return (
     <ProtectedRoute>
       <AppLayout 
-        title="Swap de Tokens"
-        description="Troque tokens instantaneamente"
+        title="Transferir Tokens"
+        description="Envie tokens para qualquer endereço"
       >
         <div className="flex justify-center">
           <div className="w-full max-w-2xl space-y-6">

@@ -2,15 +2,17 @@
 
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Activity, Zap, ArrowRightLeft, Wallet, Droplets, Shield, Loader2 } from "lucide-react";
+import { TrendingUp, Activity, Zap, ArrowRightLeft, Wallet, Droplets, Shield, Loader2, Plus } from "lucide-react";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
 import { usePrivy } from "@privy-io/react-auth";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { getPortfolio, getHistory, listTokens } from "@/lib/actions/dashboard";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { user } = usePrivy();
   const { wallet } = useSmartWallet();
   const [totalBalance, setTotalBalance] = useState(0);
@@ -298,53 +300,65 @@ export default function DashboardPage() {
         {/* Quick Actions */}
         <div className="glass-card">
           <h2 className="text-xl font-bold text-white mb-6">Ações Rápidas</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <Button 
+              onClick={() => router.push('/wallet/deposit')}
+              className="h-24 flex flex-col items-center justify-center bg-green-600/10 border border-green-500/20 hover:bg-green-600/20 group relative"
+              title="Adicionar saldo"
+            >
+              <Plus className="h-8 w-8 text-green-400 mb-2" />
+              <span className="font-semibold text-white">Depositar</span>
+              <span className="text-xs text-slate-400">Adicionar fundos</span>
+            </Button>
+
+            <Button 
+              onClick={() => router.push('/swap')}
               className="h-24 flex flex-col items-center justify-center bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 group relative"
               title="Trocar uma cripto por outra"
             >
               <ArrowRightLeft className="h-8 w-8 text-blue-400 mb-2" />
               <span className="font-semibold text-white">Swap</span>
               <span className="text-xs text-slate-400">Trocar tokens</span>
-              <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                Trocar uma cripto por outra
-              </div>
             </Button>
 
             <Button 
+              onClick={() => router.push('/transfer')}
               className="h-24 flex flex-col items-center justify-center bg-emerald-600/10 border border-emerald-500/20 hover:bg-emerald-600/20 group relative"
               title="Enviar para outra pessoa"
             >
               <Wallet className="h-8 w-8 text-emerald-400 mb-2" />
               <span className="font-semibold text-white">Enviar</span>
               <span className="text-xs text-slate-400">Transferir tokens</span>
-              <div className="absolute -top-2 -right-2 bg-emerald-500 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                Enviar para outra pessoa
-              </div>
             </Button>
 
             <Button 
+              onClick={() => router.push('/history')}
               className="h-24 flex flex-col items-center justify-center bg-purple-600/10 border border-purple-500/20 hover:bg-purple-600/20 group relative"
+              title="Ver histórico"
+            >
+              <Activity className="h-8 w-8 text-purple-400 mb-2" />
+              <span className="font-semibold text-white">Histórico</span>
+              <span className="text-xs text-slate-400">Ver transações</span>
+            </Button>
+
+            <Button 
+              onClick={() => router.push('/pools')}
+              className="h-24 flex flex-col items-center justify-center bg-yellow-600/10 border border-yellow-500/20 hover:bg-yellow-600/20 group relative"
               title="Ganhar rendimento"
             >
-              <Droplets className="h-8 w-8 text-purple-400 mb-2" />
-              <span className="font-semibold text-white">Pool</span>
-              <span className="text-xs text-slate-400">Adicionar liquidez</span>
-              <div className="absolute -top-2 -right-2 bg-purple-500 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                Ganhar rendimento
-              </div>
+              <Droplets className="h-8 w-8 text-yellow-400 mb-2" />
+              <span className="font-semibold text-white">Pools</span>
+              <span className="text-xs text-slate-400">Liquidez</span>
             </Button>
 
             <Button 
-              className="h-24 flex flex-col items-center justify-center bg-yellow-600/10 border border-yellow-500/20 hover:bg-yellow-600/20 group relative"
+              onClick={() => router.push('/profile/kyc')}
+              className="h-24 flex flex-col items-center justify-center bg-red-600/10 border border-red-500/20 hover:bg-red-600/20 group relative"
               title="Verificar identidade"
             >
-              <Shield className="h-8 w-8 text-yellow-400 mb-2" />
+              <Shield className="h-8 w-8 text-red-400 mb-2" />
               <span className="font-semibold text-white">KYC</span>
-              <span className="text-xs text-slate-400">Verificar identidade</span>
-              <div className="absolute -top-2 -right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                Verificar identidade
-              </div>
+              <span className="text-xs text-slate-400">Verificar</span>
             </Button>
           </div>
         </div>

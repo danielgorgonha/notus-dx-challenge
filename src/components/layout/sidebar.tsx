@@ -16,7 +16,8 @@ import {
   ChevronRight,
   X,
   Menu,
-  BarChart3
+  BarChart3,
+  Send
 } from "lucide-react";
 
 const navigation = [
@@ -26,44 +27,36 @@ const navigation = [
     icon: LayoutDashboard,
   },
   {
-    name: "Smart Wallet",
-    href: "/wallet",
-    icon: Wallet,
+    name: "Transações",
+    href: "/swap",
+    icon: ArrowRightLeft,
     submenu: [
       {
-        name: "Overview",
-        href: "/wallet",
-        icon: BarChart3,
+        name: "Swap",
+        href: "/swap",
+        icon: ArrowRightLeft,
       },
       {
-        name: "KYC",
-        href: "/wallet/kyc",
-        icon: Shield,
+        name: "Transfer",
+        href: "/transfer",
+        icon: Send,
       },
       {
-        name: "Depósito",
-        href: "/wallet/deposit",
-        icon: Plus,
+        name: "Histórico",
+        href: "/history",
+        icon: History,
       },
     ]
   },
   {
-    name: "Swap & Transfer",
-    href: "/swap",
-    icon: ArrowRightLeft,
-    disabled: true,
-  },
-  {
     name: "Liquidity Pools",
-    href: "/liquidity",
+    href: "/pools",
     icon: Zap,
-    disabled: true,
   },
   {
-    name: "History",
-    href: "/history",
-    icon: History,
-    disabled: true,
+    name: "Perfil",
+    href: "/profile",
+    icon: Lock,
   },
 ];
 
@@ -74,14 +67,9 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const [expandedItems, setExpandedItems] = useState<string[]>(['Smart Wallet']);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpanded = (itemName: string) => {
-    // Smart Wallet sempre deve ficar aberto
-    if (itemName === 'Smart Wallet') {
-      return;
-    }
-    
     setExpandedItems(prev => 
       prev.includes(itemName) 
         ? prev.filter(name => name !== itemName)
@@ -89,28 +77,11 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     );
   };
 
-  // Garantir que Smart Wallet sempre fique aberto
-  useEffect(() => {
-    if (!expandedItems.includes('Smart Wallet')) {
-      setExpandedItems(prev => [...prev, 'Smart Wallet']);
-    }
-  }, [expandedItems]);
-
   const isSubmenuActive = (submenu: { href: string }[]) => {
-    return submenu.some(subItem => {
-      // Para KYC, verificar se está em qualquer rota que comece com /wallet/kyc
-      if (subItem.href === '/wallet/kyc') {
-        return pathname.startsWith('/wallet/kyc');
-      }
-      return pathname === subItem.href;
-    });
+    return submenu.some(subItem => pathname === subItem.href || pathname.startsWith(subItem.href + '/'));
   };
 
   const isParentActive = (item: any) => {
-    // Para Smart Wallet, não deve estar ativo quando submenus estão ativos
-    if (item.name === 'Smart Wallet') {
-      return false; // Nunca marcar o parent como ativo
-    }
     return pathname === item.href;
   };
 
