@@ -53,60 +53,17 @@ export function TokenSelector({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Tokens padrão para fallback quando API não retorna tokens
-  const DEFAULT_TOKENS = [
-    {
-      address: "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-      symbol: "USDC",
-      name: "USD Coin",
-      decimals: 6,
-      chainId: 137,
-      isNative: false,
-      price: 1.00
-    },
-    {
-      address: "0x4e15361fd6b4bb609fa63c81a2be19d873717870",
-      symbol: "BRZ",
-      name: "Brazilian Real Token",
-      decimals: 18,
-      chainId: 137,
-      isNative: false,
-      price: 0.20
-    },
-    {
-      address: "0x0000000000000000000000000000000000000000",
-      symbol: "MATIC",
-      name: "Polygon",
-      decimals: 18,
-      chainId: 137,
-      isNative: true,
-      price: 0.80
-    },
-    {
-      address: "0x7ceb23fd6fc0ad59bb62c01bdb4a4c4e96f73b4e",
-      symbol: "WETH",
-      name: "Wrapped Ethereum",
-      decimals: 18,
-      chainId: 137,
-      isNative: false,
-      price: 2500.00
-    }
-  ];
-
   // Buscar tokens suportados da API Notus
   const { data: tokensData, isLoading: tokensLoading, error: tokensError } = useQuery({
     queryKey: ['tokens', chainId],
     queryFn: async () => {
-      console.log('🔍 TokenSelector: Buscando tokens para chainId:', chainId);
       const result = await listTokensByChain({ 
         chainId, 
         page: 1, 
         perPage: 100, 
-        filterWhitelist: false, 
         orderBy: 'marketCap', 
         orderDir: 'desc' 
       });
-      console.log('🔍 TokenSelector: Tokens recebidos:', result?.tokens?.length || 0);
       return result;
     },
     refetchInterval: 300000, // 5 minutos
@@ -125,9 +82,6 @@ export function TokenSelector({
   const tokensWithBalances = React.useMemo(() => {
     const supportedTokens = tokensData?.tokens || [];
     const portfolioTokens = portfolioData?.tokens || [];
-    
-    console.log('🔍 TokenSelector: supportedTokens:', supportedTokens.length);
-    console.log('🔍 TokenSelector: portfolioTokens:', portfolioTokens.length);
     
     
     // 1. Mapear tokens suportados com saldos do portfolio
@@ -177,8 +131,6 @@ export function TokenSelector({
     
     // 3. Combinar e remover duplicatas
     const allTokens = [...supportedWithBalances, ...portfolioOnlyTokens];
-    console.log('🔍 TokenSelector: allTokens before deduplication:', allTokens.length);
-    console.log('🔍 TokenSelector: allTokens sample:', allTokens.slice(0, 3).map(t => ({ symbol: t.symbol, chainId: t.chainId, chainIdFromChain: t.chain?.id })));
     
     // 4. Remover duplicatas por símbolo (manter o token com maior saldo)
     const uniqueTokens = allTokens.reduce((acc: any[], current: any) => {
@@ -205,14 +157,7 @@ export function TokenSelector({
     }, []);
     
     // 5. Filtrar apenas tokens da mesma chain
-    console.log('🔍 TokenSelector: uniqueTokens before chain filter:', uniqueTokens.length);
-    console.log('🔍 TokenSelector: chainId:', chainId);
-    console.log('🔍 TokenSelector: uniqueTokens chainIds:', uniqueTokens.map(t => ({ symbol: t.symbol, chainId: t.chain?.id })));
-    console.log('🔍 TokenSelector: First 5 tokens chainIds:', uniqueTokens.slice(0, 5).map(t => ({ symbol: t.symbol, chainId: t.chain?.id })));
-    console.log('🔍 TokenSelector: First token structure:', uniqueTokens[0]);
-    
     const sameChainTokens = uniqueTokens.filter(token => token.chain?.id === chainId);
-    console.log('🔍 TokenSelector: sameChainTokens after filter:', sameChainTokens.length);
     
     // 6. Ordenar por saldo (tokens com saldo primeiro)
     const finalTokens = sameChainTokens.sort((a, b) => {
@@ -221,35 +166,32 @@ export function TokenSelector({
       return balanceB - balanceA; // Maior saldo primeiro
     });
     
-    console.log('🔍 TokenSelector: Final tokens count:', finalTokens.length);
-    console.log('🔍 TokenSelector: Final tokens:', finalTokens.map(t => t.symbol));
-    
     return finalTokens;
-         }, [tokensData, portfolioData]);
+  }, [tokensData, portfolioData]);
 
-         // Auto-selecionar token quando disponível
-         React.useEffect(() => {
-           if (autoSelectSymbol && !selectedToken && tokensWithBalances.length > 0) {
-             const tokenToSelect = tokensWithBalances.find(token => 
-               token.symbol.toLowerCase() === autoSelectSymbol.toLowerCase()
-             );
-             if (tokenToSelect) {
-               onTokenSelect(tokenToSelect);
-             }
-           }
-         }, [autoSelectSymbol, selectedToken, tokensWithBalances, onTokenSelect]);
+  // Auto-selecionar token quando disponível
+  React.useEffect(() => {
+    if (autoSelectSymbol && !selectedToken && tokensWithBalances.length > 0) {
+      const tokenToSelect = tokensWithBalances.find(token => 
+        token.symbol.toLowerCase() === autoSelectSymbol.toLowerCase()
+      );
+      if (tokenToSelect) {
+        onTokenSelect(tokenToSelect);
+      }
+    }
+  }, [autoSelectSymbol, selectedToken, tokensWithBalances, onTokenSelect]);
 
-         // Filtrar tokens por busca
-         const filteredTokens = React.useMemo(() => {
-           if (!searchQuery) return tokensWithBalances;
-           
-           const query = searchQuery.toLowerCase();
-           return tokensWithBalances.filter(token => 
-             token.symbol.toLowerCase().includes(query) ||
-             token.name.toLowerCase().includes(query) ||
-             token.address.toLowerCase().includes(query)
-           );
-         }, [tokensWithBalances, searchQuery]);
+  // Filtrar tokens por busca
+  const filteredTokens = React.useMemo(() => {
+    if (!searchQuery) return tokensWithBalances;
+    
+    const query = searchQuery.toLowerCase();
+    return tokensWithBalances.filter(token => 
+      token.symbol.toLowerCase().includes(query) ||
+      token.name.toLowerCase().includes(query) ||
+      token.address.toLowerCase().includes(query)
+    );
+  }, [tokensWithBalances, searchQuery]);
 
   const handleTokenSelect = (token: Token) => {
     onTokenSelect(token);
@@ -277,13 +219,8 @@ export function TokenSelector({
           {selectedToken ? (
             <>
               <div className={compact ? 'text-sm' : 'text-lg'}>
-                {selectedToken.logoUrl ? (
+                {selectedToken.logoUrl && (
                   <img src={selectedToken.logoUrl} alt={selectedToken.symbol} className={`${compact ? 'w-5 h-5' : 'w-6 h-6'} rounded-full`} />
-                ) : (
-                  selectedToken.symbol === 'USDC' ? '💙' : 
-                  selectedToken.symbol === 'BRZ' ? '🇧🇷' :
-                  selectedToken.symbol === 'ETH' ? '💎' :
-                  selectedToken.symbol === 'MATIC' ? '🟣' : '🪙'
                 )}
               </div>
               <div className="text-left">
@@ -339,13 +276,8 @@ export function TokenSelector({
                 >
                   <div className="flex items-center space-x-3">
                     <div className="text-lg">
-                      {token.logoUrl ? (
+                      {token.logoUrl && (
                         <img src={token.logoUrl} alt={token.symbol} className="w-6 h-6 rounded-full" />
-                      ) : (
-                        token.symbol === 'USDC' ? '💙' : 
-                        token.symbol === 'BRZ' ? '🇧🇷' :
-                        token.symbol === 'ETH' ? '💎' :
-                        token.symbol === 'MATIC' ? '🟣' : '🪙'
                       )}
                     </div>
                     <div className="text-left">
