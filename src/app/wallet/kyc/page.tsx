@@ -39,18 +39,15 @@ export default function KYCPage() {
 
   // Carregar dados KYC da wallet quando a página carrega
   useEffect(() => {
-    console.log('🔍 useEffect executado - dependências:', { walletAddress, completePhase1: !!completePhase1, completePhase2: !!completePhase2 });
     
     const loadKYCData = async () => {
       // Evitar processamento simultâneo
       if (isProcessingRef.current) {
-        console.log('🔍 Processamento já em andamento, pulando...');
         return;
       }
       
       try {
         isProcessingRef.current = true;
-        console.log('🔍 Carregando dados KYC...');
         setIsLoadingKYC(true);
         
         // Não resetar aqui - queremos manter o controle por sessionId
@@ -58,40 +55,30 @@ export default function KYCPage() {
         // Usar o EOA (externally owned account) que sabemos que existe
         const eoaAddress = '0x7092C791436f7047956c42ABbD2aC67dedD7C511';
         
-        console.log('🔍 Usando EOA:', eoaAddress);
         
         // Buscar dados da wallet usando o EOA
         const response = await getWalletAddress({ externallyOwnedAccount: eoaAddress });
         
-        console.log('🔍 Resposta da API:', response);
-        console.log('🔍 Wallet metadata:', response.wallet?.metadata);
-        console.log('🔍 KYC Data string:', response.wallet?.metadata?.kycData);
         
         if (response.wallet?.metadata?.kycData) {
           const parsedData = JSON.parse(response.wallet.metadata.kycData as string);
-          console.log('🔍 Dados KYC encontrados:', parsedData);
           
           // Verificar Level 1 primeiro
           if (parsedData.kycLevel >= 1) {
-            console.log('🔍 Marcando Nível 1 como completo');
             completePhase1();
             // Não mostrar toast no carregamento - usuário já vê o status na tela
           }
           
           // Verificar Level 2 se houver sessionId
           if (parsedData.sessionId) {
-            console.log('🔍 Validando Level 2 com sessionId:', parsedData.sessionId);
             
             try {
               const sessionResult = await getSessionResult(parsedData.sessionId) as any;
-              console.log('🔍 Resultado da sessão KYC:', sessionResult);
               
               // Verificar o status da sessão KYC
               const sessionStatus = sessionResult.session?.status;
-              console.log('🔍 Status da sessão KYC:', sessionStatus);
               
               if (sessionStatus === 'COMPLETED') {
-                console.log('✅ Level 2 aprovado pela API Notus');
                 completePhase2();
                 // Não mostrar toast no carregamento - usuário já vê o status na tela
                 // Definir dados com status aprovado
@@ -102,7 +89,6 @@ export default function KYCPage() {
                   individualId: sessionResult.session?.individualId
                 });
               } else if (sessionStatus === 'PENDING' || sessionStatus === 'PROCESSING' || sessionStatus === 'VERIFYING') {
-                console.log('⏳ Level 2 ainda em processamento na API Notus:', sessionStatus);
                 // Não mostrar toast no carregamento - usuário já vê o status na tela
                 // Manter como Level 1 com status de processamento
                 setKycData({
@@ -112,15 +98,11 @@ export default function KYCPage() {
                   processingMessage: 'Documentos em análise pela Notus'
                 });
               } else if (sessionStatus === 'FAILED') {
-                console.log('❌ Level 2 falhou na API Notus - documentos rejeitados');
                 
                 // Só mostrar toast se ainda não foi mostrado para esta sessão
                 const sessionId = parsedData.sessionId;
-                console.log('🔍 SessionId:', sessionId);
-                console.log('🔍 Toasts já mostrados:', Array.from(toastShownRef.current));
                 
                 if (sessionId && !toastShownRef.current.has(sessionId)) {
-                  console.log('🔍 Mostrando toast para sessionId:', sessionId);
                   toast.error(
                     'KYC Rejeitado',
                     'Seus documentos foram rejeitados. Por favor, tente novamente.',
@@ -128,7 +110,6 @@ export default function KYCPage() {
                   );
                   toastShownRef.current.add(sessionId);
                 } else {
-                  console.log('🔍 Toast já foi mostrado para esta sessão, pulando...');
                 }
                 
                 // Resetar para permitir nova tentativa
@@ -139,7 +120,6 @@ export default function KYCPage() {
                 });
                 setKycLevel2Failed(true);
               } else if (sessionStatus === 'EXPIRED') {
-                console.log('⏰ Level 2 expirado na API Notus');
                 // Resetar para permitir nova tentativa
                 setKycData({
                   ...parsedData,
@@ -148,7 +128,6 @@ export default function KYCPage() {
                 });
                 setKycLevel2Failed(true);
               } else {
-                console.log('⚠️ Status desconhecido da sessão KYC:', sessionStatus);
                 // Para status desconhecidos, manter dados originais
                 setKycData(parsedData);
               }
@@ -164,20 +143,16 @@ export default function KYCPage() {
             // Sem sessionId, usar dados locais
             setKycData(parsedData);
             if (parsedData.kycLevel >= 2) {
-              console.log('🔍 Marcando Nível 2 como completo (dados locais)');
               completePhase2();
             }
           }
         } else {
-          console.log('🔍 Nenhum dado KYC encontrado');
-          console.log('🔍 Estrutura completa da resposta:', JSON.stringify(response, null, 2));
           setKycData(null);
         }
       } catch (error) {
         console.error('🔍 Erro ao carregar dados KYC:', error);
         setKycData(null);
       } finally {
-        console.log('✅ Carregamento KYC concluído');
         setIsLoadingKYC(false);
         isProcessingRef.current = false; // Liberar processamento
       }
@@ -194,7 +169,6 @@ export default function KYCPage() {
   const isLevel2Completed = kycData?.kycLevel >= 2 || kycPhase2Completed;
   
   // Debug logs
-  console.log('🔍 KYC Page Debug:', {
     kycData,
     isLoadingKYC,
     isLevel1Completed,

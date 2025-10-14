@@ -12,7 +12,6 @@ export async function auth(): Promise<AuthUser | null> {
     
     const token = get("privy-token");
 
-    console.log('🔍 Token:', token);
         
     if (!token) {
       return null;
@@ -26,7 +25,6 @@ export async function auth(): Promise<AuthUser | null> {
 
 		let user = await privy.getUserById(authToken.userId);
 
-    console.log('🔍 User:', user);
 
     // Create wallet if user doesn't have one
     if (!user.wallet?.address) {
@@ -48,7 +46,6 @@ export async function auth(): Promise<AuthUser | null> {
       });
     }
 
-    console.log('🔍 Wallet:', wallet.accountAbstraction);
 
     // Return user with smart wallet address
     return {
@@ -56,7 +53,6 @@ export async function auth(): Promise<AuthUser | null> {
       accountAbstractionAddress: wallet.accountAbstraction,
     };
   } catch (error) {
-    console.log('Erro na autenticação:', error);
     return null;
   }
 }

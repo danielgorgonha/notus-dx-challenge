@@ -54,7 +54,6 @@ interface TransferQuote {
  */
 export async function createTransferQuote(params: TransferParams): Promise<TransferQuote> {
   try {
-    console.log('💸 Criando cotação de transferência:', params);
     
     const response = await notusAPI.post("crypto/transfer", {
       json: {
@@ -70,7 +69,6 @@ export async function createTransferQuote(params: TransferParams): Promise<Trans
       },
     }).json<TransferQuote>();
 
-    console.log('✅ Cotação de transferência criada:', response);
     return response;
   } catch (error) {
     console.error('❌ Erro ao criar cotação de transferência:', error);

@@ -24,7 +24,6 @@ interface ExecuteUserOpResponse {
  */
 export async function executeUserOperation(params: ExecuteUserOpParams): Promise<ExecuteUserOpResponse> {
   try {
-    console.log('⚙️ Executando User Operation:', params.userOperationHash);
     
     const response = await notusAPI.post("crypto/execute-user-op", {
       json: {
@@ -34,7 +33,6 @@ export async function executeUserOperation(params: ExecuteUserOpParams): Promise
       },
     }).json<ExecuteUserOpResponse>();
 
-    console.log('✅ User Operation executada:', response);
     return response;
   } catch (error) {
     console.error('❌ Erro ao executar User Operation:', error);
@@ -61,11 +59,9 @@ interface UserOperationStatus {
  */
 export async function getUserOperation(params: GetUserOpParams): Promise<UserOperationStatus> {
   try {
-    console.log('🔍 Buscando status da User Operation:', params.userOperationHash);
     
     const response = await notusAPI.get(`crypto/user-operation/${params.userOperationHash}`).json<UserOperationStatus>();
 
-    console.log('✅ Status da User Operation:', response);
     return response;
   } catch (error) {
     console.error('❌ Erro ao buscar User Operation:', error);

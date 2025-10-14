@@ -51,13 +51,11 @@ interface TokensResponse {
  */
 export async function listChains(page: number = 1, perPage: number = 50): Promise<ChainsResponse> {
   try {
-    console.log('🌐 Listando chains suportadas...');
     
     const response = await notusAPI.get("crypto/chains", {
       searchParams: { page, perPage },
     }).json<ChainsResponse>();
 
-    console.log('✅ Chains listadas:', response.chains.length);
     return response;
   } catch (error) {
     console.error('❌ Erro ao listar chains:', error);
@@ -77,7 +75,6 @@ export async function listTokens(
   orderDir: 'asc' | 'desc' = 'desc'
 ): Promise<TokensResponse> {
   try {
-    console.log('🪙 Listando tokens suportados...');
     
     const response = await notusAPI.get("crypto/tokens", {
       searchParams: { 
@@ -90,7 +87,6 @@ export async function listTokens(
       },
     }).json<TokensResponse>();
 
-    console.log('✅ Tokens listados:', response.tokens.length);
     return response;
   } catch (error) {
     console.error('❌ Erro ao listar tokens:', error);
@@ -111,7 +107,6 @@ export async function listTokensByChain(
   orderDir: 'asc' | 'desc' = 'desc'
 ): Promise<TokensResponse> {
   try {
-    console.log(`🪙 Listando tokens para chain ${chainId}...`);
     
     const response = await notusAPI.get("crypto/tokens", {
       searchParams: { 
@@ -125,7 +120,6 @@ export async function listTokensByChain(
       },
     }).json<TokensResponse>();
 
-    console.log(`✅ Tokens listados para chain ${chainId}:`, response.tokens.length);
     return response;
   } catch (error) {
     console.error(`❌ Erro ao listar tokens para chain ${chainId}:`, error);

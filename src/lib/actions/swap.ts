@@ -61,7 +61,6 @@ interface SwapQuote {
  */
 export async function createSwapQuote(params: SwapParams): Promise<SwapQuote> {
   try {
-    console.log('🔄 Criando cotação de swap:', params);
     
     const response = await notusAPI.post("crypto/swap", {
       json: {
@@ -81,7 +80,6 @@ export async function createSwapQuote(params: SwapParams): Promise<SwapQuote> {
       },
     }).json<SwapQuote>();
 
-    console.log('✅ Cotação de swap criada:', response);
     return response;
   } catch (error) {
     console.error('❌ Erro ao criar cotação de swap:', error);

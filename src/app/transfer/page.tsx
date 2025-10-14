@@ -74,7 +74,6 @@ export default function TransferPage() {
 
     setIsLoading(true);
     try {
-      console.log('💸 Obtendo cotação de transferência...');
       
       const transferQuote = await createTransferQuote({
         amount: amount,
@@ -87,7 +86,6 @@ export default function TransferPage() {
         metadata: memo ? { memo } : undefined
       });
 
-      console.log('✅ Cotação obtida:', transferQuote);
       
       const quoteData = {
         ...transferQuote.transfer,
@@ -135,7 +133,6 @@ export default function TransferPage() {
     setCurrentStep("executing");
     
     try {
-      console.log('⚙️ Assinando User Operation...');
       
       // Assinar a User Operation
       const signature = await signMessage({ message: userOperationHash });
@@ -144,7 +141,6 @@ export default function TransferPage() {
         throw new Error('Assinatura cancelada pelo usuário');
       }
 
-      console.log('✅ Assinatura obtida, executando transferência...');
       
       // Executar a User Operation
       const result = await executeUserOperation({
@@ -152,7 +148,6 @@ export default function TransferPage() {
         signature: (signature as any).signature || signature
       });
 
-      console.log('✅ Transferência executada:', result);
       
       setTransactionHash(result.userOperationHash);
       setCurrentStep("success");

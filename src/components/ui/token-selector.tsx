@@ -200,18 +200,10 @@ export function TokenSelector({
 
          // Auto-selecionar token quando disponível
          React.useEffect(() => {
-           console.log('🔍 AutoSelect Debug:', {
-             autoSelectSymbol,
-             selectedToken: selectedToken?.symbol,
-             tokensCount: tokensWithBalances.length,
-             availableTokens: tokensWithBalances.map(t => t.symbol)
-           });
-           
            if (autoSelectSymbol && !selectedToken && tokensWithBalances.length > 0) {
              const tokenToSelect = tokensWithBalances.find(token => 
                token.symbol.toLowerCase() === autoSelectSymbol.toLowerCase()
              );
-             console.log('🔍 Token to select:', tokenToSelect);
              if (tokenToSelect) {
                onTokenSelect(tokenToSelect);
              }

@@ -22,8 +22,6 @@ import { getWalletAddress } from '@/lib/actions/dashboard';
   const uploadAPI = {
     uploadDocument: async (uploadData: { url: string; fields: any }, file: File) => {
       try {
-        console.log('📤 Iniciando upload do documento:', file.name);
-        console.log('📋 Dados de upload:', { url: uploadData.url, fields: Object.keys(uploadData.fields) });
         
         const formData = new FormData();
         
@@ -35,13 +33,11 @@ import { getWalletAddress } from '@/lib/actions/dashboard';
         // Adicionar o arquivo por último (obrigatório para S3)
         formData.append('file', file);
         
-        console.log('🔄 Enviando para S3...');
         const response = await fetch(uploadData.url, {
           method: 'POST',
           body: formData,
         });
         
-        console.log('📡 Resposta S3:', { status: response.status, statusText: response.statusText });
         
         if (!response.ok) {
           const errorText = await response.text();
@@ -49,7 +45,6 @@ import { getWalletAddress } from '@/lib/actions/dashboard';
           throw new Error(`Erro ao fazer upload do documento: ${response.status} ${response.statusText}`);
         }
         
-        console.log('✅ Upload S3 concluído com sucesso');
         return response;
       } catch (error) {
         console.error('❌ Erro no upload do documento:', error);
@@ -173,12 +168,10 @@ export default function KYCLevel2Page() {
   useEffect(() => {
     const loadLevel1Data = async () => {
       if (!wallet?.walletAddress) {
-        console.log('⚠️ Wallet walletAddress não disponível');
         return;
       }
       
       try {
-        console.log('🔄 Carregando dados Level 1 para EOA:', wallet.walletAddress);
         
         // Buscar dados KYC existentes usando o Server Action
         // Usar o EOA (walletAddress) para encontrar a smart wallet
@@ -186,8 +179,6 @@ export default function KYCLevel2Page() {
           externallyOwnedAccount: wallet.walletAddress 
         });
         
-        console.log('📡 Resposta do getWalletAddress:', response);
-        console.log('📋 Estrutura da resposta:', {
           hasWallet: !!response?.wallet,
           hasMetadata: !!response?.wallet?.metadata,
           hasKycData: !!response?.wallet?.metadata?.kycData,
@@ -198,12 +189,7 @@ export default function KYCLevel2Page() {
         if (response?.wallet?.metadata?.kycData) {
           const kycData = JSON.parse(response.wallet.metadata.kycData as string);
           setLevel1Data(kycData);
-          console.log('📋 Dados Level 1 carregados:', kycData);
         } else {
-          console.log('⚠️ Nenhum dado KYC encontrado na metadata');
-          console.log('📋 Metadata disponível:', response?.wallet?.metadata);
-          console.log('📋 Smart Wallet Address:', response?.wallet?.walletAddress);
-          console.log('📋 Account Abstraction:', response?.wallet?.accountAbstraction);
         }
       } catch (err) {
         console.error('❌ Erro ao carregar dados Level 1:', err);
@@ -225,12 +211,10 @@ export default function KYCLevel2Page() {
   // Configurar vídeo quando stream for definido
   useEffect(() => {
     if (stream && videoRef.current) {
-      console.log('🎥 Configurando vídeo com stream:', stream);
       videoRef.current.srcObject = stream;
       
       // Forçar o vídeo a carregar
       videoRef.current.onloadedmetadata = () => {
-        console.log('🎥 Vídeo carregado com sucesso');
         videoRef.current?.play();
       };
     }
@@ -238,7 +222,6 @@ export default function KYCLevel2Page() {
 
   // Navegação entre steps
   const nextStep = () => {
-    console.log('🔄 nextStep chamado:', { currentStep, capturedPhoto, facialVerificationCompleted });
     
     if (currentStep === 3) {
       // Step 3: Upload de documento
@@ -253,7 +236,6 @@ export default function KYCLevel2Page() {
       }
     } else if (currentStep === 4 && capturedPhoto) {
       // Step 4: Após capturar foto, processa automaticamente
-      console.log('🚀 Iniciando processamento KYC Level 2...');
       handleSubmit();
     } else if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
@@ -357,7 +339,6 @@ export default function KYCLevel2Page() {
   };
 
   const capturePhoto = () => {
-    console.log('📸 capturePhoto chamado:', { videoRef: !!videoRef.current, cameraActive });
     
     if (videoRef.current && cameraActive) {
       const canvas = document.createElement('canvas');
@@ -369,7 +350,6 @@ export default function KYCLevel2Page() {
         context.drawImage(videoRef.current, 0, 0);
         
         const photoDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        console.log('✅ Foto capturada com sucesso');
         setCapturedPhoto(photoDataUrl);
         stopCamera();
         
@@ -380,7 +360,6 @@ export default function KYCLevel2Page() {
   };
 
   const handleFacialVerification = () => {
-    console.log('🎥 handleFacialVerification chamado:', { cameraActive, capturedPhoto });
     
     if (!cameraActive) {
       startCamera();
@@ -390,16 +369,13 @@ export default function KYCLevel2Page() {
   };
 
   const handleSubmit = async () => {
-    console.log('🚀 handleSubmit iniciado');
     
     if (!level1Data) {
-      console.log('❌ Dados do Level 1 não encontrados');
       error('Erro', 'Dados do Level 1 não encontrados');
       return;
     }
 
     if (!frontDocumentFile || !backDocumentFile || !capturedPhoto) {
-      console.log('❌ Documentos ou foto facial faltando:', { 
         frontDocumentFile: !!frontDocumentFile, 
         backDocumentFile: !!backDocumentFile, 
         capturedPhoto: !!capturedPhoto 
@@ -410,20 +386,15 @@ export default function KYCLevel2Page() {
 
     // Usar dados do metadata da wallet em vez do formulário
     // Os dados de endereço já estão salvos no metadata da wallet
-    console.log('📋 Usando dados do metadata da wallet:', level1Data);
 
     setLoading(true);
-    console.log('⏳ Loading state definido como true');
     
     try {
-      console.log('🚀 Iniciando processo KYC Level 2...');
       
       // PASSO 1: Preparar dados do Level 1
-      console.log('📝 PASSO 1: Preparando dados do Level 1');
       const fullName = level1Data.fullName.split(' ');
       const firstName = fullName[0] || '';
       const lastName = fullName.slice(1).join(' ') || '';
-      console.log('✅ Nome processado:', { firstName, lastName });
       
       // Mapear documento selecionado para categoria da API
       const documentCategoryMap = {
@@ -431,10 +402,8 @@ export default function KYCLevel2Page() {
         'cnh': 'DRIVERS_LICENSE',
         'rnm': 'IDENTITY_CARD'
       };
-      console.log('📄 Documento selecionado:', selectedDocument);
       
       // PASSO 2: Preparar dados para a API Notus usando dados do metadata da wallet
-      console.log('📝 PASSO 2: Preparando dados da sessão KYC');
       const kycSessionData = {
         firstName: level1Data.firstName || firstName,
         lastName: level1Data.lastName || lastName,
@@ -452,79 +421,54 @@ export default function KYCLevel2Page() {
         postalCode: level1Data.postalCode || ''
       };
       
-      console.log('📋 Dados da sessão KYC:', kycSessionData);
       
       // PASSO 3: Criar sessão na API Notus
-      console.log('📝 PASSO 3: Criando sessão na API Notus');
-      console.log('🔄 Chamando createStandardSession...');
       const sessionResponse = await createStandardSession(kycSessionData) as any;
-      console.log('✅ Resposta da API recebida:', sessionResponse);
       
       const sessionId = sessionResponse.session.id;
       const frontDocumentUpload = sessionResponse.frontDocumentUpload;
       const backDocumentUpload = sessionResponse.backDocumentUpload;
       
-      console.log('✅ Sessão KYC criada:', sessionId);
-      console.log('🔗 Front Document Upload:', frontDocumentUpload);
-      console.log('🔗 Back Document Upload:', backDocumentUpload);
       
       // Salvar sessionId e individualId na metadata da wallet
-      console.log('📝 PASSO 4: Salvando sessionId e individualId na metadata da wallet');
-      console.log('🔄 Chamando saveKYCSessionId...');
       const updatedKycData = await saveKYCSessionId(sessionId, sessionResponse.session?.individualId || null, level1Data, wallet?.accountAbstraction || '');
-      console.log('✅ SessionId e individualId salvos na metadata:', updatedKycData);
       
       setKycSessionId(sessionId);
       setUploadUrls({ frontDocumentUpload, backDocumentUpload });
       
       // PASSO 5: Upload dos documentos
-      console.log('📝 PASSO 5: Upload dos documentos');
       if (frontDocumentUpload && frontDocumentFile) {
-        console.log('📤 Upload documento frente...');
         try {
           await uploadAPI.uploadDocument(frontDocumentUpload, frontDocumentFile);
-          console.log('✅ Upload documento frente concluído');
         } catch (err) {
           console.error('❌ Erro no upload documento frente:', err);
           throw new Error(`Falha no upload do documento frente: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
         }
       } else {
-        console.log('⚠️ Front document upload ou arquivo não disponível');
       }
       
       if (backDocumentUpload && backDocumentFile) {
-        console.log('📤 Upload documento verso...');
         try {
           await uploadAPI.uploadDocument(backDocumentUpload, backDocumentFile);
-          console.log('✅ Upload documento verso concluído');
         } catch (err) {
           console.error('❌ Erro no upload documento verso:', err);
           throw new Error(`Falha no upload do documento verso: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
         }
       } else {
-        console.log('⚠️ Back document upload ou arquivo não disponível');
       }
       
       // PASSO 6: Processar sessão
-      console.log('📝 PASSO 6: Processando sessão');
-      console.log('🔄 Chamando processSession...');
       await processSession(sessionId);
-      console.log('✅ Sessão processada com sucesso');
       
       // Não marcar como completo ainda - aguardar validação real na página principal
-      console.log('📝 PASSO 7: Finalizando processo');
-      console.log('✅ SessionId salvo na metadata - aguardando validação real');
       
-      console.log('🎉 Processo KYC Level 2 concluído com sucesso!');
       success('Sucesso!', 'Documentos enviados para verificação! Aguarde a validação.');
-      console.log('🔄 Redirecionando para /wallet/kyc...');
       router.push('/wallet/kyc');
     } catch (err) {
       console.error('❌ Erro ao processar KYC Level 2:', err);
       console.error('❌ Stack trace:', err instanceof Error ? err.stack : 'No stack trace');
       error('Erro', `Falha ao processar verificação KYC: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     } finally {
-      console.log('🔄 Finalizando processo - setLoading(false)');
       setLoading(false);
     }
   };

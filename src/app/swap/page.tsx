@@ -103,25 +103,14 @@ export default function SwapPage() {
   const currentFromToken = fromToken;
   const currentToToken = toToken;
   
-  // Debug para verificar se os elementos condicionais devem aparecer
-  console.log('🔍 Conditional Elements Debug:', {
-    fromAmount,
-    toAmount,
-    currentFromToken: currentFromToken?.symbol,
-    currentToToken: currentToToken?.symbol,
-    shouldShowRate: !!(fromAmount && toAmount && currentFromToken && currentToToken),
-    shouldShowReview: !!(fromAmount && toAmount && currentFromToken && currentToToken)
-  });
 
   // Auto-selecionar tokens se não estiverem selecionados (fallback)
   React.useEffect(() => {
     if (!fromToken) {
       // Tentar selecionar BRZ automaticamente
-      console.log('🔍 Attempting to auto-select BRZ token');
     }
     if (!toToken) {
       // Tentar selecionar USDC automaticamente  
-      console.log('🔍 Attempting to auto-select USDC token');
     }
   }, [fromToken, toToken]);
 
@@ -157,28 +146,6 @@ export default function SwapPage() {
     // Para BRZ → USDC: se BRZ = $0.20 e USDC = $1.00, então 1 BRZ = 0.20 USDC
     const rate = fromPrice / toPrice;
     
-    // Debug temporário
-    console.log('🔍 Exchange Rate Debug (CORRIGIDO):', {
-      fromToken: currentFromToken.symbol,
-      fromPrice,
-      toToken: currentToToken.symbol,
-      toPrice,
-      rate,
-      originalFromPrice: currentFromToken.price,
-      originalToPrice: currentToToken.price,
-      calculation: `${fromPrice} / ${toPrice} = ${rate}`
-    });
-    
-    // Teste: 19.89 BRZ deveria resultar em ~3.98 USDC
-    if (currentFromToken.symbol === 'BRZ' && currentToToken.symbol === 'USDC') {
-      console.log('🧪 Teste BRZ→USDC (CORRIGIDO):', {
-        input: '19.89',
-        expectedRate: 0.20,
-        expectedOutput: 19.89 * 0.20,
-        actualRate: rate,
-        actualOutput: 19.89 * rate
-      });
-    }
     
     return rate;
   })();
@@ -263,7 +230,6 @@ export default function SwapPage() {
 
     setIsLoading(true);
     try {
-      console.log('🔄 Obtendo cotação de swap...');
       
       const swapQuote = await createSwapQuote({
         amountIn: fromAmount,
@@ -278,7 +244,6 @@ export default function SwapPage() {
         payGasFeeToken: currentFromToken.address
       });
 
-      console.log('✅ Cotação obtida:', swapQuote);
       
       const quoteData = {
         ...swapQuote.swap,
@@ -329,7 +294,6 @@ export default function SwapPage() {
     setCurrentStep("executing");
     
     try {
-      console.log('⚙️ Assinando User Operation...');
       
       // Assinar a User Operation
       const signature = await signMessage(userOperationHash);
@@ -338,7 +302,6 @@ export default function SwapPage() {
         throw new Error('Assinatura cancelada pelo usuário');
       }
 
-      console.log('✅ Assinatura obtida, executando swap...');
       
       // Executar a User Operation
       const result = await executeUserOperation({
@@ -346,7 +309,6 @@ export default function SwapPage() {
         signature
       });
 
-      console.log('✅ Swap executado:', result);
       
       setTransactionHash(result.userOperationHash);
       setCurrentStep("success");

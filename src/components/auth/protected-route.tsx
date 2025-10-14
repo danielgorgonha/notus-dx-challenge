@@ -14,7 +14,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     if (ready && !authenticated) {
-      console.log('🔍 ProtectedRoute: Usuário não autenticado, redirecionando para landing page');
       router.push("/");
     }
   }, [ready, authenticated, router]);

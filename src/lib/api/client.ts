@@ -27,26 +27,8 @@ export const notusAPI = ky.create({
     'x-api-key': process.env.NEXT_PUBLIC_NOTUS_API_KEY || process.env.NOTUS_API_KEY || '',
   },
   hooks: {
-    beforeRequest: [
-      (request) => {
-        console.log('🔍 Notus API Request:', {
-          url: request.url,
-          method: request.method,
-          headers: {
-            'x-api-key': `${(process.env.NEXT_PUBLIC_NOTUS_API_KEY || process.env.NOTUS_API_KEY)?.slice(0, 20)}...`,
-          },
-        });
-      },
-    ],
-    afterResponse: [
-      (request, options, response) => {
-        console.log('📡 Notus API Response:', {
-          status: response.status,
-          statusText: response.statusText,
-          url: response.url,
-        });
-      },
-    ],
+    beforeRequest: [],
+    afterResponse: [],
     beforeError: [
       async (error) => {
         const { response } = error;
@@ -81,9 +63,3 @@ export const notusAPI = ky.create({
 });
 
 
-// Log da configuração da API
-console.log('🔧 Notus API Client Config:', {
-  baseURL: process.env.NEXT_PUBLIC_NOTUS_API_URL || 'https://api.notus.team/api/v1',
-  hasApiKey: !!(process.env.NEXT_PUBLIC_NOTUS_API_KEY || process.env.NOTUS_API_KEY),
-  apiKeyLength: (process.env.NEXT_PUBLIC_NOTUS_API_KEY || process.env.NOTUS_API_KEY)?.length || 0
-});

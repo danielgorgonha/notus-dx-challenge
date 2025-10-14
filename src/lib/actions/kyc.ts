@@ -30,13 +30,11 @@ export async function createStandardSession(params: {
   postalCode?: string;
 }) {
   try {
-    console.log('🚀 Criando sessão KYC com dados:', params);
     
     const response = await notusAPI.post("kyc/individual-verification-sessions/standard", {
       json: params,
     }).json();
     
-    console.log('✅ Sessão KYC criada:', response);
     return response;
   } catch (error) {
     console.error('❌ Erro ao criar sessão KYC:', error);
@@ -62,7 +60,6 @@ export async function getSessionResult(sessionId: string) {
  */
 export async function saveKYCSessionId(sessionId: string, individualId: string | null, kycData: any, walletAddress: string) {
   try {
-    console.log('💾 Salvando sessionId e individualId na metadata:', { sessionId, individualId });
     
     const updatedKycData = {
       ...kycData,
@@ -75,7 +72,6 @@ export async function saveKYCSessionId(sessionId: string, individualId: string |
     
     await walletActions.updateMetadata(walletAddress, { kycData: JSON.stringify(updatedKycData) });
     
-    console.log('✅ SessionId e individualId salvos na metadata');
     return updatedKycData;
   } catch (error) {
     console.error('❌ Erro ao salvar sessionId e individualId:', error);
@@ -89,19 +85,16 @@ export async function saveKYCSessionId(sessionId: string, individualId: string |
  */
 export async function processSession(sessionId: string) {
   try {
-    console.log('⚡ Processando sessão KYC:', sessionId);
     
     const response = await notusAPI.post(`kyc/individual-verification-sessions/standard/${sessionId}/process`);
     
     // Status 204 (No Content) é esperado para este endpoint
     if (response.status === 204) {
-      console.log('✅ Sessão KYC processada com sucesso (204 No Content)');
       return { success: true, status: 204 };
     }
     
     // Se houver conteúdo, tentar fazer parse
     const responseData = await response.json();
-    console.log('✅ Sessão KYC processada:', responseData);
     return responseData;
   } catch (error) {
     console.error('❌ Erro ao processar sessão KYC:', error);
