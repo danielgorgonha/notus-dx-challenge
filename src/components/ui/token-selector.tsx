@@ -35,6 +35,7 @@ interface TokenSelectorProps {
   placeholder?: string;
   showBalance?: boolean;
   className?: string;
+  autoSelectSymbol?: string;
 }
 
 export function TokenSelector({
@@ -44,7 +45,8 @@ export function TokenSelector({
   walletAddress,
   placeholder = "Selecionar token",
   showBalance = true,
-  className = ""
+  className = "",
+  autoSelectSymbol
 }: TokenSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -126,7 +128,7 @@ export function TokenSelector({
         decimals: token.decimals,
         chainId: token.chainId,
         logoUrl: token.logo,
-        price: token.marketCap ? token.marketCap / 1000000 : undefined,
+        price: token.priceUsd !== undefined ? parseFloat(token.priceUsd) : undefined,
         isNative: token.address === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         balance: portfolioToken?.balanceFormatted || portfolioToken?.balance || "0",
         balanceUsd: portfolioToken?.balanceUsd || "0"
@@ -189,19 +191,31 @@ export function TokenSelector({
       const balanceB = parseFloat(b.balance || "0");
       return balanceB - balanceA; // Maior saldo primeiro
     });
-  }, [tokensData, portfolioData]);
+         }, [tokensData, portfolioData]);
 
-  // Filtrar tokens por busca
-  const filteredTokens = React.useMemo(() => {
-    if (!searchQuery) return tokensWithBalances;
-    
-    const query = searchQuery.toLowerCase();
-    return tokensWithBalances.filter(token => 
-      token.symbol.toLowerCase().includes(query) ||
-      token.name.toLowerCase().includes(query) ||
-      token.address.toLowerCase().includes(query)
-    );
-  }, [tokensWithBalances, searchQuery]);
+         // Auto-selecionar token quando disponível
+         React.useEffect(() => {
+           if (autoSelectSymbol && !selectedToken && tokensWithBalances.length > 0) {
+             const tokenToSelect = tokensWithBalances.find(token => 
+               token.symbol.toLowerCase() === autoSelectSymbol.toLowerCase()
+             );
+             if (tokenToSelect) {
+               onTokenSelect(tokenToSelect);
+             }
+           }
+         }, [autoSelectSymbol, selectedToken, tokensWithBalances, onTokenSelect]);
+
+         // Filtrar tokens por busca
+         const filteredTokens = React.useMemo(() => {
+           if (!searchQuery) return tokensWithBalances;
+           
+           const query = searchQuery.toLowerCase();
+           return tokensWithBalances.filter(token => 
+             token.symbol.toLowerCase().includes(query) ||
+             token.name.toLowerCase().includes(query) ||
+             token.address.toLowerCase().includes(query)
+           );
+         }, [tokensWithBalances, searchQuery]);
 
   const handleTokenSelect = (token: Token) => {
     onTokenSelect(token);
