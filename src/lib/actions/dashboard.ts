@@ -35,9 +35,9 @@ export async function getHistory(walletAddress: string, params?: { take?: number
 /**
  * Lista tokens suportados
  */
-export async function listSupportedTokens(page: number = 1, perPage: number = 50) {
+export async function listSupportedTokens({ page = 1, perPage = 50 }: { page?: number; perPage?: number } = {}) {
   try {
-    return await listTokens(page, perPage);
+    return await listTokens({ page, perPage });
   } catch (error) {
     console.error('Error listing tokens:', error);
     throw error;

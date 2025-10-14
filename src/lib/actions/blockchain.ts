@@ -49,7 +49,13 @@ interface TokensResponse {
 /**
  * Lista todas as chains suportadas
  */
-export async function listChains(page: number = 1, perPage: number = 50): Promise<ChainsResponse> {
+export async function listChains({ 
+  page = 1, 
+  perPage = 50 
+}: {
+  page?: number;
+  perPage?: number;
+} = {}): Promise<ChainsResponse> {
   try {
     
     const response = await notusAPI.get("crypto/chains", {
@@ -66,21 +72,26 @@ export async function listChains(page: number = 1, perPage: number = 50): Promis
 /**
  * Lista todos os tokens suportados
  */
-export async function listTokens(
-  page: number = 1, 
-  perPage: number = 100,
-  projectId: string = 'fdf973e5-3523-4077-903d-bacfc0d0c2dd',
-  filterWhitelist: boolean = false,
-  orderBy: 'marketCap' | 'chainId' = 'marketCap',
-  orderDir: 'asc' | 'desc' = 'desc'
-): Promise<TokensResponse> {
+export async function listTokens({
+  page = 1, 
+  perPage = 100,
+  filterWhitelist = false,
+  orderBy = 'marketCap',
+  orderDir = 'desc'
+}: {
+  page?: number;
+  perPage?: number;
+  filterWhitelist?: boolean;
+  orderBy?: 'marketCap' | 'chainId';
+  orderDir?: 'asc' | 'desc';
+} = {}): Promise<TokensResponse> {
   try {
     
     const response = await notusAPI.get("crypto/tokens", {
       searchParams: { 
         page, 
         perPage,
-        projectId,
+        projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
         filterWhitelist,
         orderBy,
         orderDir
@@ -97,23 +108,29 @@ export async function listTokens(
 /**
  * Lista tokens por chain específica
  */
-export async function listTokensByChain(
-  chainId: number, 
-  page: number = 1, 
-  perPage: number = 100,
-  projectId: string = 'fdf973e5-3523-4077-903d-bacfc0d0c2dd',
-  filterWhitelist: boolean = true,
-  orderBy: 'marketCap' | 'chainId' = 'marketCap',
-  orderDir: 'asc' | 'desc' = 'desc'
-): Promise<TokensResponse> {
+export async function listTokensByChain({
+  chainId,
+  page = 1, 
+  perPage = 100,
+  filterWhitelist = false,
+  orderBy = 'marketCap',
+  orderDir = 'desc'
+}: {
+  chainId: number;
+  page?: number;
+  perPage?: number;
+  filterWhitelist?: boolean;
+  orderBy?: 'marketCap' | 'chainId';
+  orderDir?: 'asc' | 'desc';
+}): Promise<TokensResponse> {
   try {
     
     const response = await notusAPI.get("crypto/tokens", {
       searchParams: { 
-        chainId, 
+        filterByChainId: chainId, 
         page, 
         perPage,
-        projectId,
+        projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
         filterWhitelist,
         orderBy,
         orderDir

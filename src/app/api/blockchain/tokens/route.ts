@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const perPage = parseInt(searchParams.get('perPage') || '20');
 
-    const response = await listTokens(page, perPage);
+    const response = await listTokens({ page, perPage });
     return NextResponse.json(response);
   } catch (error) {
     console.error('Error listing tokens:', error);

@@ -96,7 +96,19 @@ export function TokenSelector({
   // Buscar tokens suportados da API Notus
   const { data: tokensData, isLoading: tokensLoading, error: tokensError } = useQuery({
     queryKey: ['tokens', chainId],
-    queryFn: () => listTokensByChain(chainId, 1, 100, 'fdf973e5-3523-4077-903d-bacfc0d0c2dd', false, 'marketCap', 'desc'),
+    queryFn: async () => {
+      console.log('🔍 TokenSelector: Buscando tokens para chainId:', chainId);
+      const result = await listTokensByChain({ 
+        chainId, 
+        page: 1, 
+        perPage: 100, 
+        filterWhitelist: false, 
+        orderBy: 'marketCap', 
+        orderDir: 'desc' 
+      });
+      console.log('🔍 TokenSelector: Tokens recebidos:', result?.tokens?.length || 0);
+      return result;
+    },
     refetchInterval: 300000, // 5 minutos
   });
 
@@ -114,12 +126,15 @@ export function TokenSelector({
     const supportedTokens = tokensData?.tokens || [];
     const portfolioTokens = portfolioData?.tokens || [];
     
+    console.log('🔍 TokenSelector: supportedTokens:', supportedTokens.length);
+    console.log('🔍 TokenSelector: portfolioTokens:', portfolioTokens.length);
+    
     
     // 1. Mapear tokens suportados com saldos do portfolio
     const supportedWithBalances = supportedTokens.map((token: any) => {
       const portfolioToken = portfolioTokens.find((pt: any) => 
         pt.address.toLowerCase() === token.address.toLowerCase() && 
-        pt.chainId === token.chainId
+        pt.chainId === token.chain?.id
       );
       
       
@@ -128,7 +143,7 @@ export function TokenSelector({
         symbol: token.symbol,
         name: token.name,
         decimals: token.decimals,
-        chainId: token.chainId,
+        chainId: token.chain?.id,
         logoUrl: token.logo,
         price: token.priceUsd !== undefined ? parseFloat(token.priceUsd) : undefined,
         isNative: token.address === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
@@ -143,7 +158,7 @@ export function TokenSelector({
         // Verificar se este token do portfolio NÃO está na lista suportada
         return !supportedTokens.some((st: any) => 
           st.address.toLowerCase() === pt.address.toLowerCase() && 
-          pt.chainId === pt.chainId
+          pt.chainId === st.chain?.id
         );
       })
       .map((pt: any) => ({
@@ -162,12 +177,14 @@ export function TokenSelector({
     
     // 3. Combinar e remover duplicatas
     const allTokens = [...supportedWithBalances, ...portfolioOnlyTokens];
+    console.log('🔍 TokenSelector: allTokens before deduplication:', allTokens.length);
+    console.log('🔍 TokenSelector: allTokens sample:', allTokens.slice(0, 3).map(t => ({ symbol: t.symbol, chainId: t.chainId, chainIdFromChain: t.chain?.id })));
     
     // 4. Remover duplicatas por símbolo (manter o token com maior saldo)
     const uniqueTokens = allTokens.reduce((acc: any[], current: any) => {
       const existingIndex = acc.findIndex(token => 
         token.symbol.toLowerCase() === current.symbol.toLowerCase() && 
-        token.chainId === current.chainId
+        (token.chainId === current.chainId || token.chain?.id === current.chain?.id)
       );
       
       if (existingIndex === -1) {
@@ -188,14 +205,26 @@ export function TokenSelector({
     }, []);
     
     // 5. Filtrar apenas tokens da mesma chain
-    const sameChainTokens = uniqueTokens.filter(token => token.chainId === chainId);
+    console.log('🔍 TokenSelector: uniqueTokens before chain filter:', uniqueTokens.length);
+    console.log('🔍 TokenSelector: chainId:', chainId);
+    console.log('🔍 TokenSelector: uniqueTokens chainIds:', uniqueTokens.map(t => ({ symbol: t.symbol, chainId: t.chain?.id })));
+    console.log('🔍 TokenSelector: First 5 tokens chainIds:', uniqueTokens.slice(0, 5).map(t => ({ symbol: t.symbol, chainId: t.chain?.id })));
+    console.log('🔍 TokenSelector: First token structure:', uniqueTokens[0]);
+    
+    const sameChainTokens = uniqueTokens.filter(token => token.chain?.id === chainId);
+    console.log('🔍 TokenSelector: sameChainTokens after filter:', sameChainTokens.length);
     
     // 6. Ordenar por saldo (tokens com saldo primeiro)
-    return sameChainTokens.sort((a, b) => {
+    const finalTokens = sameChainTokens.sort((a, b) => {
       const balanceA = parseFloat(a.balance || "0");
       const balanceB = parseFloat(b.balance || "0");
       return balanceB - balanceA; // Maior saldo primeiro
     });
+    
+    console.log('🔍 TokenSelector: Final tokens count:', finalTokens.length);
+    console.log('🔍 TokenSelector: Final tokens:', finalTokens.map(t => t.symbol));
+    
+    return finalTokens;
          }, [tokensData, portfolioData]);
 
          // Auto-selecionar token quando disponível

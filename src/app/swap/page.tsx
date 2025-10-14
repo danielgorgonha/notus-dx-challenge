@@ -132,11 +132,19 @@ export default function SwapPage() {
 
   // Recalcular valores quando tokens ou exchangeRate mudarem
   useEffect(() => {
-    if (fromAmount && exchangeRate > 0) {
+    if (fromAmount && exchangeRate > 0 && currentFromToken && currentToToken) {
       const calculatedTo = calculateToAmount(fromAmount);
       setToAmount(calculatedTo);
     }
-  }, [currentFromToken, currentToToken, exchangeRate]);
+  }, [fromAmount, currentFromToken, currentToToken, exchangeRate]);
+
+  // Recalcular fromAmount quando toAmount mudar
+  useEffect(() => {
+    if (toAmount && exchangeRate > 0 && currentFromToken && currentToToken) {
+      const calculatedFrom = calculateFromAmount(toAmount);
+      setFromAmount(calculatedFrom);
+    }
+  }, [toAmount, currentFromToken, currentToToken, exchangeRate]);
 
   // Calcular valor de destino baseado no valor de origem
   const calculateToAmount = (fromValue: string) => {
@@ -442,8 +450,6 @@ export default function SwapPage() {
                 onChange={(e) => {
                   const rawValue = e.target.value.replace(/[^\d.,]/g, '').replace(',', '.');
                   setFromAmount(rawValue);
-                  const calculatedTo = calculateToAmount(rawValue);
-                  setToAmount(calculatedTo);
                 }}
                 className="bg-transparent border-none text-white text-3xl font-bold text-right p-0 h-auto focus:ring-0 focus:outline-none"
                 disabled={!currentFromToken}
@@ -515,8 +521,6 @@ export default function SwapPage() {
                 onChange={(e) => {
                   const rawValue = e.target.value.replace(/[^\d.,]/g, '').replace(',', '.');
                   setToAmount(rawValue);
-                  const calculatedFrom = calculateFromAmount(rawValue);
-                  setFromAmount(calculatedFrom);
                 }}
                 className="bg-transparent border-none text-white text-3xl font-bold text-right p-0 h-auto focus:ring-0 focus:outline-none"
                 disabled={!currentToToken}
@@ -547,11 +551,14 @@ export default function SwapPage() {
       </div>
 
       {/* Taxa de conversão - Só aparece quando há valor */}
-      {fromAmount && toAmount && (
+      {fromAmount && currentFromToken && (
         <div className="bg-slate-800/50 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <span className="text-white font-medium">
-              1 {currentToToken.symbol} = {exchangeRate.toFixed(3)} {currentFromToken.symbol} ({formatFiatAmount(calculateFiatValue("1", currentToToken))})
+              {currentToToken ? 
+                `1 ${currentToToken.symbol} = ${exchangeRate.toFixed(3)} ${currentFromToken.symbol} (${formatFiatAmount(calculateFiatValue("1", currentToToken))})` :
+                `Taxa de conversão será calculada quando selecionar o token de destino`
+              }
             </span>
             <ChevronDown className="h-4 w-4 text-slate-400" />
           </div>
@@ -559,7 +566,7 @@ export default function SwapPage() {
       )}
 
       {/* Timer de preço e botão Revisar - Só aparece quando há valor */}
-      {fromAmount && toAmount && (
+      {fromAmount && currentFromToken && (
         <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
@@ -582,7 +589,7 @@ export default function SwapPage() {
                 <span>Obtendo Cotação...</span>
               </div>
             ) : (
-              <span>Revisar</span>
+              <span>{currentToToken ? 'Revisar' : 'Selecionar Token de Destino'}</span>
             )}
           </Button>
         </div>
