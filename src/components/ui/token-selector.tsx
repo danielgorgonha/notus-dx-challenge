@@ -141,7 +141,7 @@ export function TokenSelector({
         // Verificar se este token do portfolio NÃO está na lista suportada
         return !supportedTokens.some((st: any) => 
           st.address.toLowerCase() === pt.address.toLowerCase() && 
-          st.chainId === pt.chainId
+          pt.chainId === pt.chainId
         );
       })
       .map((pt: any) => ({

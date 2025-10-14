@@ -114,18 +114,18 @@ export default function SwapPage() {
     let fromPrice = currentFromToken.price;
     let toPrice = currentToToken.price;
     
-    // Corrigir preços incorretos da API
-    if (currentFromToken.symbol === 'BRZ') {
+    // Corrigir preços incorretos da API - sempre forçar valores corretos
+    if (currentFromToken.symbol === 'BRZ' || currentFromToken.symbol === 'brz') {
       fromPrice = 0.20; // Forçar preço correto do BRZ
-    } else if (currentFromToken.symbol === 'USDC') {
+    } else if (currentFromToken.symbol === 'USDC' || currentFromToken.symbol === 'usdc') {
       fromPrice = 1.0; // Forçar preço correto do USDC
     } else if (!fromPrice) {
       fromPrice = 1.0; // Padrão para outros tokens
     }
     
-    if (currentToToken.symbol === 'BRZ') {
+    if (currentToToken.symbol === 'BRZ' || currentToToken.symbol === 'brz') {
       toPrice = 0.20; // Forçar preço correto do BRZ
-    } else if (currentToToken.symbol === 'USDC') {
+    } else if (currentToToken.symbol === 'USDC' || currentToToken.symbol === 'usdc') {
       toPrice = 1.0; // Forçar preço correto do USDC
     } else if (!toPrice) {
       toPrice = 1.0; // Padrão para outros tokens
