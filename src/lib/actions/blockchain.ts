@@ -106,7 +106,7 @@ export async function listTokensByChain(
   page: number = 1, 
   perPage: number = 100,
   projectId: string = 'fdf973e5-3523-4077-903d-bacfc0d0c2dd',
-  filterWhitelist: boolean = false,
+  filterWhitelist: boolean = true,
   orderBy: 'marketCap' | 'chainId' = 'marketCap',
   orderDir: 'asc' | 'desc' = 'desc'
 ): Promise<TokensResponse> {

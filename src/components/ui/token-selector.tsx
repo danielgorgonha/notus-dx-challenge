@@ -36,6 +36,7 @@ interface TokenSelectorProps {
   showBalance?: boolean;
   className?: string;
   autoSelectSymbol?: string;
+  compact?: boolean;
 }
 
 export function TokenSelector({
@@ -46,7 +47,8 @@ export function TokenSelector({
   placeholder = "Selecionar token",
   showBalance = true,
   className = "",
-  autoSelectSymbol
+  autoSelectSymbol,
+  compact = false
 }: TokenSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -185,8 +187,11 @@ export function TokenSelector({
       return acc;
     }, []);
     
-    // 5. Ordenar por saldo (tokens com saldo primeiro)
-    return uniqueTokens.sort((a, b) => {
+    // 5. Filtrar apenas tokens da mesma chain
+    const sameChainTokens = uniqueTokens.filter(token => token.chainId === chainId);
+    
+    // 6. Ordenar por saldo (tokens com saldo primeiro)
+    return sameChainTokens.sort((a, b) => {
       const balanceA = parseFloat(a.balance || "0");
       const balanceB = parseFloat(b.balance || "0");
       return balanceB - balanceA; // Maior saldo primeiro
@@ -195,10 +200,18 @@ export function TokenSelector({
 
          // Auto-selecionar token quando disponível
          React.useEffect(() => {
+           console.log('🔍 AutoSelect Debug:', {
+             autoSelectSymbol,
+             selectedToken: selectedToken?.symbol,
+             tokensCount: tokensWithBalances.length,
+             availableTokens: tokensWithBalances.map(t => t.symbol)
+           });
+           
            if (autoSelectSymbol && !selectedToken && tokensWithBalances.length > 0) {
              const tokenToSelect = tokensWithBalances.find(token => 
                token.symbol.toLowerCase() === autoSelectSymbol.toLowerCase()
              );
+             console.log('🔍 Token to select:', tokenToSelect);
              if (tokenToSelect) {
                onTokenSelect(tokenToSelect);
              }
@@ -237,14 +250,14 @@ export function TokenSelector({
       <Button
         onClick={() => setIsOpen(!isOpen)}
         variant="outline"
-        className="w-full justify-between p-3 h-auto bg-slate-800/50 border-slate-600 hover:bg-slate-700/50"
+        className={`${compact ? 'px-3 py-2 h-auto' : 'w-full justify-between p-3 h-auto'} bg-slate-800/50 border-slate-600 hover:bg-slate-700/50`}
       >
-        <div className="flex items-center space-x-3">
+        <div className={`flex items-center ${compact ? 'space-x-2' : 'space-x-3'}`}>
           {selectedToken ? (
             <>
-              <div className="text-lg">
+              <div className={compact ? 'text-sm' : 'text-lg'}>
                 {selectedToken.logoUrl ? (
-                  <img src={selectedToken.logoUrl} alt={selectedToken.symbol} className="w-6 h-6 rounded-full" />
+                  <img src={selectedToken.logoUrl} alt={selectedToken.symbol} className={`${compact ? 'w-5 h-5' : 'w-6 h-6'} rounded-full`} />
                 ) : (
                   selectedToken.symbol === 'USDC' ? '💙' : 
                   selectedToken.symbol === 'BRZ' ? '🇧🇷' :
@@ -253,15 +266,15 @@ export function TokenSelector({
                 )}
               </div>
               <div className="text-left">
-                <div className="text-white font-semibold">{selectedToken.symbol}</div>
-                <div className="text-slate-400 text-sm">{selectedToken.name}</div>
+                <div className={`text-white font-semibold ${compact ? 'text-sm' : ''}`}>{selectedToken.symbol}</div>
+                {!compact && <div className="text-slate-400 text-sm">{selectedToken.name}</div>}
               </div>
             </>
           ) : (
-            <div className="text-slate-400">{placeholder}</div>
+            <div className={`text-slate-400 ${compact ? 'text-sm' : ''}`}>{placeholder}</div>
           )}
         </div>
-        <ChevronDown className="h-4 w-4 text-slate-400" />
+        <ChevronDown className={`h-4 w-4 text-slate-400 ${compact ? 'ml-2' : ''}`} />
       </Button>
 
       {/* Dropdown */}

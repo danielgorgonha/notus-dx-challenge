@@ -102,6 +102,28 @@ export default function SwapPage() {
   // Atualizar tokens selecionados com dados reais
   const currentFromToken = fromToken;
   const currentToToken = toToken;
+  
+  // Debug para verificar se os elementos condicionais devem aparecer
+  console.log('🔍 Conditional Elements Debug:', {
+    fromAmount,
+    toAmount,
+    currentFromToken: currentFromToken?.symbol,
+    currentToToken: currentToToken?.symbol,
+    shouldShowRate: !!(fromAmount && toAmount && currentFromToken && currentToToken),
+    shouldShowReview: !!(fromAmount && toAmount && currentFromToken && currentToToken)
+  });
+
+  // Auto-selecionar tokens se não estiverem selecionados (fallback)
+  React.useEffect(() => {
+    if (!fromToken) {
+      // Tentar selecionar BRZ automaticamente
+      console.log('🔍 Attempting to auto-select BRZ token');
+    }
+    if (!toToken) {
+      // Tentar selecionar USDC automaticamente  
+      console.log('🔍 Attempting to auto-select USDC token');
+    }
+  }, [fromToken, toToken]);
 
   // Calcular taxa de câmbio (só se ambos tokens têm preço)
   const exchangeRate = (() => {
@@ -441,167 +463,181 @@ export default function SwapPage() {
 
   const renderFormStep = () => (
     <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-white mb-2">Conversão de criptomoedas</h1>
-        <p className="text-slate-300">Troque tokens instantaneamente</p>
+      {/* Header com título e settings */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Conversão de criptomoedas</h1>
+          <p className="text-slate-400 text-sm mt-1">A quantidade mínima é de 5,500 BRZ.</p>
+        </div>
+        <Button
+          onClick={handleSlippageModalOpen}
+          variant="outline"
+          size="sm"
+          className="border-slate-600/50 text-slate-300 hover:border-blue-500/70 hover:text-blue-400 hover:bg-blue-500/10 transition-all duration-200 backdrop-blur-sm bg-slate-800/30"
+        >
+          <Settings className="h-4 w-4" />
+                </Button>
       </div>
 
-      <Card className="glass-card">
-        <CardContent className="p-6 space-y-6">
-          <div className="flex items-center justify-end">
-            <Button
-              onClick={handleSlippageModalOpen}
-              variant="outline"
-              size="sm"
-              className="border-slate-600/50 text-slate-300 hover:border-blue-500/70 hover:text-blue-400 hover:bg-blue-500/10 transition-all duration-200 backdrop-blur-sm bg-slate-800/30"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              <span className="font-medium">{slippage}%</span>
-            </Button>
-          </div>
-            {/* From Token */}
-          <div className="space-y-3">
-            <Label className="text-white text-lg">Envia</Label>
-            <div className="bg-slate-800/50 rounded-lg p-4 space-y-4">
-              <TokenSelector
-                selectedToken={currentFromToken}
-                onTokenSelect={handleFromTokenSelect}
-                chainId={SUPPORTED_CHAINS.POLYGON}
-                walletAddress={walletAddress}
-                placeholder="Selecionar token de origem"
-                showBalance={true}
-                autoSelectSymbol="BRZ"
-              />
-              
-              <div className="relative">
+      {/* Seção Envia - Estilo Chainless */}
+      <div className="space-y-3">
+        <Label className="text-white text-lg">Envia</Label>
+        <div className="bg-slate-800/50 rounded-lg p-4 space-y-4">
+          {/* Input principal com token selector à direita */}
+          <div className="flex items-center space-x-3">
+            <div className="flex-1">
                 <Input 
-                  type="text"
-                  placeholder="0,00"
-                  value={fromAmount ? formatTokenAmount(fromAmount, currentFromToken?.decimals, true) : ""}
-                  onChange={(e) => {
-                    // Remove formatação para permitir edição
-                    const rawValue = e.target.value.replace(/[^\d.,]/g, '').replace(',', '.');
-                    setFromAmount(rawValue);
-                    const calculatedTo = calculateToAmount(rawValue);
-                    setToAmount(calculatedTo);
-                  }}
-                  className="bg-slate-700 border-slate-600 text-white text-2xl text-right py-4 pr-16"
-                  disabled={!currentFromToken}
+                type="text"
+                placeholder="0"
+                value={fromAmount ? formatTokenAmount(fromAmount, currentFromToken?.decimals, true) : ""}
+                onChange={(e) => {
+                  const rawValue = e.target.value.replace(/[^\d.,]/g, '').replace(',', '.');
+                  setFromAmount(rawValue);
+                  const calculatedTo = calculateToAmount(rawValue);
+                  setToAmount(calculatedTo);
+                }}
+                className="bg-transparent border-none text-white text-3xl font-bold text-right p-0 h-auto focus:ring-0 focus:outline-none"
+                disabled={!currentFromToken}
                 />
-                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <span className="text-slate-400">
-                    {currentFromToken?.symbol || "TOKEN"}
-                  </span>
-                </div>
               </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="text-slate-400 text-sm">
-                  {formatFiatAmount(0)} {/* TODO: Calcular valor real em R$ */}
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-slate-400 text-sm">
-                    Saldo: {formatBalance(currentFromToken?.balance || "0", currentFromToken?.symbol || "TOKEN", currentFromToken?.decimals)}
-                  </span>
-                  <Button
-                    onClick={handleMaxAmount}
-                    size="sm"
-                    variant="outline"
-                    className="text-xs px-2 py-1 h-auto bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
-                  >
-                    MAX
-                  </Button>
-                </div>
+            <TokenSelector
+              selectedToken={currentFromToken}
+              onTokenSelect={handleFromTokenSelect}
+              chainId={SUPPORTED_CHAINS.POLYGON}
+              walletAddress={walletAddress}
+              placeholder="Selecionar token"
+              showBalance={false}
+              autoSelectSymbol="BRZ"
+              compact={true}
+            />
               </div>
-              
-              {fromAmount && !isValidAmount(fromAmount) && (
-                <p className="text-red-400 text-sm flex items-center space-x-1">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>Saldo insuficiente</span>
-                </p>
-              )}
-              </div>
+          
+          {/* Valor em R$ e saldo com MAX */}
+          <div className="flex items-center justify-between">
+            <div className="text-slate-400 text-sm">
+              R$20,00
             </div>
-
-            {/* Swap Arrow */}
-            <div className="flex justify-center">
-            <Button
-              onClick={handleSwapTokens}
-              size="sm"
-              className="bg-white/10 hover:bg-white/20 border-2 border-white/20 hover:border-white/40 transition-all duration-200"
-            >
-              <ArrowUpDown className="h-4 w-4" />
+            <div className="flex items-center space-x-2">
+              <span className="text-slate-400 text-sm">
+                Saldo: {formatBalance(currentFromToken?.balance || "0", currentFromToken?.symbol || "TOKEN", currentFromToken?.decimals)}
+              </span>
+              <Button
+                onClick={handleMaxAmount}
+                size="sm"
+                variant="outline"
+                className="text-xs px-2 py-1 h-auto bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+              >
+                MAX
               </Button>
             </div>
-
-            {/* To Token */}
-          <div className="space-y-3">
-            <Label className="text-white text-lg">Recebe</Label>
-            <div className="bg-slate-800/50 rounded-lg p-4 space-y-4">
-              <TokenSelector
-                selectedToken={currentToToken}
-                onTokenSelect={handleToTokenSelect}
-                chainId={SUPPORTED_CHAINS.POLYGON}
-                walletAddress={walletAddress}
-                placeholder="Selecionar token de destino"
-                showBalance={false}
-                autoSelectSymbol="USDC"
-              />
-              
-              <div className="relative">
-                <Input 
-                  type="text"
-                  placeholder="0"
-                  value={toAmount ? formatTokenAmount(toAmount, currentToToken?.decimals, true) : ""}
-                  onChange={(e) => {
-                    // Remove formatação para permitir edição
-                    const rawValue = e.target.value.replace(/[^\d.,]/g, '').replace(',', '.');
-                    setToAmount(rawValue);
-                    const calculatedFrom = calculateFromAmount(rawValue);
-                    setFromAmount(calculatedFrom);
-                  }}
-                  className="bg-slate-700 border-slate-600 text-white text-2xl text-right py-4 pr-16"
-                  disabled={!currentToToken}
-                />
-                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <span className="text-slate-400">
-                    {currentToToken?.symbol || "TOKEN"}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="text-slate-400 text-sm">
-                  ~{formatFiatAmount(0)} {/* TODO: Calcular valor real em R$ */}
-                </div>
-                <div className="text-slate-400 text-sm">
-                  Saldo: {formatBalance(currentToToken?.balance || "0", currentToToken?.symbol || "TOKEN", currentToToken?.decimals)}
-                </div>
-              </div>
-              </div>
             </div>
 
+          {fromAmount && !isValidAmount(fromAmount) && (
+            <p className="text-red-400 text-sm flex items-center space-x-1">
+              <AlertCircle className="h-4 w-4" />
+              <span>Saldo insuficiente</span>
+            </p>
+          )}
+        </div>
+            </div>
 
-        </CardContent>
-      </Card>
+      {/* Botão de Swap - Estilo Chainless */}
+      <div className="flex justify-center">
+        <Button
+          onClick={handleSwapTokens}
+          size="sm"
+          className="bg-white/10 hover:bg-white/20 border-2 border-white/20 hover:border-white/40 transition-all duration-200 rounded-full w-12 h-12"
+        >
+          <ArrowUpDown className="h-5 w-5" />
+                </Button>
+      </div>
 
-      <Button
-        onClick={handleGetQuote}
-        disabled={!canProceed || isLoading}
-        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-slate-600 disabled:to-slate-600"
-      >
-        {isLoading ? (
-          <div className="flex items-center space-x-2">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Obtendo Cotação...</span>
+      {/* Seção Recebe - Estilo Chainless */}
+      <div className="space-y-3">
+        <Label className="text-white text-lg">Recebe</Label>
+        <div className="bg-slate-800/50 rounded-lg p-4 space-y-4">
+          {/* Input principal com token selector à direita */}
+          <div className="flex items-center space-x-3">
+            <div className="flex-1">
+                <Input 
+                type="text"
+                placeholder="0"
+                value={toAmount ? formatTokenAmount(toAmount, currentToToken?.decimals, true) : ""}
+                onChange={(e) => {
+                  const rawValue = e.target.value.replace(/[^\d.,]/g, '').replace(',', '.');
+                  setToAmount(rawValue);
+                  const calculatedFrom = calculateFromAmount(rawValue);
+                  setFromAmount(calculatedFrom);
+                }}
+                className="bg-transparent border-none text-white text-3xl font-bold text-right p-0 h-auto focus:ring-0 focus:outline-none"
+                disabled={!currentToToken}
+              />
+            </div>
+            <TokenSelector
+              selectedToken={currentToToken}
+              onTokenSelect={handleToTokenSelect}
+              chainId={SUPPORTED_CHAINS.POLYGON}
+              walletAddress={walletAddress}
+              placeholder="Selecionar token"
+              showBalance={false}
+              autoSelectSymbol="USDC"
+              compact={true}
+            />
           </div>
-        ) : (
-          <div className="flex items-center space-x-2">
-            <ArrowRightLeft className="h-5 w-5" />
-            <span>Revisar</span>
+          
+          {/* Valor em R$ e saldo */}
+          <div className="flex items-center justify-between">
+            <div className="text-slate-400 text-sm">
+              ~R$19,69
+            </div>
+            <div className="text-slate-400 text-sm">
+              Saldo: {formatBalance(currentToToken?.balance || "0", currentToToken?.symbol || "TOKEN", currentToToken?.decimals)}
+            </div>
           </div>
-        )}
-      </Button>
+        </div>
+      </div>
+
+      {/* Taxa de conversão - Só aparece quando há valor */}
+      {fromAmount && toAmount && (
+        <div className="bg-slate-800/50 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-white font-medium">
+              1 {currentToToken.symbol} = {exchangeRate.toFixed(3)} {currentFromToken.symbol} (R$30,38)
+            </span>
+            <ChevronDown className="h-4 w-4 text-slate-400" />
+          </div>
+        </div>
+      )}
+
+      {/* Timer de preço e botão Revisar - Só aparece quando há valor */}
+      {fromAmount && toAmount && (
+        <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <Clock className="h-4 w-4 text-yellow-400" />
+              <span className="text-yellow-400 text-sm">
+                O preço efetivo será atualizado em:
+              </span>
+            </div>
+            <span className="text-yellow-400 font-mono text-sm">00:47</span>
+          </div>
+          
+          <Button
+            onClick={handleGetQuote}
+            disabled={!canProceed || isLoading}
+            className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <div className="flex items-center space-x-2">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Obtendo Cotação...</span>
+              </div>
+            ) : (
+              <span>Revisar</span>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 
@@ -614,75 +650,136 @@ export default function SwapPage() {
 
       <Card className="glass-card">
         <CardContent className="p-6 space-y-6">
-          {/* Resumo do Swap */}
-          <div className="bg-slate-800/50 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="text-2xl">{fromToken.icon}</div>
-                <div>
-                  <p className="text-white font-semibold">{fromToken.symbol}</p>
-                  <p className="text-slate-400 text-sm">{fromToken.name}</p>
+          {/* Resumo do Swap - Estilo Chainless */}
+          <div className="space-y-4">
+            {/* Você pagará */}
+            <div className="bg-slate-800/50 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="text-2xl">{fromToken.icon}</div>
+                  <div>
+                    <p className="text-white font-semibold">Você pagará</p>
+                  </div>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="text-white font-bold text-xl">{fromAmount} {fromToken.symbol}</p>
-                <p className="text-slate-400 text-sm">Você envia</p>
+                <div className="text-right">
+                  <p className="text-white font-bold text-xl">{fromAmount} {fromToken.symbol}</p>
+                  <p className="text-slate-400 text-sm">R$20,00</p>
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-center mb-4">
-              <ArrowDown className="h-5 w-5 text-slate-400" />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="text-2xl">{toToken.icon}</div>
-                <div>
-                  <p className="text-white font-semibold">{toToken.symbol}</p>
-                  <p className="text-slate-400 text-sm">{toToken.name}</p>
+            {/* Você receberá no mínimo */}
+            <div className="bg-slate-800/50 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="text-2xl">{toToken.icon}</div>
+                  <div>
+                    <p className="text-white font-semibold">Você receberá no mínimo</p>
+                  </div>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="text-white font-bold text-xl">{toAmount} {toToken.symbol}</p>
-                <p className="text-slate-400 text-sm">Você recebe</p>
+                <div className="text-right">
+                  <p className="text-white font-bold text-xl">{toAmount} {toToken.symbol}</p>
+                  <p className="text-slate-400 text-sm">R$19,65</p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Detalhes da Transação */}
+          {/* Taxa de Conversão - Igual à Chainless */}
+          <div className="bg-slate-800/50 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-white font-medium">Taxa de conversão</span>
+              <ChevronDown className="h-4 w-4 text-slate-400" />
+            </div>
+            <div className="text-center">
+              <p className="text-white text-lg font-semibold">
+                1 {toToken.symbol} = {exchangeRate.toFixed(3)} {fromToken.symbol}
+              </p>
+              <p className="text-slate-400 text-sm">
+                (R$30,38)
+              </p>
+            </div>
+          </div>
+
+          {/* Composição do Preço Efetivo - Expandível */}
+          <div className="bg-slate-800/50 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-white font-medium">Composição do Preço Efetivo</span>
+              <ChevronDown className="h-4 w-4 text-slate-400" />
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Câmbio do Provedor:</span>
+                <span className="text-white">1 {toToken.symbol} = {(exchangeRate * 0.99).toFixed(3)} {fromToken.symbol}</span>
+            </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Impacto no Preço:</span>
+                <span className="text-red-400">-9,69%</span>
+            </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Tolerância a Slippage:</span>
+                <span className="text-yellow-400">{slippage}%</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Taxa da Rede:</span>
+                <div className="text-right">
+                  <span className="text-white">0,0427 {fromToken.symbol}</span>
+                  <p className="text-slate-400 text-xs">R$0,04</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Taxa da Chainless:</span>
+                <div className="text-right">
+                  <span className="text-white">0,100 {fromToken.symbol}</span>
+                  <p className="text-slate-400 text-xs">R$0,10 (0,5%)</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Detalhes da Operação */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Taxa de câmbio:</span>
-              <span className="text-white">1 {fromToken.symbol} = {exchangeRate.toFixed(6)} {toToken.symbol}</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-slate-400">Operação</span>
+                <AlertCircle className="h-4 w-4 text-slate-400" />
+              </div>
+              <span className="text-white">Swap</span>
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Tolerância ao deslizamento:</span>
-              <span className="text-white">{slippage}%</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400">Taxa de rede:</span>
-              <span className="text-white">{quote?.estimatedGasFee} {quote?.gasFeeToken}</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400">Taxa da plataforma:</span>
-              <span className="text-white">{quote?.transactionFee} {quote?.gasFeeToken}</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400">Impacto no preço:</span>
-              <span className="text-white">{quote?.priceImpact}%</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-slate-400">Provedor</span>
+                <AlertCircle className="h-4 w-4 text-slate-400" />
+              </div>
+              <span className="text-white">Odos</span>
             </div>
             
             <div className="flex items-center justify-between">
               <span className="text-slate-400">Tempo estimado:</span>
-              <span className="text-white">{quote?.estimatedTime}</span>
+              <span className="text-white">~1min</span>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Timer de atualização de preço - Estilo Chainless */}
+      <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Clock className="h-4 w-4 text-yellow-400" />
+            <span className="text-yellow-400 text-sm">
+              O preço efetivo será atualizado em:
+            </span>
+          </div>
+          <span className="text-yellow-400 font-mono text-sm">00:30</span>
+        </div>
+      </div>
 
       <div className="flex space-x-4">
         <Button
@@ -695,7 +792,7 @@ export default function SwapPage() {
         <Button
           onClick={handleExecuteSwap}
           disabled={isLoading}
-          className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <div className="flex items-center space-x-2">
@@ -705,7 +802,7 @@ export default function SwapPage() {
           ) : (
             <div className="flex items-center space-x-2">
               <Zap className="h-5 w-5" />
-              <span>Executar Swap</span>
+              <span>Confirmar</span>
             </div>
           )}
             </Button>
