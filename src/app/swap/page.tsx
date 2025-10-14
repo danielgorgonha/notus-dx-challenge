@@ -34,30 +34,6 @@ import { useQuery } from "@tanstack/react-query";
 import { getPortfolio } from "@/lib/actions/dashboard";
 import { TokenSelector } from "@/components/ui/token-selector";
 
-// Tokens padrão para seleção inicial
-const DEFAULT_TOKENS = [
-  {
-    symbol: "USDC",
-    name: "USD Coin",
-    address: "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-    decimals: 6,
-    icon: "💙"
-  },
-  {
-    symbol: "BRZ",
-    name: "Brazilian Real Token", 
-    address: "0x4e15361fd6b4bb609fa63c81a2be19d873717870",
-    decimals: 18,
-    icon: "🇧🇷"
-  },
-  {
-    symbol: "ETH",
-    name: "Ethereum",
-    address: "0x0000000000000000000000000000000000000000",
-    decimals: 18,
-    icon: "💎"
-  }
-];
 
 export default function SwapPage() {
   const router = useRouter();
@@ -104,15 +80,18 @@ export default function SwapPage() {
   const currentToToken = toToken;
   
 
-  // Auto-selecionar tokens se não estiverem selecionados (fallback)
+  // Auto-selecionar tokens quando disponíveis
   React.useEffect(() => {
-    if (!fromToken) {
-      // Tentar selecionar BRZ automaticamente
+    if (!fromToken && !toToken && walletAddress) {
+      // Aguardar um pouco para os tokens serem carregados
+      const timer = setTimeout(() => {
+        // A auto-seleção será feita pelo TokenSelector com autoSelectSymbol
+        // Não precisamos fazer nada aqui, pois o TokenSelector já cuida disso
+      }, 1000);
+      
+      return () => clearTimeout(timer);
     }
-    if (!toToken) {
-      // Tentar selecionar USDC automaticamente  
-    }
-  }, [fromToken, toToken]);
+  }, [walletAddress, fromToken, toToken]);
 
   // Calcular taxa de câmbio (só se ambos tokens têm preço)
   const exchangeRate = (() => {
@@ -150,18 +129,6 @@ export default function SwapPage() {
     return rate;
   })();
 
-  // Auto-selecionar BRZ e USDC quando disponíveis
-  useEffect(() => {
-    if (!fromToken && !toToken && walletAddress) {
-      // Aguardar um pouco para os tokens serem carregados
-      const timer = setTimeout(() => {
-        // Aqui seria ideal buscar os tokens do portfolio e selecionar BRZ/USDC
-        // Por enquanto, vamos deixar o usuário selecionar manualmente
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [walletAddress, fromToken, toToken]);
 
   // Recalcular valores quando tokens ou exchangeRate mudarem
   useEffect(() => {
@@ -423,6 +390,26 @@ export default function SwapPage() {
     return `${formatted} ${symbol}`;
   };
 
+  // Calcular valor em R$ baseado no preço do token
+  const calculateFiatValue = (amount: string, token: any) => {
+    if (!amount || !token || amount === "0") return 0;
+    
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount === 0) return 0;
+    
+    // Usar preço corrigido do token
+    let price = token.price;
+    if (token.symbol === 'BRZ' || token.symbol === 'brz') {
+      price = 0.20; // R$ 0.20
+    } else if (token.symbol === 'USDC' || token.symbol === 'usdc') {
+      price = 1.0; // $1.00 = R$ 5.50 (aproximadamente)
+    } else if (!price) {
+      price = 1.0;
+    }
+    
+    return numAmount * price;
+  };
+
   const renderFormStep = () => (
     <div className="space-y-6">
       {/* Header com título e settings */}
@@ -477,7 +464,7 @@ export default function SwapPage() {
           {/* Valor em R$ e saldo com MAX */}
           <div className="flex items-center justify-between">
             <div className="text-slate-400 text-sm">
-              R$20,00
+              {formatFiatAmount(calculateFiatValue(fromAmount, currentFromToken))}
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-slate-400 text-sm">
@@ -550,7 +537,7 @@ export default function SwapPage() {
           {/* Valor em R$ e saldo */}
           <div className="flex items-center justify-between">
             <div className="text-slate-400 text-sm">
-              ~R$19,69
+              ~{formatFiatAmount(calculateFiatValue(toAmount, currentToToken))}
             </div>
             <div className="text-slate-400 text-sm">
               Saldo: {formatBalance(currentToToken?.balance || "0", currentToToken?.symbol || "TOKEN", currentToToken?.decimals)}
@@ -564,7 +551,7 @@ export default function SwapPage() {
         <div className="bg-slate-800/50 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <span className="text-white font-medium">
-              1 {currentToToken.symbol} = {exchangeRate.toFixed(3)} {currentFromToken.symbol} (R$30,38)
+              1 {currentToToken.symbol} = {exchangeRate.toFixed(3)} {currentFromToken.symbol} ({formatFiatAmount(calculateFiatValue("1", currentToToken))})
             </span>
             <ChevronDown className="h-4 w-4 text-slate-400" />
           </div>
@@ -625,7 +612,7 @@ export default function SwapPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-white font-bold text-xl">{fromAmount} {fromToken.symbol}</p>
-                  <p className="text-slate-400 text-sm">R$20,00</p>
+                  <p className="text-slate-400 text-sm">{formatFiatAmount(calculateFiatValue(fromAmount, fromToken))}</p>
                 </div>
               </div>
             </div>
@@ -641,7 +628,7 @@ export default function SwapPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-white font-bold text-xl">{toAmount} {toToken.symbol}</p>
-                  <p className="text-slate-400 text-sm">R$19,65</p>
+                  <p className="text-slate-400 text-sm">{formatFiatAmount(calculateFiatValue(toAmount, toToken))}</p>
                 </div>
               </div>
             </div>
@@ -658,7 +645,7 @@ export default function SwapPage() {
                 1 {toToken.symbol} = {exchangeRate.toFixed(3)} {fromToken.symbol}
               </p>
               <p className="text-slate-400 text-sm">
-                (R$30,38)
+                ({formatFiatAmount(calculateFiatValue("1", toToken))})
               </p>
             </div>
           </div>
