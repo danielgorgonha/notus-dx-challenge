@@ -97,33 +97,12 @@ export default function SwapPage() {
   const exchangeRate = (() => {
     if (!currentFromToken || !currentToToken) return 0;
     
-    // Preços padrão realistas se não estiverem disponíveis ou incorretos
-    // BRZ ≈ R$ 0.20 = $0.20 USD
-    // USDC = $1.00 USD
-    
-    let fromPrice = currentFromToken.price;
-    let toPrice = currentToToken.price;
-    
-    // Corrigir preços incorretos da API - sempre forçar valores corretos
-    if (currentFromToken.symbol === 'BRZ' || currentFromToken.symbol === 'brz') {
-      fromPrice = 0.20; // Forçar preço correto do BRZ
-    } else if (currentFromToken.symbol === 'USDC' || currentFromToken.symbol === 'usdc') {
-      fromPrice = 1.0; // Forçar preço correto do USDC
-    } else if (!fromPrice) {
-      fromPrice = 1.0; // Padrão para outros tokens
-    }
-    
-    if (currentToToken.symbol === 'BRZ' || currentToToken.symbol === 'brz') {
-      toPrice = 0.20; // Forçar preço correto do BRZ
-    } else if (currentToToken.symbol === 'USDC' || currentToToken.symbol === 'usdc') {
-      toPrice = 1.0; // Forçar preço correto do USDC
-    } else if (!toPrice) {
-      toPrice = 1.0; // Padrão para outros tokens
-    }
+    // Usar preços reais da API
+    const fromPrice = currentFromToken.price || 0;
+    const toPrice = currentToToken.price || 0;
     
     // Taxa de câmbio: quantos tokens de destino por 1 token de origem
-    // Para BRZ → USDC: se BRZ = $0.20 e USDC = $1.00, então 1 BRZ = 0.20 USDC
-    const rate = fromPrice / toPrice;
+    const rate = toPrice > 0 ? fromPrice / toPrice : 0;
     
     
     return rate;
@@ -271,7 +250,7 @@ export default function SwapPage() {
     try {
       
       // Assinar a User Operation
-      const signature = await signMessage(userOperationHash);
+      const signature = await signMessage({ message: userOperationHash });
       
       if (!signature) {
         throw new Error('Assinatura cancelada pelo usuário');
@@ -281,7 +260,7 @@ export default function SwapPage() {
       // Executar a User Operation
       const result = await executeUserOperation({
         userOperationHash,
-        signature
+        signature: (signature as any).signature || signature
       });
 
       
@@ -405,15 +384,8 @@ export default function SwapPage() {
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount === 0) return 0;
     
-    // Usar preço corrigido do token
-    let price = token.price;
-    if (token.symbol === 'BRZ' || token.symbol === 'brz') {
-      price = 0.20; // R$ 0.20
-    } else if (token.symbol === 'USDC' || token.symbol === 'usdc') {
-      price = 1.0; // $1.00 = R$ 5.50 (aproximadamente)
-    } else if (!price) {
-      price = 1.0;
-    }
+    // Usar preço real da API
+    const price = token.price || 0;
     
     return numAmount * price;
   };
@@ -424,7 +396,7 @@ export default function SwapPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Conversão de criptomoedas</h1>
-          <p className="text-slate-400 text-sm mt-1">A quantidade mínima é de 5,500 BRZ.</p>
+          <p className="text-slate-400 text-sm mt-1">Digite o valor que deseja converter.</p>
         </div>
         <Button
           onClick={handleSlippageModalOpen}
@@ -462,7 +434,6 @@ export default function SwapPage() {
               walletAddress={walletAddress}
               placeholder="Selecionar token"
               showBalance={false}
-              autoSelectSymbol="BRZ"
               compact={true}
             />
               </div>
@@ -533,7 +504,6 @@ export default function SwapPage() {
               walletAddress={walletAddress}
               placeholder="Selecionar token"
               showBalance={false}
-              autoSelectSymbol="USDC"
               compact={true}
             />
           </div>
@@ -670,10 +640,6 @@ export default function SwapPage() {
                 <span className="text-white">1 {toToken.symbol} = {(exchangeRate * 0.99).toFixed(3)} {fromToken.symbol}</span>
             </div>
 
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Impacto no Preço:</span>
-                <span className="text-red-400">-9,69%</span>
-            </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Tolerância a Slippage:</span>

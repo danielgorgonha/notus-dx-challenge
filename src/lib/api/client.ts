@@ -23,42 +23,38 @@ export class NotusAPIError extends Error {
 // Cliente ky para a API Notus
 export const notusAPI = ky.create({
   prefixUrl: process.env.NEXT_PUBLIC_NOTUS_API_URL || 'https://api.notus.team/api/v1',
+  timeout: 60000, // 60 segundos
+  retry: {
+    limit: 3,
+    methods: ['get', 'post', 'put', 'delete'],
+    statusCodes: [408, 413, 429, 500, 502, 503, 504],
+    backoffLimit: 5000,
+  },
   headers: {
     'x-api-key': process.env.NEXT_PUBLIC_NOTUS_API_KEY || process.env.NOTUS_API_KEY || '',
   },
-  hooks: {
-    beforeRequest: [],
-    afterResponse: [],
-    beforeError: [
-      async (error) => {
-        const { response } = error;
-        if (response && response.body) {
-          const errorText = await response.text();
-          console.error('❌ Notus API Error:', errorText);
-          
-          // Parse error response para extrair informações específicas
-          let errorMessage = `API Error: ${response.status} ${response.statusText}`;
-          let errorId: string | undefined;
-          
-          try {
-            const errorData = JSON.parse(errorText);
-            errorMessage = errorData.message || errorMessage;
-            errorId = errorData.id || undefined;
-            
-            // Log específico para erros conhecidos
-            if (errorId === 'INDIVIDUAL_NOT_FOUND') {
-              console.warn('🔍 Individual não encontrado - será criado automaticamente');
+      hooks: {
+        beforeError: [
+          async (error) => {
+            const { response } = error;
+            if (response && response.body) {
+              const errorText = await response.text();
+              let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+              let errorId: string | undefined;
+
+              try {
+                const errorData = JSON.parse(errorText);
+                errorMessage = errorData.message || errorMessage;
+                errorId = errorData.id || undefined;
+              } catch (parseError) {
+                errorMessage += ` - ${errorText}`;
+              }
+
+              throw new NotusAPIError(errorMessage, response.status, errorId, errorText);
             }
-          } catch (parseError) {
-            // Se não conseguir fazer parse, usa o texto original
-            errorMessage += ` - ${errorText}`;
-          }
-          
-          throw new NotusAPIError(errorMessage, response.status, errorId, errorText);
-        }
-        throw error;
-      },
-    ],
+            throw error;
+          },
+        ],
   },
 });
 

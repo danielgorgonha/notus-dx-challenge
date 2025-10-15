@@ -52,6 +52,8 @@ export function TokenSelector({
 }: TokenSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Logs serão adicionados após as definições das variáveis
 
   // Buscar tokens suportados da API Notus
   const { data: tokensData, isLoading: tokensLoading, error: tokensError } = useQuery({
@@ -67,6 +69,10 @@ export function TokenSelector({
       return result;
     },
     refetchInterval: 300000, // 5 minutos
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 300000, // 5 minutos
+    gcTime: 600000, // 10 minutos
   });
 
   // Buscar portfolio do usuário para obter saldos
@@ -78,33 +84,52 @@ export function TokenSelector({
   });
 
 
+
   // Combinar tokens suportados com saldos do portfolio + tokens do portfolio que não estão na lista suportada
   const tokensWithBalances = React.useMemo(() => {
     const supportedTokens = tokensData?.tokens || [];
     const portfolioTokens = portfolioData?.tokens || [];
+    
+    console.log('🔍 DEBUG TokenSelector:');
+    console.log('- chainId:', chainId);
+    console.log('- supportedTokens:', supportedTokens.length);
+    console.log('- portfolioTokens:', portfolioTokens.length);
+    console.log('- tokensData:', tokensData);
+    console.log('- portfolioData:', portfolioData);
+    
+    // Verificar estrutura dos tokens
+    if (supportedTokens.length > 0) {
+      console.log('🔍 DEBUG First token structure:', supportedTokens[0]);
+      console.log('🔍 DEBUG First token chain:', (supportedTokens[0] as any).chain);
+    }
     
     
     // 1. Mapear tokens suportados com saldos do portfolio
     const supportedWithBalances = supportedTokens.map((token: any) => {
       const portfolioToken = portfolioTokens.find((pt: any) => 
         pt.address.toLowerCase() === token.address.toLowerCase() && 
-        pt.chainId === token.chain?.id
+        pt.chainId === (token.chain?.id || token.chainId)
       );
       
-      
-      return {
+      const mappedToken = {
         address: token.address,
         symbol: token.symbol,
         name: token.name,
         decimals: token.decimals,
-        chainId: token.chain?.id,
+        chainId: token.chain?.id || token.chainId,
         logoUrl: token.logo,
         price: token.priceUsd !== undefined ? parseFloat(token.priceUsd) : undefined,
         isNative: token.address === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         balance: portfolioToken?.balanceFormatted || portfolioToken?.balance || "0",
         balanceUsd: portfolioToken?.balanceUsd || "0"
       };
+      
+      console.log('🔍 DEBUG Token mapping:', token.symbol, 'chainId:', (token as any).chain?.id, 'mapped:', mappedToken.chainId);
+      
+      return mappedToken;
     });
+    
+    console.log('✅ DEBUG supportedWithBalances:', supportedWithBalances.length);
     
     // 2. Adicionar tokens do portfolio que não estão na lista suportada
     const portfolioOnlyTokens = portfolioTokens
@@ -157,7 +182,15 @@ export function TokenSelector({
     }, []);
     
     // 5. Filtrar apenas tokens da mesma chain
-    const sameChainTokens = uniqueTokens.filter(token => token.chain?.id === chainId);
+    const sameChainTokens = uniqueTokens.filter(token => {
+      const tokenChainId = token.chainId || token.chain?.id;
+      const match = tokenChainId === chainId;
+      
+      console.log('🔍 DEBUG Chain filter:');
+      console.log('- token:', token.symbol, 'tokenChainId:', tokenChainId, 'target:', chainId, 'match:', match);
+      
+      return match;
+    });
     
     // 6. Ordenar por saldo (tokens com saldo primeiro)
     const finalTokens = sameChainTokens.sort((a, b) => {
@@ -165,6 +198,10 @@ export function TokenSelector({
       const balanceB = parseFloat(b.balance || "0");
       return balanceB - balanceA; // Maior saldo primeiro
     });
+    
+    console.log('✅ DEBUG Final tokens:', finalTokens.length);
+    console.log('- sameChainTokens:', sameChainTokens.length);
+    console.log('- finalTokens:', finalTokens.slice(0, 3));
     
     return finalTokens;
   }, [tokensData, portfolioData]);
@@ -183,21 +220,74 @@ export function TokenSelector({
 
   // Filtrar tokens por busca
   const filteredTokens = React.useMemo(() => {
-    if (!searchQuery) return tokensWithBalances;
+    console.log('🔍 DEBUG filteredTokens:');
+    console.log('- tokensWithBalances:', tokensWithBalances.length);
+    console.log('- searchQuery:', searchQuery);
+    
+    if (!searchQuery) {
+      console.log('✅ DEBUG: Retornando todos os tokens');
+      return tokensWithBalances;
+    }
     
     const query = searchQuery.toLowerCase();
-    return tokensWithBalances.filter(token => 
+    const filtered = tokensWithBalances.filter(token => 
       token.symbol.toLowerCase().includes(query) ||
       token.name.toLowerCase().includes(query) ||
       token.address.toLowerCase().includes(query)
     );
+    
+    console.log('✅ DEBUG: Filtrados', filtered.length, 'tokens');
+    return filtered;
   }, [tokensWithBalances, searchQuery]);
 
+
   const handleTokenSelect = (token: Token) => {
+    console.log('🔍 DEBUG: Token selecionado:', token.symbol);
     onTokenSelect(token);
     setIsOpen(false);
     setSearchQuery("");
   };
+
+
+  // Se estiver carregando, mostrar loading
+  if (tokensLoading) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+        <span className="ml-2 text-sm text-gray-500">Carregando tokens...</span>
+      </div>
+    );
+  }
+
+  // Se houver erro, mostrar erro
+  if (tokensError) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <span className="text-sm text-red-500">Erro ao carregar tokens: {tokensError.message}</span>
+      </div>
+    );
+  }
+
+  // Se não há tokens, mostrar mensagem
+  if (!tokensWithBalances || tokensWithBalances.length === 0) {
+    console.log('❌ DEBUG: Nenhum token disponível');
+    console.log('- tokensWithBalances:', tokensWithBalances);
+    console.log('- length:', tokensWithBalances?.length);
+    return (
+      <div className="flex items-center justify-center p-4">
+        <span className="text-sm text-gray-500">Nenhum token disponível</span>
+      </div>
+    );
+  }
+  
+  console.log('✅ DEBUG: Renderizando TokenSelector com', tokensWithBalances.length, 'tokens');
+  console.log('🔍 DEBUG TokenSelector render:', {
+    isOpen,
+    searchQuery,
+    tokensWithBalances: tokensWithBalances?.length,
+    filteredTokens: filteredTokens?.length
+  });
+
 
   const formatBalance = (balance: string, decimals: number) => {
     const num = parseFloat(balance);
@@ -211,7 +301,10 @@ export function TokenSelector({
     <div className={`relative ${className}`}>
       {/* Botão de seleção */}
       <Button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          console.log('🔍 DEBUG: Clique no botão, isOpen:', isOpen, '->', !isOpen);
+          setIsOpen(!isOpen);
+        }}
         variant="outline"
         className={`${compact ? 'px-3 py-2 h-auto' : 'w-full justify-between p-3 h-auto'} bg-slate-800/50 border-slate-600 hover:bg-slate-700/50`}
       >
@@ -268,10 +361,19 @@ export function TokenSelector({
                 Nenhum token encontrado
               </div>
             ) : (
-              filteredTokens.map((token) => (
+              (() => {
+                console.log('🔍 DEBUG: Renderizando', filteredTokens.length, 'tokens');
+                console.log('- filteredTokens:', filteredTokens.slice(0, 3));
+                console.log('- filteredTokens[0]:', filteredTokens[0]);
+                return filteredTokens.map((token) => {
+                  console.log('🔍 DEBUG: Renderizando token:', token.symbol);
+                  return (
                 <button
                   key={`${token.address}-${token.chainId || 'unknown'}-${token.symbol}`}
-                  onClick={() => handleTokenSelect(token)}
+                  onClick={() => {
+                    console.log('🔍 DEBUG: Clique no token:', token.symbol);
+                    handleTokenSelect(token);
+                  }}
                   className="w-full flex items-center justify-between p-3 hover:bg-slate-700/50 transition-colors"
                 >
                   <div className="flex items-center space-x-3">
@@ -299,7 +401,9 @@ export function TokenSelector({
                     </div>
                   )}
                 </button>
-              ))
+                  );
+                });
+              })()
             )}
           </div>
         </div>

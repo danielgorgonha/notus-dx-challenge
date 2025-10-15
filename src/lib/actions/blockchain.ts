@@ -124,13 +124,12 @@ export async function listTokensByChain({
   orderDir?: 'asc' | 'desc';
 }): Promise<TokensResponse> {
   try {
-    
     const response = await notusAPI.get("crypto/tokens", {
       searchParams: { 
         filterByChainId: chainId, 
         page, 
         perPage,
-        projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
+        projectId: process.env.NOTUS_PROJECT_ID,
         filterWhitelist,
         orderBy,
         orderDir
@@ -139,7 +138,6 @@ export async function listTokensByChain({
 
     return response;
   } catch (error) {
-    console.error(`❌ Erro ao listar tokens para chain ${chainId}:`, error);
     throw error;
   }
 }
