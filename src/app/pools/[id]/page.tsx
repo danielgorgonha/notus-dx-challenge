@@ -23,6 +23,7 @@ interface PoolDetails {
     name: string;
     address: string;
     decimals: number;
+    poolShareInPercentage: number;
   }>;
   stats?: {
     volumeInUSD?: number;
@@ -102,7 +103,8 @@ export default function PoolDetailsPage() {
                 logo: '',
                 name: `Token ${index + 1}`,
                 address: '',
-                decimals: 18
+                decimals: 18,
+                poolShareInPercentage: 0
               };
             }
             
@@ -111,7 +113,8 @@ export default function PoolDetailsPage() {
               logo: typeof token.logo === 'string' ? token.logo : '',
               name: typeof token.name === 'string' ? token.name : `Token ${index + 1}`,
               address: typeof token.address === 'string' ? token.address : '',
-              decimals: typeof token.decimals === 'number' ? token.decimals : 18
+              decimals: typeof token.decimals === 'number' ? token.decimals : 18,
+              poolShareInPercentage: typeof token.poolShareInPercentage === 'number' ? token.poolShareInPercentage : 0
             };
           }) : [],
           stats: {
@@ -171,9 +174,9 @@ export default function PoolDetailsPage() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'BRL',
+      currency: 'USD',
       minimumFractionDigits: 2,
     }).format(value);
   };
@@ -198,9 +201,8 @@ export default function PoolDetailsPage() {
   const apr = calculateAPR();
 
   // Calcular composição da pool baseada nos dados reais
-  // Por enquanto, vamos usar valores simulados até termos dados de composição da API
-  const token0Percentage = 20.05;
-  const token1Percentage = 79.95;
+  const token0Percentage = poolData?.tokens?.[0]?.poolShareInPercentage || 0;
+  const token1Percentage = poolData?.tokens?.[1]?.poolShareInPercentage || 0;
 
   return (
     <ProtectedRoute>
