@@ -192,20 +192,12 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             return (
               <div
                 key={item.name}
-                className={`nav-item ${isActive ? 'active' : ''} ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                onClick={item.disabled ? (e) => e.preventDefault() : undefined}
+                className={`nav-item ${isActive ? 'active' : ''}`}
               >
-                {item.disabled ? (
-                  <div className="flex items-center">
-                    <item.icon className="h-5 w-5 mr-3" />
-                    {item.name}
-                  </div>
-                ) : (
-                  <Link href={item.href} className="flex items-center">
-                    <item.icon className="h-5 w-5 mr-3" />
-                    {item.name}
-                  </Link>
-                )}
+                <Link href={item.href} className="flex items-center">
+                  <item.icon className="h-5 w-5 mr-3" />
+                  {item.name}
+                </Link>
               </div>
             );
           })}

@@ -1,260 +1,609 @@
 "use client";
 
+import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Droplets, 
-  TrendingUp,
-  Plus,
-  Minus,
-  Info
+  TrendingUp, 
+  Info,
+  Filter,
+  DollarSign,
+  Clock,
+  Home,
+  Wallet,
+  Coins,
+  LineChart
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useSmartWallet } from "@/hooks/use-smart-wallet";
+import { useToast } from "@/hooks/use-toast";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { useState } from "react";
-
-// TODO: Integrar com API da Notus para pools de liquidez
-// Mock data temporário - será substituído por dados reais da API
-const MOCK_POOLS = [
-  {
-    id: 1,
-    name: "USDC/USDT",
-    protocol: "Uniswap V3",
-    apr: 12.5,
-    tvl: 1250000,
-    volume24h: 850000,
-    yourLiquidity: 0,
-    token0: { symbol: "USDC", balance: "0" },
-    token1: { symbol: "USDT", balance: "0" }
-  },
-  {
-    id: 2,
-    name: "BRZ/USDC",
-    protocol: "Uniswap V3",
-    apr: 8.3,
-    tvl: 450000,
-    volume24h: 125000,
-    yourLiquidity: 0,
-    token0: { symbol: "BRZ", balance: "0" },
-    token1: { symbol: "USDC", balance: "0" }
-  },
-  {
-    id: 3,
-    name: "WMATIC/USDC",
-    protocol: "Uniswap V3",
-    apr: 15.7,
-    tvl: 2100000,
-    volume24h: 1250000,
-    yourLiquidity: 0,
-    token0: { symbol: "WMATIC", balance: "0" },
-    token1: { symbol: "USDC", balance: "0" }
-  }
-];
+import { liquidityActions } from "@/lib/actions/liquidity";
+import { useQuery } from "@tanstack/react-query";
 
 export default function PoolsPage() {
-  const [selectedPool, setSelectedPool] = useState<typeof MOCK_POOLS[0] | null>(null);
-  const [action, setAction] = useState<'add' | 'remove' | null>(null);
+  const router = useRouter();
+  const { wallet } = useSmartWallet();
+  const toast = useToast();
+  
+  // Estados principais
+  const [selectedPool, setSelectedPool] = useState<any>(null);
+  const [sortBy, setSortBy] = useState<"rentabilidade" | "tvl" | "tarifa" | "volume">("rentabilidade");
+  const [showSortModal, setShowSortModal] = useState(false);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
+  const walletAddress = wallet?.accountAbstraction;
+
+  // Buscar pools de liquidez da API
+  const { data: poolsData, isLoading: poolsLoading, error: poolsError } = useQuery({
+    queryKey: ['liquidity-pools'],
+    queryFn: async () => {
+      try {
+        console.log('🚀 Fazendo chamada para API da Notus...');
+        const response = await liquidityActions.listPools({
+          take: 20,
+          offset: 0,
+          chainIds: "137", // Polygon
+          filterWhitelist: false,
+          rangeInDays: 30
+        });
+        console.log('✅ Chamada para liquidityActions.listPools concluída!');
+        
+        console.log('🔍 API Response completa:', response);
+        console.log('🔍 Tipo da resposta:', typeof response);
+        console.log('🔍 Chaves da resposta:', Object.keys(response || {}));
+        console.log('📊 Número de pools encontrados:', (response as any)?.pools?.length || 0);
+        
+        // Log detalhado da estrutura da resposta
+        if (response) {
+          console.log('📋 Estrutura completa da resposta:', JSON.stringify(response, null, 2));
+        }
+        
+        if ((response as any)?.pools && (response as any).pools.length > 0) {
+          console.log('📋 Primeiro pool (exemplo):', (response as any).pools[0]);
+          console.log('📋 Estrutura do primeiro pool:', JSON.stringify((response as any).pools[0], null, 2));
+          
+          // Log de cada campo importante
+          const firstPool = (response as any).pools[0];
+          console.log('🔍 Campos do primeiro pool:');
+          console.log('  - id:', firstPool.id);
+          console.log('  - address:', firstPool.address);
+          console.log('  - chain:', firstPool.chain);
+          console.log('  - fee:', firstPool.fee);
+          console.log('  - provider:', firstPool.provider);
+          console.log('  - totalValueLockedUSD:', firstPool.totalValueLockedUSD);
+          console.log('  - tokens:', firstPool.tokens);
+          console.log('  - stats:', firstPool.stats);
+        }
+        
+        // Mapear dados reais da API para o formato da interface
+        const apiResponse = response as { pools: any[] };
+        console.log('🔍 Estrutura da resposta:', apiResponse);
+        
+        if (!apiResponse.pools || apiResponse.pools.length === 0) {
+          console.log('⚠️ Nenhum pool encontrado na resposta da API');
+          return [];
+        }
+        
+        return apiResponse.pools.map((pool: any, index: number) => {
+          console.log(`📋 Processando pool ${index + 1}:`, {
+            id: pool.id,
+            address: pool.address,
+            chain: pool.chain,
+            fee: pool.fee,
+            provider: pool.provider,
+            totalValueLockedUSD: pool.totalValueLockedUSD,
+            tokens: pool.tokens,
+            stats: pool.stats
+          });
+          
+          console.log(`🔍 Dados brutos do pool ${index + 1}:`, JSON.stringify(pool, null, 2));
+          
+          // Verificar estrutura dos tokens
+          console.log(`🔍 Tokens do pool ${index + 1}:`, {
+            tokens: pool.tokens,
+            token0: pool.tokens?.[0],
+            token1: pool.tokens?.[1],
+            token0Type: typeof pool.tokens?.[0],
+            token1Type: typeof pool.tokens?.[1]
+          });
+          
+          // Log detalhado dos tokens
+          if (pool.tokens && Array.isArray(pool.tokens)) {
+            console.log(`📋 Estrutura completa dos tokens do pool ${index + 1}:`, JSON.stringify(pool.tokens, null, 2));
+            
+            pool.tokens.forEach((token, tokenIndex) => {
+              console.log(`🪙 Token ${tokenIndex + 1} do pool ${index + 1}:`, {
+                index: tokenIndex,
+                token: token,
+                type: typeof token,
+                keys: token ? Object.keys(token) : 'null/undefined',
+                symbol: token?.symbol,
+                logo: token?.logo,
+                name: token?.name,
+                address: token?.address,
+                decimals: token?.decimals,
+                chainId: token?.chainId
+              });
+            });
+          } else {
+            console.log(`⚠️ Tokens não é um array válido no pool ${index + 1}:`, pool.tokens);
+          }
+          
+          // Usar dados reais da API com verificações de tipo
+          const tvl = typeof pool.totalValueLockedUSD === 'number' ? pool.totalValueLockedUSD : parseFloat(pool.totalValueLockedUSD) || 0;
+          const volume24h = typeof pool.stats?.volumeInUSD === 'number' ? pool.stats.volumeInUSD : parseFloat(pool.stats?.volumeInUSD) || 0;
+          const fee = typeof pool.fee === 'number' ? pool.fee : parseFloat(pool.fee) || 0;
+          
+          console.log(`💰 Valores extraídos do pool ${index + 1}:`, {
+            tvl: tvl,
+            volume24h: volume24h,
+            fee: fee,
+            tvlType: typeof tvl,
+            volumeType: typeof volume24h,
+            feeType: typeof fee
+          });
+          
+          // Calcular APR baseado nos dados reais
+          const dailyVolume = volume24h;
+          const dailyFees = (dailyVolume * fee) / 100;
+          const annualFees = dailyFees * 365;
+          const apr = tvl > 0 ? ((annualFees / tvl) * 100).toFixed(2) : "0.00";
+          
+          console.log(`📊 Cálculos do pool ${index + 1}:`, {
+            dailyVolume: dailyVolume,
+            dailyFees: dailyFees,
+            annualFees: annualFees,
+            apr: apr
+          });
+          
+          // Formatar valores com verificação de tipo
+          const formatValue = (value: any) => {
+            const numValue = typeof value === 'number' ? value : parseFloat(value) || 0;
+            if (numValue >= 1000000) return `$${(numValue / 1000000).toFixed(1)}M`;
+            if (numValue >= 1000) return `$${(numValue / 1000).toFixed(1)}K`;
+            return `$${numValue.toFixed(2)}`;
+          };
+          
+          // Processar tokens com verificações de segurança
+          const token0 = pool.tokens?.[0];
+          const token1 = pool.tokens?.[1];
+          
+          console.log(`🔧 Processando tokens do pool ${index + 1}:`, {
+            token0: token0,
+            token1: token1,
+            token0Symbol: token0?.symbol,
+            token1Symbol: token1?.symbol,
+            token0Logo: token0?.logo,
+            token1Logo: token1?.logo
+          });
+          
+          const safeToken0Symbol = typeof token0?.symbol === 'string' ? token0.symbol.toUpperCase() : 'TOKEN1';
+          const safeToken1Symbol = typeof token1?.symbol === 'string' ? token1.symbol.toUpperCase() : 'TOKEN2';
+          const safeToken0Logo = typeof token0?.logo === 'string' ? token0.logo : "💙";
+          const safeToken1Logo = typeof token1?.logo === 'string' ? token1.logo : "💚";
+          
+          console.log(`✅ Tokens processados do pool ${index + 1}:`, {
+            safeToken0Symbol,
+            safeToken1Symbol,
+            safeToken0Logo,
+            safeToken1Logo
+          });
+          
+          // Log detalhado das logos para debug
+          console.log(`🖼️ Logos dos tokens do pool ${index + 1}:`, {
+            token0Logo: token0?.logo,
+            token0LogoType: typeof token0?.logo,
+            token0LogoIsUrl: token0?.logo && typeof token0?.logo === 'string' && token0.logo.startsWith('http'),
+            token1Logo: token1?.logo,
+            token1LogoType: typeof token1?.logo,
+            token1LogoIsUrl: token1?.logo && typeof token1?.logo === 'string' && token1.logo.startsWith('http')
+          });
+          
+          const result = {
+            id: pool.id,
+            protocol: typeof pool.provider === 'string' ? pool.provider : "Uniswap V3",
+            tokenPair: `${safeToken0Symbol}/${safeToken1Symbol}`,
+            token1: { 
+              symbol: safeToken0Symbol, 
+              logo: safeToken0Logo, 
+              color: "blue" 
+            },
+            token2: { 
+              symbol: safeToken1Symbol, 
+              logo: safeToken1Logo, 
+              color: "green" 
+            },
+            rentabilidade: `${apr}% a.a.`,
+            tvl: formatValue(tvl),
+            tarifa: `${fee}%`,
+            volume24h: formatValue(volume24h),
+            // Dados adicionais da API
+            address: pool.address,
+            chain: pool.chain,
+            provider: pool.provider,
+            stats: pool.stats,
+            tokens: pool.tokens,
+            fee: pool.fee,
+            rawData: pool // Para debug
+          };
+          
+          console.log(`✅ Pool ${index + 1} processado:`, result);
+          
+          // Log final para verificar se os dados estão corretos
+          console.log(`🎯 Dados finais do pool ${index + 1} para renderização:`, {
+            id: result.id,
+            tokenPair: result.tokenPair,
+            token1: result.token1,
+            token2: result.token2,
+            protocol: result.protocol,
+            rentabilidade: result.rentabilidade,
+            tvl: result.tvl,
+            tarifa: result.tarifa,
+            volume24h: result.volume24h
+          });
+          
+          return result;
+        });
+        
+        console.log('🎉 Todos os pools processados com sucesso!');
+      } catch (error) {
+        console.error('Erro ao buscar pools:', error);
+        throw error; // Re-throw para mostrar erro real
+      }
+    },
+    staleTime: 30000, // 30 segundos
+  });
+
+  // Logs para debug do estado da query
+  console.log('🔍 Estado da Query:', {
+    isLoading: poolsLoading,
+    hasData: !!poolsData,
+    dataLength: poolsData?.length || 0,
+    hasError: !!poolsError,
+    errorMessage: poolsError?.message
+  });
+  
+  // Log detalhado dos dados quando disponíveis
+  if (poolsData && poolsData.length > 0) {
+    console.log('📊 Dados dos pools carregados:', {
+      totalPools: poolsData.length,
+      firstPool: poolsData[0],
+      allPools: poolsData.map((pool, index) => ({
+        index,
+        id: pool.id,
+        tokenPair: pool.tokenPair,
+        token1: pool.token1,
+        token2: pool.token2,
+        protocol: pool.protocol
+      }))
+    });
+    
+    // Log simples para verificar se os dados estão sendo renderizados
+    console.log('🎯 Primeiro pool para debug:', {
+      id: poolsData[0]?.id,
+      tokenPair: poolsData[0]?.tokenPair,
+      token1: poolsData[0]?.token1,
+      token2: poolsData[0]?.token2,
+      protocol: poolsData[0]?.protocol,
+      rentabilidade: poolsData[0]?.rentabilidade,
+      tvl: poolsData[0]?.tvl,
+      tarifa: poolsData[0]?.tarifa,
+      volume24h: poolsData[0]?.volume24h
+    });
+  }
+
+  const handlePoolClick = (pool: any) => {
+    setSelectedPool(pool);
+    // Navegar para a próxima tela (detalhes do pool)
+    router.push(`/liquidity/pool/${pool.id}`);
   };
 
-  const formatCompactCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(2)}M`;
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}K`;
-    }
-    return formatCurrency(value);
-  };
+  const renderPoolsList = () => (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Pools de Liquidez</h1>
+          <p className="text-slate-300 text-sm">Disponíveis - {poolsData?.length || 0}</p>
+        </div>
+        <Button
+          onClick={() => setShowSortModal(true)}
+          variant="outline"
+          className="border-slate-600 text-slate-300 hover:bg-slate-700 text-sm"
+        >
+          Rentabilidade estimada ↓
+        </Button>
+      </div>
+
+      {/* Resumo dos Pools - Card único com métricas */}
+      <Card className="bg-gradient-to-r from-slate-800/60 to-slate-700/60 border border-slate-600/60 rounded-2xl mb-6 shadow-xl">
+        <CardContent className="p-6">
+          <div className="grid grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-blue-400" />
+              </div>
+              <p className="text-slate-400 text-sm font-medium mb-1">TVL Total</p>
+              <p className="text-white font-bold text-xl">
+                {poolsData && poolsData.length > 0 
+                  ? `$${(poolsData.reduce((sum, pool) => {
+                      const tvl = parseFloat(pool.tvl.replace(/[$,MK]/g, '')) || 0;
+                      const multiplier = pool.tvl.includes('M') ? 1000000 : pool.tvl.includes('K') ? 1000 : 1;
+                      return sum + (tvl * multiplier);
+                    }, 0) / 1000000).toFixed(1)}M`
+                  : '$0.0M'
+                }
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-yellow-400" />
+              </div>
+              <p className="text-slate-400 text-sm font-medium mb-1">Tarifa Média</p>
+              <p className="text-white font-bold text-xl">
+                {poolsData && poolsData.length > 0 
+                  ? `${(poolsData.reduce((sum, pool) => sum + (parseFloat(pool.tarifa) || 0), 0) / poolsData.length).toFixed(2)}%`
+                  : '0.00%'
+                }
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-green-500/20 flex items-center justify-center">
+                <LineChart className="h-6 w-6 text-green-400" />
+              </div>
+              <p className="text-slate-400 text-sm font-medium mb-1">Volume (24h)</p>
+              <p className="text-white font-bold text-xl">
+                {poolsData && poolsData.length > 0 
+                  ? `$${(poolsData.reduce((sum, pool) => {
+                      const volume = parseFloat(pool.volume24h.replace(/[$,MK]/g, '')) || 0;
+                      const multiplier = pool.volume24h.includes('M') ? 1000000 : pool.volume24h.includes('K') ? 1000 : 1;
+                      return sum + (volume * multiplier);
+                    }, 0) / 1000).toFixed(1)}K`
+                  : '$0.0K'
+                }
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Lista de Pools */}
+      <div className="space-y-6">
+        {(() => {
+  console.log('🎨 Renderizando lista de pools:', {
+    isLoading: poolsLoading,
+    hasData: !!poolsData,
+    dataLength: poolsData?.length || 0,
+    hasError: !!poolsError
+  });
+  
+  // Log simples para verificar se os dados estão sendo renderizados
+  if (poolsData && poolsData.length > 0) {
+    console.log('✅ Dados disponíveis para renderização:', poolsData.length, 'pools');
+    console.log('🔍 Primeiro pool:', poolsData[0]);
+  }
+          
+          if (poolsLoading) {
+            return (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+                <span className="ml-2 text-slate-300">Carregando pools...</span>
+              </div>
+            );
+          }
+          
+          if (poolsError) {
+            return (
+              <div className="text-center py-8">
+                <p className="text-red-400">Erro ao carregar pools da API</p>
+                <p className="text-slate-400 text-sm mt-1">Verifique a conexão com a API da Notus</p>
+                <p className="text-slate-500 text-xs mt-2">Erro: {poolsError.message}</p>
+              </div>
+            );
+          }
+          
+          if (!poolsData || poolsData.length === 0) {
+            return (
+              <div className="text-center py-8">
+                <p className="text-slate-400">Nenhum pool encontrado</p>
+                <p className="text-slate-500 text-sm mt-1">Verifique os logs do console</p>
+              </div>
+            );
+          }
+          
+          return poolsData?.map((pool: any) => {
+            // Verificar se os dados do pool são válidos
+            if (!pool || typeof pool !== 'object') {
+              console.warn('Pool inválido encontrado:', pool);
+              return null;
+            }
+            
+            return (
+            <Card 
+              key={pool.id}
+              className="bg-slate-800/60 border border-slate-700/60 rounded-2xl cursor-pointer hover:bg-slate-700/40 hover:border-slate-600/60 transition-all duration-300 shadow-lg hover:shadow-xl"
+              onClick={() => handlePoolClick(pool)}
+            >
+              <CardContent className="p-6">
+                {/* Header Section */}
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center space-x-4">
+                    {/* Token Icons */}
+                    <div className="relative flex items-center">
+                      <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center border-2 border-slate-700 shadow-md">
+                        {pool.token1.logo && typeof pool.token1.logo === 'string' && pool.token1.logo.startsWith('http') ? (
+                          <img 
+                            src={pool.token1.logo} 
+                            alt={pool.token1.symbol || 'Token1'} 
+                            className="w-8 h-8 rounded-full object-cover"
+                            onError={(e) => {
+                              console.log('❌ Erro ao carregar logo do token1:', pool.token1.logo);
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling.style.display = 'block';
+                            }}
+                          />
+                        ) : null}
+                        <span className="text-xl" style={{ display: pool.token1.logo && typeof pool.token1.logo === 'string' && pool.token1.logo.startsWith('http') ? 'none' : 'block' }}>
+                          {String(pool.token1.logo || '💙')}
+                        </span>
+                      </div>
+                      <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center border-2 border-slate-700 shadow-md -ml-3">
+                        {pool.token2.logo && typeof pool.token2.logo === 'string' && pool.token2.logo.startsWith('http') ? (
+                          <img 
+                            src={pool.token2.logo} 
+                            alt={pool.token2.symbol || 'Token2'} 
+                            className="w-8 h-8 rounded-full object-cover"
+                            onError={(e) => {
+                              console.log('❌ Erro ao carregar logo do token2:', pool.token2.logo);
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling.style.display = 'block';
+                            }}
+                          />
+                        ) : null}
+                        <span className="text-xl" style={{ display: pool.token2.logo && typeof pool.token2.logo === 'string' && pool.token2.logo.startsWith('http') ? 'none' : 'block' }}>
+                          {String(pool.token2.logo || '💚')}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Token Pair Info */}
+                    <div className="flex flex-col">
+                      <h3 className="text-white font-bold text-lg leading-tight">{String(pool.tokenPair || 'N/A')}</h3>
+                      <p className="text-slate-400 text-sm font-medium">{String(pool.protocol || 'N/A')}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Rentability Section */}
+                  <div className="text-right">
+                    <div className="flex items-center justify-end space-x-2 mb-2">
+                      <span className="text-slate-400 text-sm font-medium">Rent. estimada</span>
+                      <Info className="h-4 w-4 text-slate-400" />
+                    </div>
+                    <p className="text-green-400 font-bold text-lg">{String(pool.rentabilidade || 'N/A')}</p>
+                  </div>
+                </div>
+
+                {/* Metrics Section */}
+                <div className="grid grid-cols-3 gap-6 pt-4 border-t border-slate-700/50">
+                  <div className="text-center">
+                    <p className="text-slate-400 text-sm font-medium mb-1">TVL</p>
+                    <p className="text-white font-bold text-base">{String(pool.tvl || 'N/A')}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-slate-400 text-sm font-medium mb-1">Tarifa</p>
+                    <p className="text-white font-bold text-base">{String(pool.tarifa || 'N/A')}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-slate-400 text-sm font-medium mb-1">Volume (24h)</p>
+                    <p className="text-white font-bold text-base">{String(pool.volume24h || 'N/A')}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            );
+          });
+        })()}
+      </div>
+
+      {/* FAQ Section */}
+      <div className="mt-8">
+        <h2 className="text-white text-2xl font-bold mb-6">FAQ</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl cursor-pointer hover:bg-slate-700/40 hover:border-slate-600/60 transition-all duration-300 shadow-lg hover:shadow-xl group">
+            <CardContent className="p-6 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/30 transition-colors duration-300">
+                <Coins className="h-8 w-8 text-blue-400" />
+              </div>
+              <h3 className="text-white font-semibold text-lg mb-2">O que são pools de liquidez?</h3>
+              <p className="text-slate-400 text-sm">Entenda como funcionam os pools de liquidez e seus benefícios</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl cursor-pointer hover:bg-slate-700/40 hover:border-slate-600/60 transition-all duration-300 shadow-lg hover:shadow-xl group">
+            <CardContent className="p-6 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center group-hover:bg-green-500/30 transition-colors duration-300">
+                <Wallet className="h-8 w-8 text-green-400" />
+              </div>
+              <h3 className="text-white font-semibold text-lg mb-2">Como funcionam as pools na Notus DX?</h3>
+              <p className="text-slate-400 text-sm">Descubra as funcionalidades exclusivas da nossa plataforma</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl cursor-pointer hover:bg-slate-700/40 hover:border-slate-600/60 transition-all duration-300 shadow-lg hover:shadow-xl group">
+            <CardContent className="p-6 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-500/20 flex items-center justify-center group-hover:bg-yellow-500/30 transition-colors duration-300">
+                <TrendingUp className="h-8 w-8 text-yellow-400" />
+              </div>
+              <h3 className="text-white font-semibold text-lg mb-2">Como funcionam os rendimentos?</h3>
+              <p className="text-slate-400 text-sm">Aprenda sobre os diferentes tipos de rendimento disponíveis</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderSortModal = () => (
+    <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
+      <div className="bg-slate-800 rounded-t-xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-white font-bold text-lg">Classificação</h2>
+          <Button
+            onClick={() => setShowSortModal(false)}
+            variant="ghost"
+            className="text-slate-400"
+          >
+            ✕
+          </Button>
+        </div>
+        
+        <div className="space-y-3">
+          {[
+            { key: "rentabilidade", label: "Rentabilidade estimada", icon: "↓" },
+            { key: "tvl", label: "TVL" },
+            { key: "tarifa", label: "Tarifa" },
+            { key: "volume", label: "Volume (24h)" }
+          ].map((option) => (
+            <div
+              key={option.key}
+              className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                sortBy === option.key ? "bg-slate-700/50" : "hover:bg-slate-700/30"
+              }`}
+              onClick={() => {
+                setSortBy(option.key as any);
+                setShowSortModal(false);
+              }}
+            >
+              <span className="text-white">{option.label}</span>
+              {option.icon && <span className="text-slate-400">{option.icon}</span>}
+            </div>
+          ))}
+        </div>
+
+        <Button
+          onClick={() => setShowSortModal(false)}
+          className="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-3 rounded-xl mt-6"
+        >
+          Aplicar
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <ProtectedRoute>
       <AppLayout 
-        title="Liquidity Pools"
-        description="Forneça liquidez e ganhe rendimento"
+        title="Pools de Liquidez"
+        description="Adicione liquidez aos pools e ganhe recompensas"
       >
-        <div className="space-y-6">
-          {/* Info Banner */}
-          <Card className="glass-card bg-gradient-to-r from-purple-900/20 to-blue-900/20 border-purple-500/20">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Info className="h-5 w-5 text-purple-400" />
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold mb-2">Sobre Liquidity Pools</h3>
-                  <p className="text-slate-300 text-sm">
-                    Forneça liquidez para pools de trading e ganhe taxas proporcionais ao volume de transações. 
-                    Quanto maior o APR, maior o retorno potencial.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pools List */}
-          <div className="grid gap-4">
-            {MOCK_POOLS.map((pool) => (
-              <Card key={pool.id} className="glass-card">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    {/* Pool Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="flex items-center -space-x-2">
-                          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-slate-800">
-                            {pool.token0.symbol.slice(0, 2)}
-                          </div>
-                          <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-slate-800">
-                            {pool.token1.symbol.slice(0, 2)}
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-white font-bold text-lg">{pool.name}</h3>
-                          <p className="text-slate-400 text-sm">{pool.protocol}</p>
-                        </div>
-
-                        <Badge className="bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                          APR {pool.apr}%
-                        </Badge>
-                      </div>
-
-                      {/* Pool Stats */}
-                      <div className="grid grid-cols-3 gap-6 pl-12">
-                        <div>
-                          <div className="text-slate-400 text-sm">TVL</div>
-                          <div className="text-white font-semibold">{formatCompactCurrency(pool.tvl)}</div>
-                        </div>
-                        
-                        <div>
-                          <div className="text-slate-400 text-sm">Volume 24h</div>
-                          <div className="text-white font-semibold">{formatCompactCurrency(pool.volume24h)}</div>
-                        </div>
-                        
-                        <div>
-                          <div className="text-slate-400 text-sm">Sua Liquidez</div>
-                          <div className="text-white font-semibold">
-                            {pool.yourLiquidity > 0 ? formatCurrency(pool.yourLiquidity) : '-'}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => {
-                          setSelectedPool(pool);
-                          setAction('add');
-                        }}
-                        className="bg-green-600/20 border border-green-500/30 text-green-400 hover:bg-green-600/30 px-6"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Adicionar
-                      </Button>
-                      
-                      {pool.yourLiquidity > 0 && (
-                        <Button
-                          onClick={() => {
-                            setSelectedPool(pool);
-                            setAction('remove');
-                          }}
-                          className="bg-red-600/20 border border-red-500/30 text-red-400 hover:bg-red-600/30 px-6"
-                          variant="outline"
-                        >
-                          <Minus className="h-4 w-4 mr-2" />
-                          Remover
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Stats Overview */}
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card className="glass-card">
-              <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl mx-auto mb-4 flex items-center justify-center">
-                  <Droplets className="h-6 w-6 text-white" />
-                </div>
-                <div className="text-2xl font-bold text-white mb-1">
-                  {MOCK_POOLS.length}
-                </div>
-                <div className="text-slate-400 text-sm">Pools Disponíveis</div>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-card">
-              <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl mx-auto mb-4 flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-white" />
-                </div>
-                <div className="text-2xl font-bold text-white mb-1">
-                  {Math.max(...MOCK_POOLS.map(p => p.apr))}%
-                </div>
-                <div className="text-slate-400 text-sm">Maior APR</div>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-card">
-              <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl mx-auto mb-4 flex items-center justify-center">
-                  <Droplets className="h-6 w-6 text-white" />
-                </div>
-                <div className="text-2xl font-bold text-white mb-1">
-                  $0
-                </div>
-                <div className="text-slate-400 text-sm">Sua Liquidez Total</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Action Modal Placeholder */}
-          {selectedPool && action && (
-            <Card className="glass-card border-2 border-purple-500/30">
-              <CardHeader>
-                <CardTitle className="text-white">
-                  {action === 'add' ? 'Adicionar' : 'Remover'} Liquidez - {selectedPool.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center p-12">
-                  <Droplets className="h-16 w-16 text-purple-400 mx-auto mb-4" />
-                  <h3 className="text-white font-semibold text-lg mb-2">
-                    Funcionalidade em Implementação
-                  </h3>
-                  <p className="text-slate-400 mb-6">
-                    A integração com a API da Notus para {action === 'add' ? 'adicionar' : 'remover'} liquidez 
-                    será implementada na próxima fase do projeto.
-                  </p>
-                  <Button
-                    onClick={() => {
-                      setSelectedPool(null);
-                      setAction(null);
-                    }}
-                    variant="outline"
-                    className="border-slate-600"
-                  >
-                    Fechar
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        <div className="w-full max-w-4xl mx-auto px-6">
+          {renderPoolsList()}
         </div>
+        
+        {showSortModal && renderSortModal()}
       </AppLayout>
     </ProtectedRoute>
   );
 }
-

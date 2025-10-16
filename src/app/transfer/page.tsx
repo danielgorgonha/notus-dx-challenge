@@ -236,8 +236,8 @@ export default function TransferPage() {
       {
         id: 'polygon',
         name: polygon.name,
-        logo: polygon.logo,
-        description: 'Na Chainless, este ativo é custodiado na POLYGON',
+        logo: (polygon as any).logo || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM4MjQ3RUEiLz4KPHBhdGggZD0iTTE2IDZMMjAgMTBIMTZWNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyNkwyMCAyMkgxNlYyNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAxMEwyMCAxNEgxNlYxMFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyMkwyMCAyNkgxNlYyMloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=',
+        description: 'Na Notus DX, este ativo é custodiado na POLYGON',
         minWithdrawal: '0.1',
         estimatedTime: '~0min',
         cost: '$1,00',
@@ -247,7 +247,7 @@ export default function TransferPage() {
       {
         id: 'bnb',
         name: bnb.name,
-        logo: bnb.logo,
+        logo: (bnb as any).logo || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNGM0I5MDAiLz4KPHBhdGggZD0iTTE2IDZMMjAgMTBIMTZWNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyNkwyMCAyMkgxNlYyNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAxMEwyMCAxNEgxNlYxMFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyMkwyMCAyNkgxNlYyMloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=',
         description: 'Você pode enviar seu token para outra rede. Nós faremos a bridge para você.',
         minWithdrawal: '0.1',
         estimatedTime: '~3min',
@@ -258,7 +258,7 @@ export default function TransferPage() {
       {
         id: 'avalanche',
         name: avalanche.name,
-        logo: avalanche.logo,
+        logo: (avalanche as any).logo || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNFODQ0NDQiLz4KPHBhdGggZD0iTTE2IDZMMjAgMTBIMTZWNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyNkwyMCAyMkgxNlYyNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAxMEwyMCAxNEgxNlYxMFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyMkwyMCAyNkgxNlYyMloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=',
         description: 'Você pode enviar seu token para outra rede. Nós faremos a bridge para você.',
         minWithdrawal: '0.1',
         estimatedTime: '~3min',
@@ -279,7 +279,7 @@ export default function TransferPage() {
       {/* Rede do Token */}
       <div className="space-y-4">
         <h2 className="text-white text-lg">Rede do Token</h2>
-        <p className="text-slate-400 text-sm">Na Chainless, este ativo é custodiado na POLYGON</p>
+        <p className="text-slate-400 text-sm">Na Notus DX, este ativo é custodiado na POLYGON</p>
         
         <Card 
           className={`cursor-pointer transition-all duration-200 ${

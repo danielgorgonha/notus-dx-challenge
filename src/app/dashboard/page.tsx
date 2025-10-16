@@ -106,7 +106,7 @@ export default function DashboardPage() {
   // Query para buscar tokens suportados
   const { data: tokens, isLoading: tokensLoading } = useQuery({
     queryKey: ['tokens'],
-    queryFn: () => listSupportedTokens(1, 50),
+    queryFn: () => listSupportedTokens(),
     refetchInterval: 60000, // Refetch a cada 1 minuto
   });
 
