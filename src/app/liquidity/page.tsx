@@ -39,11 +39,6 @@ export default function LiquidityPage() {
   
   const [currentView, setCurrentView] = useState<"pools" | "pool-details" | "add-liquidity">("pools");
   
-  // Debug log para verificar o estado
-  console.log('🔍 DEBUG currentView:', currentView);
-  console.log('🔍 DEBUG poolsData:', poolsData);
-  console.log('🔍 DEBUG poolsLoading:', poolsLoading);
-  console.log('🔍 DEBUG poolsError:', poolsError);
   const [selectedPool, setSelectedPool] = useState<any>(null);
   const [sortBy, setSortBy] = useState<"rentabilidade" | "tvl" | "tarifa" | "volume">("rentabilidade");
   const [showSortModal, setShowSortModal] = useState(false);
@@ -65,12 +60,54 @@ export default function LiquidityPage() {
     queryFn: async () => {
       try {
         const response = await liquidityActions.listPools({
-          page: 1,
-          perPage: 20,
-          chainId: 137 // Polygon
+          take: 10,
+          offset: 0,
+          chainIds: "137", // Polygon
+          filterWhitelist: false,
+          rangeInDays: 30
         });
-        console.log('🔍 DEBUG API Response:', response);
-        return response.pools || response.data || [];
+        // Mapear dados reais da API para o formato da interface
+        const apiResponse = response as { pools: any[] };
+        return apiResponse.pools?.map((pool: any) => {
+          
+          // Calcular APR baseado nas taxas e volume (simulação)
+          const tvl = parseFloat(pool.totalValueLockedUSD);
+          const volume = parseFloat(pool.stats?.volumeInUSD || "0");
+          const fee = pool.fee;
+          const apr = tvl > 0 ? ((volume * fee / 100) / tvl * 365 * 100).toFixed(1) : "0";
+          
+          return {
+            id: pool.id,
+            protocol: pool.provider?.name || "Uniswap V3",
+            tokenPair: `${pool.tokens[0]?.symbol?.toUpperCase()}/${pool.tokens[1]?.symbol?.toUpperCase()}`,
+            token1: { 
+              symbol: pool.tokens[0]?.symbol?.toUpperCase() || "TOKEN1", 
+              logo: pool.tokens[0]?.logo || "💙", 
+              color: "blue" 
+            },
+            token2: { 
+              symbol: pool.tokens[1]?.symbol?.toUpperCase() || "TOKEN2", 
+              logo: pool.tokens[1]?.logo || "💚", 
+              color: "green" 
+            },
+            rentabilidade: `${apr}%`,
+            tvl: `$${(tvl / 1000000).toFixed(2)}M`,
+            tarifa: `${fee}%`,
+            volume24h: `$${(volume / 1000).toFixed(1)}K`,
+            composition: { 
+              token1: `${pool.tokens[0]?.poolShareInPercentage?.toFixed(1) || "0"}%`, 
+              token2: `${pool.tokens[1]?.poolShareInPercentage?.toFixed(1) || "0"}%` 
+            },
+            userLiquidity: "-",
+            // Dados adicionais da API
+            address: pool.address,
+            chain: pool.chain,
+            provider: pool.provider,
+            stats: pool.stats,
+            tokens: pool.tokens,
+            fee: pool.fee
+          };
+        }) || [];
       } catch (error) {
         console.error('Erro ao buscar pools:', error);
         // Fallback para dados mockados em caso de erro
@@ -86,32 +123,6 @@ export default function LiquidityPage() {
             tarifa: "0.05%",
             volume24h: "$850.0K",
             composition: { usdc: "50%", usdt: "50%" },
-            userLiquidity: "-"
-          },
-          {
-            id: "brz-usdc",
-            protocol: "Uniswap V3",
-            tokenPair: "BRZ/USDC",
-            token1: { symbol: "BRZ", logo: "🇧🇷", color: "blue" },
-            token2: { symbol: "USDC", logo: "💙", color: "blue" },
-            rentabilidade: "8.3%",
-            tvl: "$450.0K",
-            tarifa: "0.30%",
-            volume24h: "$125.0K",
-            composition: { brz: "45%", usdc: "55%" },
-            userLiquidity: "-"
-          },
-          {
-            id: "wmatic-usdc",
-            protocol: "Uniswap V3",
-            tokenPair: "WMATIC/USDC",
-            token1: { symbol: "WMATIC", logo: "🔷", color: "purple" },
-            token2: { symbol: "USDC", logo: "💙", color: "blue" },
-            rentabilidade: "15.7%",
-            tvl: "$2.10M",
-            tarifa: "0.30%",
-            volume24h: "$1.25M",
-            composition: { wmatic: "40%", usdc: "60%" },
             userLiquidity: "-"
           }
         ];
@@ -144,8 +155,14 @@ export default function LiquidityPage() {
     queryFn: async () => {
       if (!selectedPool?.id || !walletAddress) return null;
       return await liquidityActions.getAmounts({
-        poolId: selectedPool.id,
-        walletAddress: walletAddress
+        chainId: 137,
+        token0: selectedPool?.tokens?.[0]?.address || "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+        token1: selectedPool?.tokens?.[1]?.address || "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+        poolFeePercent: selectedPool?.fee || 0.3,
+        minPrice: 0,
+        maxPrice: 1000000,
+        payGasFeeToken: "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+        gasFeePaymentMethod: "ADD_TO_AMOUNT"
       });
     },
     enabled: !!selectedPool?.id && !!walletAddress,
@@ -159,118 +176,120 @@ export default function LiquidityPage() {
     // Buscar detalhes reais do pool
     try {
       const poolDetails = await liquidityActions.getPool(pool.id);
-      setSelectedPool({ ...pool, ...poolDetails });
+      const poolData = poolDetails as { pool: any };
+      
+      // Mapear dados detalhados da API
+      const detailedPool = {
+        ...pool,
+        ...poolData.pool,
+        // Manter dados mapeados da lista
+        protocol: poolData.pool?.provider?.name || pool.protocol,
+        tokenPair: pool.tokenPair,
+        token1: pool.token1,
+        token2: pool.token2,
+        tvl: `$${parseFloat(poolData.pool?.totalValueLockedUSD || "0").toFixed(2)}`,
+        tarifa: `${poolData.pool?.fee || 0}%`,
+        volume24h: `$${parseFloat(poolData.pool?.stats?.volumeInUSD || "0").toFixed(2)}`,
+        rentabilidade: "0%", // Não disponível na API atual
+        stats: poolData.pool?.stats,
+        provider: poolData.pool?.provider,
+        chain: poolData.pool?.chain
+      };
+      
+      setSelectedPool(detailedPool);
     } catch (error) {
       console.error('Erro ao buscar detalhes do pool:', error);
-      // Manter dados mockados em caso de erro
+      // Manter dados da lista em caso de erro
     }
   };
 
   const handleAddLiquidity = async () => {
     if (!walletAddress) {
-      toast({
-        title: "Erro",
-        description: "Carteira não conectada",
-        variant: "destructive",
-      });
+      toast.error("Carteira não conectada");
       return;
     }
 
     try {
       // Criar liquidez usando a API
       const result = await liquidityActions.createLiquidity({
-        poolId: selectedPool?.id || "usdc-link",
-        amount0: totalAmount,
-        amount1: "0", // Será calculado automaticamente
         walletAddress: walletAddress,
+        toAddress: walletAddress,
         chainId: 137, // Polygon
-        slippageTolerance: 0.5
+        payGasFeeToken: "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270", // WMATIC
+        gasFeePaymentMethod: "ADD_TO_AMOUNT",
+        token0: selectedPool?.tokens?.[0]?.address || "0x2791bca1f2de4661ed88a30c99a7a9449aa84174", // USDC
+        token1: selectedPool?.tokens?.[1]?.address || "0xc2132d05d31c914a87c6611c10748aeb04b58e8f", // USDT
+        poolFeePercent: selectedPool?.fee || 0.3,
+        token0Amount: totalAmount,
+        token1Amount: "0", // Será calculado automaticamente
+        minPrice: 0,
+        maxPrice: 1000000,
+        slippage: 0.5
       });
 
-      toast({
-        title: "Sucesso",
-        description: "Liquidez adicionada com sucesso!",
-      });
+      toast.success("Liquidez adicionada com sucesso!");
 
       // Voltar para a lista de pools
       setCurrentView("pools");
       setSelectedPool(null);
     } catch (error) {
       console.error('Erro ao adicionar liquidez:', error);
-      toast({
-        title: "Erro",
-        description: "Falha ao adicionar liquidez",
-        variant: "destructive",
-      });
+      toast.error("Falha ao adicionar liquidez");
     }
   };
 
   // Função para alterar liquidez (adicionar/remover)
   const handleChangeLiquidity = async (liquidityAmount: string, action: 'add' | 'remove') => {
     if (!walletAddress || !selectedPool?.id) {
-      toast({
-        title: "Erro",
-        description: "Dados insuficientes",
-        variant: "destructive",
-      });
+      toast.error("Dados insuficientes");
       return;
     }
 
     try {
       const result = await liquidityActions.changeLiquidity({
-        poolId: selectedPool.id,
-        liquidityAmount: action === 'remove' ? `-${liquidityAmount}` : liquidityAmount,
         walletAddress: walletAddress,
         chainId: 137, // Polygon
-        slippageTolerance: 0.5
+        payGasFeeToken: "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270", // WMATIC
+        gasFeePaymentMethod: "ADD_TO_AMOUNT",
+        tokenId: selectedPool.id,
+        change: {
+          token0: selectedPool?.tokens?.[0]?.address || "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+          token1: selectedPool?.tokens?.[1]?.address || "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+          token0Amount: action === 'remove' ? `-${liquidityAmount}` : liquidityAmount,
+          token1Amount: "0"
+        },
+        slippage: 0.5
       });
 
-      toast({
-        title: "Sucesso",
-        description: `Liquidez ${action === 'add' ? 'adicionada' : 'removida'} com sucesso!`,
-      });
+      toast.success(`Liquidez ${action === 'add' ? 'adicionada' : 'removida'} com sucesso!`);
 
       // Atualizar dados do usuário
       // Refetch user amounts
     } catch (error) {
       console.error('Erro ao alterar liquidez:', error);
-      toast({
-        title: "Erro",
-        description: `Falha ao ${action === 'add' ? 'adicionar' : 'remover'} liquidez`,
-        variant: "destructive",
-      });
+      toast.error(`Falha ao ${action === 'add' ? 'adicionar' : 'remover'} liquidez`);
     }
   };
 
   // Função para coletar taxas
   const handleCollectFees = async () => {
     if (!walletAddress || !selectedPool?.id) {
-      toast({
-        title: "Erro",
-        description: "Dados insuficientes",
-        variant: "destructive",
-      });
+      toast.error("Dados insuficientes");
       return;
     }
 
     try {
       const result = await liquidityActions.collectFees({
-        poolId: selectedPool.id,
+        chainId: 137, // Polygon
+        nftId: selectedPool.id,
         walletAddress: walletAddress,
-        chainId: 137 // Polygon
+        payGasFeeToken: "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270" // WMATIC
       });
 
-      toast({
-        title: "Sucesso",
-        description: "Taxas coletadas com sucesso!",
-      });
+      toast.success("Taxas coletadas com sucesso!");
     } catch (error) {
       console.error('Erro ao coletar taxas:', error);
-      toast({
-        title: "Erro",
-        description: "Falha ao coletar taxas",
-        variant: "destructive",
-      });
+      toast.error("Falha ao coletar taxas");
     }
   };
 
@@ -289,7 +308,7 @@ export default function LiquidityPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Pools de Liquidez</h1>
-          <p className="text-slate-300">Disponíveis - {poolsData.length}</p>
+          <p className="text-slate-300">Disponíveis - {poolsData?.length || 0}</p>
         </div>
         <Button
           onClick={() => setShowSortModal(true)}
@@ -314,9 +333,7 @@ export default function LiquidityPage() {
             <p className="text-slate-400 text-sm mt-1">Usando dados de exemplo</p>
           </div>
         ) : (
-          poolsData?.map((pool) => {
-            console.log('🔍 DEBUG Pool data:', pool);
-            return (
+          poolsData?.map((pool: any) => (
           <Card 
             key={pool.id}
             className="bg-slate-800/50 border-slate-700/50 rounded-xl cursor-pointer hover:bg-slate-700/30 transition-all duration-200"
@@ -374,8 +391,7 @@ export default function LiquidityPage() {
               </div>
             </CardContent>
           </Card>
-            );
-          })
+          ))
         )}
       </div>
 
@@ -400,7 +416,12 @@ export default function LiquidityPage() {
                 <TrendingUp className="h-4 w-4 text-green-400" />
               </div>
             </div>
-            <p className="text-2xl font-bold text-white">15.7%</p>
+            <p className="text-2xl font-bold text-white">
+              {poolsData && poolsData.length > 0 
+                ? `${Math.max(...(poolsData.map((pool: any) => parseFloat(pool.rentabilidade.replace('%', '')) || 0))).toFixed(1)}%`
+                : "0%"
+              }
+            </p>
             <p className="text-slate-400 text-sm">Maior APR</p>
           </CardContent>
         </Card>
@@ -442,7 +463,7 @@ export default function LiquidityPage() {
     </div>
   );
 
-  const renderPoolDetails = () => (
+  const renderPoolDetails = (): React.ReactElement => (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center space-x-4">
@@ -488,7 +509,7 @@ export default function LiquidityPage() {
               <Info className="h-4 w-4 text-slate-400" />
                   </div>
             <div className="flex items-center space-x-2">
-              <span className="text-3xl font-bold text-green-400">{selectedPool?.rentabilidade}</span>
+              <span className="text-3xl font-bold text-green-400">{(selectedPool as any)?.rentabilidade || '0%'}</span>
               <DollarSign className="h-6 w-6 text-green-400" />
                   </div>
                 </div>
@@ -599,13 +620,13 @@ export default function LiquidityPage() {
           <CardContent className="space-y-3">
             <div className="flex justify-between">
               <span className="text-slate-400">Liquidez Total:</span>
-              <span className="text-white">{userAmounts.totalLiquidity || '0'}</span>
+              <span className="text-white">{(userAmounts as any)?.amounts?.totalLiquidity || '0'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Taxas Acumuladas:</span>
-              <span className="text-white">{userAmounts.accumulatedFees || '0'}</span>
+              <span className="text-white">{(userAmounts as any)?.amounts?.accumulatedFees || '0'}</span>
             </div>
-            {userAmounts.accumulatedFees && parseFloat(userAmounts.accumulatedFees) > 0 && (
+            {(userAmounts as any)?.amounts?.accumulatedFees && parseFloat((userAmounts as any).amounts.accumulatedFees) > 0 && (
               <Button 
                 onClick={handleCollectFees}
                 className="w-full bg-green-600 hover:bg-green-700 text-white mt-4"
@@ -633,11 +654,11 @@ export default function LiquidityPage() {
               <>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Volume Total:</span>
-                  <span className="text-white">{historicalData.totalVolume || 'N/A'}</span>
+                  <span className="text-white">{(historicalData as any)?.statistics?.totalVolume || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Taxas Geradas:</span>
-                  <span className="text-white">{historicalData.totalFees || 'N/A'}</span>
+                  <span className="text-white">{(historicalData as any)?.statistics?.totalFees || 'N/A'}</span>
                 </div>
               </>
             )}

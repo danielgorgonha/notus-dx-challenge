@@ -10,11 +10,13 @@ export const liquidityActions = {
    * Lista pools de liquidez
    */
   listPools: (params?: {
-    page?: number;
-    perPage?: number;
-    chainId?: number;
-    token0?: string;
-    token1?: string;
+    take?: number;
+    offset?: number;
+    chainIds?: string;
+    tokensAddresses?: string;
+    filterWhitelist?: boolean;
+    rangeInDays?: number;
+    ids?: string;
   }) =>
     notusAPI.get("liquidity/pools", {
       searchParams: params,
@@ -30,12 +32,22 @@ export const liquidityActions = {
    * Cria liquidez em um pool
    */
   createLiquidity: (params: {
-    poolId: string;
-    amount0: string;
-    amount1: string;
     walletAddress: string;
+    toAddress: string;
     chainId: number;
-    slippageTolerance?: number;
+    payGasFeeToken: string;
+    gasFeePaymentMethod: string;
+    token0: string;
+    token1: string;
+    poolFeePercent: number;
+    token0Amount: string;
+    token1Amount: string;
+    minPrice: number;
+    maxPrice: number;
+    slippage?: number;
+    liquidityProvider?: string;
+    transactionFeePercent?: number;
+    metadata?: object;
   }) =>
     notusAPI.post("liquidity/create", {
       json: params,
@@ -45,11 +57,21 @@ export const liquidityActions = {
    * Altera liquidez em um pool (adiciona/remove)
    */
   changeLiquidity: (params: {
-    poolId: string;
-    liquidityAmount: string;
     walletAddress: string;
     chainId: number;
-    slippageTolerance?: number;
+    payGasFeeToken: string;
+    gasFeePaymentMethod: string;
+    tokenId: string;
+    change: {
+      token0: string;
+      token1: string;
+      token0Amount: string;
+      token1Amount: string;
+    };
+    slippage?: number;
+    liquidityProvider?: string;
+    transactionFeePercent?: number;
+    metadata?: object;
   }) =>
     notusAPI.post("liquidity/change", {
       json: params,
@@ -59,9 +81,12 @@ export const liquidityActions = {
    * Coleta taxas de liquidez
    */
   collectFees: (params: {
-    poolId: string;
-    walletAddress: string;
     chainId: number;
+    nftId: string;
+    walletAddress: string;
+    payGasFeeToken: string;
+    liquidityProvider?: string;
+    metadata?: object;
   }) =>
     notusAPI.post("liquidity/collect", {
       json: params,
@@ -71,8 +96,17 @@ export const liquidityActions = {
    * Obtém quantidades de liquidez
    */
   getAmounts: (params: {
-    poolId: string;
-    walletAddress: string;
+    liquidityProvider?: string;
+    chainId: number;
+    token0: string;
+    token1: string;
+    poolFeePercent: number;
+    token0MaxAmount?: string;
+    token1MaxAmount?: string;
+    minPrice: number;
+    maxPrice: number;
+    payGasFeeToken: string;
+    gasFeePaymentMethod: string;
   }) =>
     notusAPI.get("liquidity/amounts", {
       searchParams: params,

@@ -1,0 +1,350 @@
+{
+  "statistics": {
+    "rangeInDays": 30,
+    "groupByInterval": "DAILY",
+    "poolId": "137-0x4ccd010148379ea531d6c587cfdd60180196f9b1",
+    "items": [
+      {
+        "timestamp": "2025-09-16T18:35:06.000Z",
+        "volumeInUSD": "445552.8810606537501837785",
+        "feesInUSD": "1338.61542091293670738977481206",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00022285741005132149",
+        "token0PerToken1Highest": "0.00022537120592451803",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "2071590.24881850096416463320917080766389625",
+        "transactionsCount": 489
+      },
+      {
+        "timestamp": "2025-09-17T18:35:08.000Z",
+        "volumeInUSD": "870919.91445571176080617104",
+        "feesInUSD": "2616.60886636281267543194018212",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00022365060192543759",
+        "token0PerToken1Highest": "0.00022452717071972822",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "2079798.20004899539502371823398784",
+        "transactionsCount": 778
+      },
+      {
+        "timestamp": "2025-09-18T18:34:18.000Z",
+        "volumeInUSD": "790008.11011877273316932275",
+        "feesInUSD": "2368.70272014095046847225516836",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00021690665328834079",
+        "token0PerToken1Highest": "0.0002252170277844711",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "2185585.73530061623342673899499921",
+        "transactionsCount": 875
+      },
+      {
+        "timestamp": "2025-09-19T18:35:08.000Z",
+        "volumeInUSD": "489506.32956103749809202068",
+        "feesInUSD": "1464.83040494881712177764522568",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00022458538888233274",
+        "token0PerToken1Highest": "0.00022458538888233274",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "2100630.28981635324177015016117353",
+        "transactionsCount": 556
+      },
+      {
+        "timestamp": "2025-09-20T18:22:34.000Z",
+        "volumeInUSD": "122374.55386024909240436853",
+        "feesInUSD": "367.4145088532138603880186019",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.0002230162584251281",
+        "token0PerToken1Highest": "0.00022472718376299271",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "2109065.7841260782521411137794486",
+        "transactionsCount": 179
+      },
+      {
+        "timestamp": "2025-09-21T18:31:06.000Z",
+        "volumeInUSD": "113838.56232842311739523942",
+        "feesInUSD": "342.02788416663505763224879732",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00022309170100655606",
+        "token0PerToken1Highest": "0.00022423335892193394",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "2119144.61448954777164870562429504",
+        "transactionsCount": 190
+      },
+      {
+        "timestamp": "2025-09-22T18:29:20.000Z",
+        "volumeInUSD": "2720098.71208559652631378073",
+        "feesInUSD": "8145.96258165452960164587970846",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00023995621085678776",
+        "token0PerToken1Highest": "0.00024408504403230967",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3365740.18788081780785642635536970329912036",
+        "transactionsCount": 999
+      },
+      {
+        "timestamp": "2025-09-23T18:34:57.000Z",
+        "volumeInUSD": "1416384.6685467768557272258",
+        "feesInUSD": "4255.4595092766310972813912146",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00024073827858928317",
+        "token0PerToken1Highest": "0.00024223220470202667",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3416511.15098828651649784189894228",
+        "transactionsCount": 927
+      },
+      {
+        "timestamp": "2025-09-24T18:26:13.000Z",
+        "volumeInUSD": "1191283.71892538897907684094",
+        "feesInUSD": "3578.86403617726889241673373058",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00023928123532276225",
+        "token0PerToken1Highest": "0.00024416358868923806",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3429746.81068120237603587986817186",
+        "transactionsCount": 702
+      },
+      {
+        "timestamp": "2025-09-25T18:30:10.000Z",
+        "volumeInUSD": "3280839.16236295104458557529",
+        "feesInUSD": "9811.42246404175772994654429232",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00025783146513810667",
+        "token0PerToken1Highest": "0.00026214066555934183",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3214002.81072489877709256363610922244819019",
+        "transactionsCount": 1760
+      },
+      {
+        "timestamp": "2025-09-26T18:19:21.000Z",
+        "volumeInUSD": "1825619.99212451307601996528",
+        "feesInUSD": "5473.50855748945836193144113176",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00024658549202060444",
+        "token0PerToken1Highest": "0.00025890792945862631",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3316161.6855522496512150457419146",
+        "transactionsCount": 1632
+      },
+      {
+        "timestamp": "2025-09-27T18:00:53.000Z",
+        "volumeInUSD": "485966.40774666593756685821",
+        "feesInUSD": "1458.05956598938983358181016045",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00025041436850919279",
+        "token0PerToken1Highest": "0.00025094340930362065",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3279210.5411518876034172896544434",
+        "transactionsCount": 337
+      },
+      {
+        "timestamp": "2025-09-28T18:31:49.000Z",
+        "volumeInUSD": "439675.62467816814953152478",
+        "feesInUSD": "1319.8691409763015362143646015",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00024755263596468954",
+        "token0PerToken1Highest": "0.00025136747850250159",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3298725.6792638845175358523247928",
+        "transactionsCount": 389
+      },
+      {
+        "timestamp": "2025-09-29T18:10:37.000Z",
+        "volumeInUSD": "1078689.56323529432579581068",
+        "feesInUSD": "3234.91836983510473164939619674",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00024116566958687764",
+        "token0PerToken1Highest": "0.00024755311770094424",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3363158.749526267102018680232584421605250611",
+        "transactionsCount": 646
+      },
+      {
+        "timestamp": "2025-09-30T18:25:09.000Z",
+        "volumeInUSD": "989978.52851351442500725524",
+        "feesInUSD": "2973.4059466674082213135499582",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00024356542216560148",
+        "token0PerToken1Highest": "0.00024372650790814599",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3351238.4891621448931308801496168",
+        "transactionsCount": 730
+      },
+      {
+        "timestamp": "2025-10-01T18:34:03.000Z",
+        "volumeInUSD": "1683312.10746876831890430397",
+        "feesInUSD": "5036.4227351372996504397585813",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00023242592355639055",
+        "token0PerToken1Highest": "0.00024356151937945491",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3410248.807573976366201256102863990302536625",
+        "transactionsCount": 1005
+      },
+      {
+        "timestamp": "2025-10-02T18:35:03.000Z",
+        "volumeInUSD": "1897934.1507238180007663755",
+        "feesInUSD": "5685.66431056172242935696632996",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00022318972689917108",
+        "token0PerToken1Highest": "0.00023251139540501936",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3486886.59209622401301697356948348",
+        "transactionsCount": 1095
+      },
+      {
+        "timestamp": "2025-10-03T18:34:08.000Z",
+        "volumeInUSD": "2392388.3396994170297893049",
+        "feesInUSD": "7187.81130101987867088038381162",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00022257496705160742",
+        "token0PerToken1Highest": "0.00022514805969929393",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3496072.73725514864237088301355148",
+        "transactionsCount": 1379
+      },
+      {
+        "timestamp": "2025-10-04T18:34:38.000Z",
+        "volumeInUSD": "722345.21385717856356625225",
+        "feesInUSD": "2169.83285163004973789903558725",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00022407193531377946",
+        "token0PerToken1Highest": "0.00022455530218823022",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3455932.03511372979721718883210087414028796",
+        "transactionsCount": 553
+      },
+      {
+        "timestamp": "2025-10-05T18:28:05.000Z",
+        "volumeInUSD": "1180324.75204173006555413195",
+        "feesInUSD": "3544.95554529957137050556116198",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00022156098433278584",
+        "token0PerToken1Highest": "0.00022407250644542432",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3458447.514451752775882370604647943048700125",
+        "transactionsCount": 673
+      },
+      {
+        "timestamp": "2025-10-06T18:34:34.000Z",
+        "volumeInUSD": "2568844.44567670185662014475",
+        "feesInUSD": "7702.122565496367485869149709",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00021289864395012386",
+        "token0PerToken1Highest": "0.0002235439483890501",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3490277.564551944972695829963026042055821792",
+        "transactionsCount": 917
+      },
+      {
+        "timestamp": "2025-10-07T18:28:58.000Z",
+        "volumeInUSD": "2288181.95362214067755357104",
+        "feesInUSD": "6850.98901316719839704013422792",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00022375650583669346",
+        "token0PerToken1Highest": "0.00022435927643910865",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3414746.37134345046286304451343704",
+        "transactionsCount": 1054
+      },
+      {
+        "timestamp": "2025-10-08T18:35:08.000Z",
+        "volumeInUSD": "1733746.13280647372433941666",
+        "feesInUSD": "5206.58667042207386307314903326",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00022044881447941701",
+        "token0PerToken1Highest": "0.00022595629805855546",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3450329.67642295339170743706271586",
+        "transactionsCount": 1417
+      },
+      {
+        "timestamp": "2025-10-09T18:31:29.000Z",
+        "volumeInUSD": "2066293.20848873115289215023",
+        "feesInUSD": "6185.52830100055478082515985623",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00023108095694717335",
+        "token0PerToken1Highest": "0.00023350029353031659",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3475925.097112019447460515166460622852450665",
+        "transactionsCount": 1276
+      },
+      {
+        "timestamp": "2025-10-10T18:34:52.000Z",
+        "volumeInUSD": "2340896.20380487485654736313",
+        "feesInUSD": "7002.19463648601202564973840474",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.000244567541901716",
+        "token0PerToken1Highest": "0.00024683253385951362",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3365660.00740245969897729542191796",
+        "transactionsCount": 1061
+      },
+      {
+        "timestamp": "2025-10-11T18:33:12.000Z",
+        "volumeInUSD": "6975907.04516288137735934018",
+        "feesInUSD": "20927.19817997635638405123536204",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00026161010009088906",
+        "token0PerToken1Highest": "0.00032497683596270412",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3155829.79536425148599514622382208",
+        "transactionsCount": 3452
+      },
+      {
+        "timestamp": "2025-10-12T18:32:29.000Z",
+        "volumeInUSD": "2606518.99699347203741025363",
+        "feesInUSD": "7799.0018335025005316910425902",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00024219372573286024",
+        "token0PerToken1Highest": "0.00027467534563695964",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3354055.726292615954340250151140894138803864",
+        "transactionsCount": 1777
+      },
+      {
+        "timestamp": "2025-10-13T18:33:23.000Z",
+        "volumeInUSD": "4045752.5165927820298905049",
+        "feesInUSD": "12150.30389055098486724340950578",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00023688719395280091",
+        "token0PerToken1Highest": "0.00024588405654239113",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3452532.26248579848791458028305404",
+        "transactionsCount": 1929
+      },
+      {
+        "timestamp": "2025-10-14T18:28:27.000Z",
+        "volumeInUSD": "4323257.9123440525922035663",
+        "feesInUSD": "12983.80574049563102551785194926",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00024243612651445262",
+        "token0PerToken1Highest": "0.00025601306565048156",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3416722.072920833773920488856695745312464144",
+        "transactionsCount": 1976
+      },
+      {
+        "timestamp": "2025-10-15T18:28:43.000Z",
+        "volumeInUSD": "3340867.84023800654539460576",
+        "feesInUSD": "10027.68704993559829424868589247",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00025045050403213363",
+        "token0PerToken1Highest": "0.00025357367470667172",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3479085.92482700847488298988026586",
+        "transactionsCount": 1680
+      },
+      {
+        "timestamp": "2025-10-16T09:50:09.000Z",
+        "volumeInUSD": "1467161.7677105575382553122",
+        "feesInUSD": "4407.48868856962892697166633089",
+        "token0PerToken1Opening": "0",
+        "token0PerToken1Closing": "0.00024794287468628037",
+        "token0PerToken1Highest": "0.00025346888421037053",
+        "token0PerToken1Lowest": "0",
+        "totalValueLockedInUSD": "3513908.01517556898536800775414089",
+        "transactionsCount": 804
+      }
+    ]
+  }
+}
