@@ -208,12 +208,29 @@ export function TokenSelector({
 
   // Auto-selecionar token quando disponível
   React.useEffect(() => {
+    console.log('🔍 DEBUG TokenSelector auto-select:', {
+      autoSelectSymbol,
+      selectedToken: selectedToken?.symbol,
+      tokensCount: tokensWithBalances.length,
+      availableTokens: tokensWithBalances.map(t => t.symbol).slice(0, 5)
+    });
+    
     if (autoSelectSymbol && !selectedToken && tokensWithBalances.length > 0) {
       const tokenToSelect = tokensWithBalances.find(token => 
         token.symbol.toLowerCase() === autoSelectSymbol.toLowerCase()
       );
+      
+      console.log('🔍 DEBUG TokenSelector search:', {
+        lookingFor: autoSelectSymbol,
+        found: tokenToSelect?.symbol,
+        allSymbols: tokensWithBalances.map(t => t.symbol)
+      });
+      
       if (tokenToSelect) {
+        console.log('✅ DEBUG TokenSelector auto-selecting:', tokenToSelect.symbol);
         onTokenSelect(tokenToSelect);
+      } else {
+        console.log('❌ DEBUG TokenSelector token not found:', autoSelectSymbol);
       }
     }
   }, [autoSelectSymbol, selectedToken, tokensWithBalances, onTokenSelect]);
