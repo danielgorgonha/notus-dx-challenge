@@ -38,6 +38,12 @@ export default function LiquidityPage() {
   const toast = useToast();
   
   const [currentView, setCurrentView] = useState<"pools" | "pool-details" | "add-liquidity">("pools");
+  
+  // Debug log para verificar o estado
+  console.log('🔍 DEBUG currentView:', currentView);
+  console.log('🔍 DEBUG poolsData:', poolsData);
+  console.log('🔍 DEBUG poolsLoading:', poolsLoading);
+  console.log('🔍 DEBUG poolsError:', poolsError);
   const [selectedPool, setSelectedPool] = useState<any>(null);
   const [sortBy, setSortBy] = useState<"rentabilidade" | "tvl" | "tarifa" | "volume">("rentabilidade");
   const [showSortModal, setShowSortModal] = useState(false);
@@ -63,22 +69,50 @@ export default function LiquidityPage() {
           perPage: 20,
           chainId: 137 // Polygon
         });
-        return response.pools || [];
+        console.log('🔍 DEBUG API Response:', response);
+        return response.pools || response.data || [];
       } catch (error) {
         console.error('Erro ao buscar pools:', error);
         // Fallback para dados mockados em caso de erro
         return [
           {
-            id: "usdc-link",
+            id: "usdc-usdt",
             protocol: "Uniswap V3",
-            tokenPair: "USDC.E/LINK",
-            token1: { symbol: "USDC.E", logo: "💙", color: "blue" },
-            token2: { symbol: "LINK", logo: "🔗", color: "blue" },
-            rentabilidade: "83,71% a.a.",
-            tvl: "$486.4 K",
-            tarifa: "0,30%",
-            volume24h: "$371.9 K",
-            composition: { usdc: "20,05%", link: "79,95%" }
+            tokenPair: "USDC/USDT",
+            token1: { symbol: "USDC", logo: "💙", color: "blue" },
+            token2: { symbol: "USDT", logo: "💚", color: "green" },
+            rentabilidade: "12.5%",
+            tvl: "$1.25M",
+            tarifa: "0.05%",
+            volume24h: "$850.0K",
+            composition: { usdc: "50%", usdt: "50%" },
+            userLiquidity: "-"
+          },
+          {
+            id: "brz-usdc",
+            protocol: "Uniswap V3",
+            tokenPair: "BRZ/USDC",
+            token1: { symbol: "BRZ", logo: "🇧🇷", color: "blue" },
+            token2: { symbol: "USDC", logo: "💙", color: "blue" },
+            rentabilidade: "8.3%",
+            tvl: "$450.0K",
+            tarifa: "0.30%",
+            volume24h: "$125.0K",
+            composition: { brz: "45%", usdc: "55%" },
+            userLiquidity: "-"
+          },
+          {
+            id: "wmatic-usdc",
+            protocol: "Uniswap V3",
+            tokenPair: "WMATIC/USDC",
+            token1: { symbol: "WMATIC", logo: "🔷", color: "purple" },
+            token2: { symbol: "USDC", logo: "💙", color: "blue" },
+            rentabilidade: "15.7%",
+            tvl: "$2.10M",
+            tarifa: "0.30%",
+            volume24h: "$1.25M",
+            composition: { wmatic: "40%", usdc: "60%" },
+            userLiquidity: "-"
           }
         ];
       }
@@ -280,7 +314,9 @@ export default function LiquidityPage() {
             <p className="text-slate-400 text-sm mt-1">Usando dados de exemplo</p>
           </div>
         ) : (
-          poolsData?.map((pool) => (
+          poolsData?.map((pool) => {
+            console.log('🔍 DEBUG Pool data:', pool);
+            return (
           <Card 
             key={pool.id}
             className="bg-slate-800/50 border-slate-700/50 rounded-xl cursor-pointer hover:bg-slate-700/30 transition-all duration-200"
@@ -327,7 +363,8 @@ export default function LiquidityPage() {
               </div>
             </CardContent>
           </Card>
-        ))
+            );
+          })
         )}
       </div>
     </div>
