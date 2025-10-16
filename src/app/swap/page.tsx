@@ -72,6 +72,9 @@ export default function SwapPage() {
   const [customSlippage, setCustomSlippage] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [tempSlippage, setTempSlippage] = useState(0.5);
+  const [isQuoteDetailsOpen, setIsQuoteDetailsOpen] = useState(false);
+  const [quoteTimer, setQuoteTimer] = useState(47); // Timer em segundos
+  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
 
   const walletAddress = wallet?.accountAbstraction;
 
@@ -165,6 +168,39 @@ export default function SwapPage() {
   // Buscar taxa USD/BRL ao carregar o componente
   useEffect(() => {
     fetchUSDBRLRate();
+  }, []);
+
+  // Timer dinâmico para atualização de preço
+  useEffect(() => {
+    if (quoteTimer > 0) {
+      const interval = setInterval(() => {
+        setQuoteTimer(prev => {
+          if (prev <= 1) {
+            // Timer chegou a zero, obter nova cotação
+            handleGetQuote();
+            return 47; // Reset para 47 segundos
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      setTimerInterval(interval);
+    }
+
+    return () => {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+    };
+  }, [quoteTimer]);
+
+  // Limpar timer ao desmontar componente
+  useEffect(() => {
+    return () => {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+    };
   }, []);
 
   // Validação automática de conversão fiat
@@ -443,6 +479,13 @@ export default function SwapPage() {
     return `${formatted} ${symbol}`;
   };
 
+  // Formatar timer para MM:SS
+  const formatTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   // Calcular valor em R$ baseado no preço do token
   const calculateFiatValue = (amount: string, token: any) => {
     if (!amount || !token || amount === "0") return 0;
@@ -676,18 +719,68 @@ export default function SwapPage() {
         </div>
       </div>
 
-      {/* Taxa de conversão - Só aparece quando há valor */}
-      {fromAmount && currentFromToken && (
+      {/* Taxa de conversão expandível - Estilo Chainless */}
+      {fromAmount && currentFromToken && currentToToken && (
         <div className="bg-slate-800/50 rounded-lg p-4">
-          <div className="flex items-center justify-between">
+          <div 
+            className="flex items-center justify-between cursor-pointer"
+            onClick={() => setIsQuoteDetailsOpen(!isQuoteDetailsOpen)}
+          >
             <span className="text-white font-medium">
-              {currentToToken ? 
-                `1 ${currentToToken.symbol} = ${exchangeRate.toFixed(3)} ${currentFromToken.symbol} (${formatFiatAmount(calculateFiatValue("1", currentToToken))})` :
-                `Taxa de conversão será calculada quando selecionar o token de destino`
-              }
+              1 {currentToToken.symbol} = {exchangeRate.toFixed(3)} {currentFromToken.symbol} ({formatFiatAmount(calculateFiatValue("1", currentToToken))})
             </span>
-            <ChevronDown className="h-4 w-4 text-slate-400" />
+            <ChevronDown 
+              className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
+                isQuoteDetailsOpen ? 'rotate-180' : ''
+              }`} 
+            />
           </div>
+          
+          {/* Detalhes expandíveis */}
+          {isQuoteDetailsOpen && (
+            <div className="mt-4 space-y-3 pt-4 border-t border-slate-700">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Câmbio:</span>
+                <span className="text-white">1 {currentToToken.symbol} = {(exchangeRate * 0.99).toFixed(3)} {currentFromToken.symbol}</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Impacto no Preço:</span>
+                <span className="text-red-400">-9,69%</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Tolerância a Slippage:</span>
+                <span className="text-yellow-400">{slippage}%</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Taxa da rede (gas):</span>
+                <div className="text-right">
+                  <span className="text-white">0,0427 {currentFromToken.symbol}</span>
+                  <p className="text-slate-400 text-xs">R$0,04</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Taxa da Chainless:</span>
+                <div className="text-right">
+                  <span className="text-white">0,100 {currentFromToken.symbol}</span>
+                  <p className="text-slate-400 text-xs">R$0,10</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Tipo de transação:</span>
+                <span className="text-white">Swap</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Provedor:</span>
+                <span className="text-white">ODOS</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -701,7 +794,7 @@ export default function SwapPage() {
                 O preço efetivo será atualizado em:
               </span>
             </div>
-            <span className="text-yellow-400 font-mono text-sm">00:47</span>
+            <span className="text-yellow-400 font-mono text-sm">{formatTimer(quoteTimer)}</span>
           </div>
           
           <Button
@@ -855,7 +948,7 @@ export default function SwapPage() {
               O preço efetivo será atualizado em:
             </span>
           </div>
-          <span className="text-yellow-400 font-mono text-sm">00:30</span>
+          <span className="text-yellow-400 font-mono text-sm">{formatTimer(quoteTimer)}</span>
         </div>
       </div>
 
