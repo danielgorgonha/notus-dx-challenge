@@ -773,7 +773,12 @@ export default function SwapPage() {
               
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Impacto no Preço:</span>
-                <span className="text-red-400">-9,69%</span>
+                <span className="text-red-400">
+                  {quote?.estimatedCollectedFee?.collectedFeePercent ? 
+                    `-${(parseFloat(quote.estimatedCollectedFee.collectedFeePercent) * 100).toFixed(2)}%` : 
+                    '-9,69%'
+                  }
+                </span>
               </div>
               
               <div className="flex items-center justify-between">
@@ -784,16 +789,36 @@ export default function SwapPage() {
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Taxa da rede (gas):</span>
                 <div className="text-right">
-                  <span className="text-white">0,0427 {currentFromToken.symbol}</span>
-                  <p className="text-slate-400 text-xs">R$0,04</p>
+                  <span className="text-white">
+                    {quote?.estimatedGasFees?.gasFeeTokenAmount ? 
+                      `${parseFloat(quote.estimatedGasFees.gasFeeTokenAmount).toFixed(4)} ${currentFromToken.symbol}` : 
+                      `0,0427 ${currentFromToken.symbol}`
+                    }
+                  </span>
+                  <p className="text-slate-400 text-xs">
+                    {quote?.estimatedGasFees?.gasFeeTokenAmountUSD ? 
+                      `R$${parseFloat(quote.estimatedGasFees.gasFeeTokenAmountUSD).toFixed(2)}` : 
+                      'R$0,04'
+                    }
+                  </p>
                 </div>
               </div>
               
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Taxa da Chainless:</span>
                 <div className="text-right">
-                  <span className="text-white">0,100 {currentFromToken.symbol}</span>
-                  <p className="text-slate-400 text-xs">R$0,10</p>
+                  <span className="text-white">
+                    {quote?.estimatedCollectedFee?.notusCollectedFee ? 
+                      `${parseFloat(quote.estimatedCollectedFee.notusCollectedFee).toFixed(3)} ${currentFromToken.symbol}` : 
+                      `0,100 ${currentFromToken.symbol}`
+                    }
+                  </span>
+                  <p className="text-slate-400 text-xs">
+                    {quote?.estimatedCollectedFee?.notusCollectedFeePercent ? 
+                      `R$${(parseFloat(quote.estimatedCollectedFee.notusCollectedFee) * parseFloat(quote.estimatedGasFees?.gasFeeTokenAmount || '1')).toFixed(2)}` : 
+                      'R$0,10'
+                    }
+                  </p>
                 </div>
               </div>
               
@@ -804,7 +829,7 @@ export default function SwapPage() {
               
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Provedor:</span>
-                <span className="text-white">ODOS</span>
+                <span className="text-white">{quote?.swapProvider || 'ODOS'}</span>
               </div>
             </div>
           )}
