@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,7 +81,6 @@ export default function SwapPage() {
   const [isFromTokenDetailsOpen, setIsFromTokenDetailsOpen] = useState(false);
   const [isToTokenDetailsOpen, setIsToTokenDetailsOpen] = useState(false);
   const [quoteTimer, setQuoteTimer] = useState(47); // Timer em segundos
-  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
   
   // Estado para taxa USD/BRL
   const [usdBRLRate, setUsdBRLRate] = useState(5.45); // Valor padrão
@@ -199,7 +198,8 @@ export default function SwapPage() {
     isValidAmount(fromAmount) && currentFromToken.symbol !== currentToToken.symbol;
 
   // Declarar handleGetQuote antes de usar no useEffect
-  const handleGetQuote = React.useCallback(async () => {
+  const handleGetQuote = React.useCallback(async (isAutoRefresh = false) => {
+    
     // Verificar se há dados mínimos para executar a cotação
     if (!walletAddress) {
       console.log('🔍 DEBUG handleGetQuote: Wallet não conectada');
@@ -262,11 +262,19 @@ export default function SwapPage() {
       setToAmount(quote.minAmountOut);
       setCurrentStep("preview");
       
-      toast.success(
-        'Cotação Gerada',
-        'Cotação de swap criada com sucesso!',
-        3000
-      );
+      if (isAutoRefresh) {
+        toast.success(
+          'Preço Atualizado',
+          'Nova cotação obtida automaticamente!',
+          2000
+        );
+      } else {
+        toast.success(
+          'Cotação Gerada',
+          'Cotação de swap criada com sucesso!',
+          3000
+        );
+      }
     } catch (error) {
       console.error("❌ Erro ao obter cotação:", error);
       toast.error(
@@ -279,43 +287,82 @@ export default function SwapPage() {
     }
   }, [canProceed, walletAddress, fromAmount, currentFromToken, currentToToken, slippage, toast]);
 
-  // Timer dinâmico para atualização de preço
+  // Wrapper para uso como onClick handler
+  const handleGetQuoteClick = () => {
+    handleGetQuote(false); // false = manual click
+  };
+
+  // Ref para manter referência estável do handleGetQuote
+  const handleGetQuoteRef = useRef(handleGetQuote);
+  handleGetQuoteRef.current = handleGetQuote;
+
+  // Ref para controlar o timer
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isTimerActiveRef = useRef(false);
+
+  // Memoizar dados do timer para evitar re-renders desnecessários
+  const timerData = useMemo(() => ({
+    walletAddress,
+    currentFromToken,
+    currentToToken,
+    fromAmount
+  }), [walletAddress, currentFromToken, currentToToken, fromAmount]);
+
+  // Timer de contagem regressiva - independente das dependências
   useEffect(() => {
-    // Limpar timer anterior se existir
-    if (timerInterval) {
-      clearInterval(timerInterval);
-    }
+    if (!isTimerActiveRef.current) return;
 
-    if (quoteTimer > 0) {
-      const interval = setInterval(() => {
-        setQuoteTimer(prev => {
-          if (prev <= 1) {
-            // Timer chegou a zero, obter nova cotação
-            // Usar setTimeout para evitar chamada durante renderização
-            setTimeout(() => {
-              handleGetQuote();
-            }, 0);
-            return 47; // Reset para 47 segundos
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    const interval = setInterval(() => {
+      setQuoteTimer(prev => {
+        if (prev <= 1) {
+          // Timer chegou a zero, obter nova cotação
+          console.log('🔄 Timer chegou a zero, obter nova cotação');
+          setTimeout(() => {
+            if (timerData.walletAddress && timerData.currentFromToken && timerData.currentToToken && timerData.fromAmount) {
+              handleGetQuoteRef.current(true); // true = auto refresh
+              console.log('🔄 Nova cotação obtida automaticamente');
+            }
+          }, 0);
+          return 47; // Reset para 47 segundos
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-      setTimerInterval(interval);
-    }
+    timerRef.current = interval;
 
     return () => {
-      if (timerInterval) {
-        clearInterval(timerInterval);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
       }
     };
-  }, [quoteTimer]); // Remover handleGetQuote das dependências para evitar loop
+  }, [timerData]);
+
+  // Controle de criação/pausa do timer
+  useEffect(() => {
+    // Limpar timer anterior
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    // Verificar se deve iniciar timer
+    if (walletAddress && currentFromToken && currentToToken && fromAmount) {
+      isTimerActiveRef.current = true;
+      console.log('🔄 Timer iniciado - condições válidas');
+    } else {
+      isTimerActiveRef.current = false;
+      console.log('⏸️ Timer pausado - condições não atendidas');
+    }
+  }, [walletAddress, currentFromToken, currentToToken, fromAmount]);
 
   // Limpar timer ao desmontar componente
   useEffect(() => {
     return () => {
-      if (timerInterval) {
-        clearInterval(timerInterval);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
       }
     };
   }, []);
@@ -815,7 +862,7 @@ export default function SwapPage() {
           </div>
           
           <Button
-            onClick={handleGetQuote}
+            onClick={handleGetQuoteClick}
             disabled={!canProceed || isLoading}
             className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
