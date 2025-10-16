@@ -323,7 +323,7 @@ export function TokenSelector({
           setIsOpen(!isOpen);
         }}
         variant="outline"
-        className={`${compact ? 'px-3 py-2 h-auto' : 'w-full justify-between p-3 h-auto'} bg-slate-800/50 border-slate-600 hover:bg-slate-700/50`}
+        className={`${compact ? 'px-3 py-2 h-auto w-[120px]' : 'justify-between p-3 h-auto w-[calc(100%+4px)]'} bg-slate-800/50 border-slate-600 hover:bg-slate-700/50`}
       >
         <div className={`flex items-center ${compact ? 'space-x-2' : 'space-x-3'}`}>
           {selectedToken ? (
