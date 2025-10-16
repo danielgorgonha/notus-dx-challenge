@@ -57,7 +57,7 @@ export default function ProfilePage() {
         description="Gerencie suas configurações e informações"
       >
 
-        <div className="space-y-6 max-w-4xl mx-auto">
+        <div className="space-y-8 max-w-4xl mx-auto">
           {/* Info do Usuário */}
           <Card className="bg-slate-800/50 border-slate-700/50 rounded-xl">
             <CardHeader className="pb-4">
@@ -126,22 +126,23 @@ export default function ProfilePage() {
                 Configurações
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent>
+              {/* Verificação KYC */}
               <Button
                 onClick={() => router.push('/profile/kyc')}
-                className="w-full flex items-center justify-between p-4 bg-slate-700/30 hover:bg-slate-700/50 border border-slate-600/50 rounded-lg text-left transition-all duration-200 group"
+                className="w-full flex items-center justify-between p-8 bg-slate-700/20 hover:bg-slate-700/40 border border-slate-600/30 hover:border-slate-500/50 rounded-xl text-left transition-all duration-300 group hover:shadow-lg hover:shadow-yellow-400/10"
                 variant="ghost"
               >
                 <div className="flex items-center">
-                  <div className="w-10 h-10 rounded-full border-2 border-yellow-400/50 bg-yellow-400/10 flex items-center justify-center mr-4 group-hover:bg-yellow-400/20 transition-all duration-200">
-                    <Shield className="h-5 w-5 text-yellow-400" />
+                  <div className="w-12 h-12 rounded-full border-2 border-yellow-400/60 bg-yellow-400/15 flex items-center justify-center mr-5 group-hover:bg-yellow-400/25 group-hover:border-yellow-400/80 transition-all duration-300 group-hover:scale-105">
+                    <Shield className="h-6 w-6 text-yellow-400 group-hover:text-yellow-300 transition-colors duration-300" />
                   </div>
                   <div>
-                    <div className="text-white font-semibold text-lg">Verificação KYC</div>
-                    <div className="text-slate-400 text-sm">Verificar identidade e aumentar limites</div>
+                    <div className="text-white font-semibold text-lg group-hover:text-yellow-50 transition-colors duration-300">Verificação KYC</div>
+                    <div className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors duration-300">Verificar identidade e aumentar limites</div>
                   </div>
                 </div>
-                <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-white transition-colors duration-200" />
+                <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-yellow-400 group-hover:translate-x-1 transition-all duration-300" />
               </Button>
             </CardContent>
           </Card>

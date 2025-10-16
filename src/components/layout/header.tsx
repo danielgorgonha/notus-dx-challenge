@@ -67,7 +67,6 @@ export function Header({ title, description, onMenuClick }: HeaderProps) {
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  <ChevronRight className="h-4 w-4" />
                   <LogOut className="h-4 w-4" />
                 </>
               )}
