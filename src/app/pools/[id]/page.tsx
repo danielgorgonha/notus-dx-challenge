@@ -3,7 +3,10 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { notusAPI } from '@/lib/api/client';
+import { liquidityActions } from '@/lib/actions/liquidity';
 import { Card, CardContent } from '@/components/ui/card';
+import { calculatePoolRentability } from '@/lib/utils/rentability-calculator';
+import { usePoolHistoricalData } from '@/hooks/use-pool-historical-data';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ExternalLink, Info, TrendingUp, DollarSign, BarChart3, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
@@ -36,6 +39,10 @@ export default function PoolDetailsPage() {
   const router = useRouter();
   const poolId = params.id as string;
 
+  // Buscar dados históricos para cálculo preciso de rentabilidade
+  // Endpoint 3: GET /liquidity/pools/{id}/historical-data
+  const { data: historicalData, isLoading: historicalLoading } = usePoolHistoricalData(poolId || '', 365);
+
   // Query para buscar detalhes do pool
   const { data: poolData, isLoading, error } = useQuery<PoolDetails>({
     queryKey: ['pool-details', poolId],
@@ -43,8 +50,9 @@ export default function PoolDetailsPage() {
       console.log('🔍 Buscando detalhes do pool:', poolId);
       
       try {
-        // Fazer chamada direta para a API da Notus com o endpoint correto
-        const response = await notusAPI.get(`liquidity/pools/${poolId}?rangeInDays=30`).json();
+        // Endpoint 2: GET /liquidity/pools/{id} - Detalhes do pool
+        console.log('🚀 Chamando API da Notus - Endpoint: GET /liquidity/pools/{id}');
+        const response = await liquidityActions.getPool(poolId, 365);
         console.log('✅ Resposta da API para detalhes do pool:', response);
         console.log('📊 Tipo da resposta:', typeof response);
         console.log('📊 Chaves da resposta:', Object.keys(response || {}));
@@ -170,32 +178,70 @@ export default function PoolDetailsPage() {
   const formatValue = (value: number) => {
     if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
     if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
-    return `$${value.toFixed(2)}`;
+    if (value >= 1) return `$${value.toFixed(2)}`;
+    if (value >= 0.01) return `$${value.toFixed(4)}`;
+    if (value >= 0.0001) return `$${value.toFixed(6)}`;
+    if (value > 0) return `$${value.toFixed(8)}`;
+    return `$0.00`;
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(value);
+    if (value >= 1) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value);
+    } else if (value >= 0.01) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
+      }).format(value);
+    } else if (value > 0) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 6,
+        maximumFractionDigits: 6,
+      }).format(value);
+    }
+    return '$0.00';
   };
 
-  // Calcular APR baseado nos dados reais
+  // Calcular APR usando dados históricos reais da API da Notus
   const calculateAPR = () => {
     if (!poolData) return 0;
     
-    const tvl = poolData.totalValueLockedUSD;
-    const volume24h = poolData.stats?.volumeInUSD || 0;
-    const fee = poolData.fee;
-    
-    if (tvl > 0 && volume24h > 0) {
-      const dailyFees = volume24h * (fee / 100);
-      const annualFees = dailyFees * 365;
-      return (annualFees / tvl) * 100;
+    // Priorizar dados históricos se disponíveis
+    if (historicalData && typeof historicalData === 'object' && 'apr' in historicalData) {
+      const apr = (historicalData as any).apr;
+      if (apr > 0) {
+        console.log('💰 Usando dados históricos da API Notus para cálculo de APR:', {
+          apr: apr,
+          totalFees: (historicalData as any).totalFees,
+          totalVolume: (historicalData as any).totalVolume,
+          daysWithData: (historicalData as any).daysWithData,
+          source: 'Notus API - historical-data endpoint'
+        });
+        return apr;
+      }
     }
     
-    return 0;
+    // Fallback para dados agregados
+    const rentability = calculatePoolRentability(poolData);
+    
+    console.log('💰 Rentabilidade calculada com fallback:', {
+      apr: rentability.apr,
+      method: rentability.calculationMethod,
+      totalFees: rentability.totalFees,
+      totalVolume: rentability.totalVolume,
+      daysWithData: rentability.daysWithData
+    });
+    
+    return rentability.apr;
   };
 
   const apr = calculateAPR();
@@ -428,8 +474,15 @@ export default function PoolDetailsPage() {
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Protocolo</span>
                 <div className="flex items-center space-x-2">
-                  <span className="text-white">{String(poolData.provider || 'Unknown')}</span>
-                  <ExternalLink className="h-4 w-4 text-slate-400" />
+                  <a 
+                    href="https://app.uniswap.org/explore/pools/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-white hover:text-blue-400 transition-colors flex items-center space-x-2"
+                  >
+                    <span>{String(poolData.provider || 'Unknown')}</span>
+                    <ExternalLink className="h-4 w-4 text-slate-400 hover:text-blue-400" />
+                  </a>
                 </div>
               </div>
               
@@ -439,7 +492,15 @@ export default function PoolDetailsPage() {
                   <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center">
                     <span className="text-xs">∞</span>
                   </div>
-                  <span className="text-white">{poolData.chain}</span>
+                  <a 
+                    href="https://polygonscan.com/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-white hover:text-blue-400 transition-colors flex items-center space-x-2"
+                  >
+                    <span>{poolData.chain}</span>
+                    <ExternalLink className="h-4 w-4 text-slate-400 hover:text-blue-400" />
+                  </a>
                 </div>
               </div>
               
@@ -447,7 +508,13 @@ export default function PoolDetailsPage() {
                 <span className="text-slate-400">Par de tokens</span>
                 <div className="flex items-center space-x-2">
                   {poolData.tokens.map((token, index) => (
-                    <div key={index} className="flex items-center space-x-1">
+                    <a 
+                      key={index}
+                      href={`https://polygonscan.com/token/${token.address}`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-1 hover:opacity-80 transition-opacity"
+                    >
                       <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center">
                         {token.logo && (token.logo.startsWith('http') || token.logo.startsWith('data:')) ? (
                           <img src={token.logo} alt={String(token.symbol || `TOKEN${index + 1}`)} className="w-3 h-3 rounded-full" />
@@ -456,8 +523,8 @@ export default function PoolDetailsPage() {
                         )}
                       </div>
                       <span className="text-white text-sm">{String(token.symbol || `TOKEN${index + 1}`)}</span>
-                      <ExternalLink className="h-3 w-3 text-slate-400" />
-                    </div>
+                      <ExternalLink className="h-3 w-3 text-slate-400 hover:text-blue-400" />
+                    </a>
                   ))}
                 </div>
               </div>
@@ -465,8 +532,15 @@ export default function PoolDetailsPage() {
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Contrato da Pool</span>
                 <div className="flex items-center space-x-2">
-                  <span className="text-white text-sm">{poolData.address}</span>
-                  <ExternalLink className="h-4 w-4 text-slate-400" />
+                  <a 
+                    href={`https://polygonscan.com/address/${poolData.address}`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-white hover:text-blue-400 transition-colors flex items-center space-x-2"
+                  >
+                    <span className="text-sm font-mono">{poolData.address.slice(0, 6)}...{poolData.address.slice(-4)}</span>
+                    <ExternalLink className="h-4 w-4 text-slate-400 hover:text-blue-400" />
+                  </a>
                 </div>
               </div>
             </div>

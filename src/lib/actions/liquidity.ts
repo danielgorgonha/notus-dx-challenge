@@ -29,8 +29,8 @@ export const liquidityActions = {
   /**
    * Obtém detalhes de um pool específico
    */
-  getPool: (poolId: string) =>
-    notusAPI.get(`liquidity/pools/${poolId}`).json(),
+  getPool: (poolId: string, rangeInDays: number = 365) =>
+    notusAPI.get(`liquidity/pools/${poolId}?rangeInDays=${rangeInDays}`).json(),
 
   /**
    * Cria liquidez em um pool
