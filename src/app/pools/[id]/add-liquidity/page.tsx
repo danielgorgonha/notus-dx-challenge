@@ -171,7 +171,15 @@ export default function AddLiquidityPage() {
   const handleNext = () => {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
+    } else {
+      // Finalizar processo
+      console.log('Processo de adição de liquidez finalizado');
+      router.push(`/pools/${poolId}`);
     }
+  };
+
+  const isStep1Valid = () => {
+    return minPrice > 0 && maxPrice > 0 && minPrice < maxPrice && selectedToken;
   };
 
   const handleBack = () => {
@@ -188,6 +196,30 @@ export default function AddLiquidityPage() {
       setMinPrice(prev => direction === 'up' ? prev + step : prev - step);
     } else {
       setMaxPrice(prev => direction === 'up' ? prev + step : prev - step);
+    }
+  };
+
+  const handlePriceRangeSelect = (range: string) => {
+    setPriceRange(range as any);
+    const currentPrice = 0.0555;
+    
+    switch (range) {
+      case '± 10%':
+        setMinPrice(currentPrice * 0.9);
+        setMaxPrice(currentPrice * 1.1);
+        break;
+      case '± 15%':
+        setMinPrice(currentPrice * 0.85);
+        setMaxPrice(currentPrice * 1.15);
+        break;
+      case '± 20%':
+        setMinPrice(currentPrice * 0.8);
+        setMaxPrice(currentPrice * 1.2);
+        break;
+      case 'Total':
+        setMinPrice(0.001);
+        setMaxPrice(1.0);
+        break;
     }
   };
 
@@ -341,7 +373,7 @@ export default function AddLiquidityPage() {
                   key={range}
                   variant="outline"
                   size="sm"
-                  onClick={() => setPriceRange(range as any)}
+                  onClick={() => handlePriceRangeSelect(range)}
                   className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                     priceRange === range 
                       ? "bg-yellow-500 text-black border-yellow-500 hover:bg-yellow-600 shadow-lg" 
@@ -451,29 +483,159 @@ export default function AddLiquidityPage() {
               <div className="text-white text-lg font-bold">{poolData.fee}%</div>
             </div>
           </div>
+
+          {/* Validation Message */}
+          {currentStep === 1 && !isStep1Valid() && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <span className="text-red-400 text-sm">
+                  Por favor, configure os preços mínimo e máximo válidos
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
   );
 
   const renderStep2 = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-white text-xl font-bold mb-2">Etapa 2</h2>
-        <p className="text-slate-400">Configuração de valores</p>
-      </div>
-      {/* Conteúdo da etapa 2 será implementado */}
-    </div>
+    <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
+      <CardContent className="p-6">
+        <div className="space-y-6">
+          <div className="text-center">
+            <h2 className="text-white text-xl font-bold mb-2">Configuração de Valores</h2>
+            <p className="text-slate-400">Defina os valores que deseja adicionar à liquidez</p>
+          </div>
+
+          {/* Token Amount Inputs */}
+          <div className="space-y-4">
+            <div className="bg-slate-700/50 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-400 text-sm">Valor em {selectedToken}</span>
+                <span className="text-slate-400 text-sm">Saldo: 1,000.00</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  className="flex-1 bg-transparent text-white text-lg font-mono border-none outline-none"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+                >
+                  MAX
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-slate-700/50 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-400 text-sm">Valor em {selectedToken === 'USDC.E' ? 'LINK' : 'USDC.E'}</span>
+                <span className="text-slate-400 text-sm">Saldo: 500.00</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  className="flex-1 bg-transparent text-white text-lg font-mono border-none outline-none"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+                >
+                  MAX
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Summary */}
+          <div className="bg-slate-700/30 rounded-lg p-4">
+            <h3 className="text-white font-medium mb-3">Resumo da Posição</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-400">Preço mínimo:</span>
+                <span className="text-white">{minPrice.toFixed(8)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Preço máximo:</span>
+                <span className="text-white">{maxPrice.toFixed(8)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Taxa:</span>
+                <span className="text-white">{poolData.fee}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 
   const renderStep3 = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-white text-xl font-bold mb-2">Etapa 3</h2>
-        <p className="text-slate-400">Confirmação e transação</p>
-      </div>
-      {/* Conteúdo da etapa 3 será implementado */}
-    </div>
+    <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
+      <CardContent className="p-6">
+        <div className="space-y-6">
+          <div className="text-center">
+            <h2 className="text-white text-xl font-bold mb-2">Confirmação</h2>
+            <p className="text-slate-400">Revise os detalhes antes de confirmar</p>
+          </div>
+
+          {/* Transaction Details */}
+          <div className="space-y-4">
+            <div className="bg-slate-700/30 rounded-lg p-4">
+              <h3 className="text-white font-medium mb-3">Detalhes da Transação</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Par de tokens:</span>
+                  <span className="text-white">{String(poolData.tokens?.[0]?.symbol || 'TOKEN1')}/{String(poolData.tokens?.[1]?.symbol || 'TOKEN2')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Preço mínimo:</span>
+                  <span className="text-white">{minPrice.toFixed(8)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Preço máximo:</span>
+                  <span className="text-white">{maxPrice.toFixed(8)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Taxa:</span>
+                  <span className="text-white">{poolData.fee}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Rede:</span>
+                  <span className="text-white">{poolData.chain}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Gas Fee */}
+            <div className="bg-slate-700/30 rounded-lg p-4">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Taxa de gás estimada:</span>
+                <span className="text-white">~$2.50</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Warning */}
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+            <div className="flex items-start space-x-2">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
+              <div className="text-yellow-400 text-sm">
+                <p className="font-medium mb-1">Atenção:</p>
+                <p>Certifique-se de que os preços estão corretos. Uma vez confirmada, a transação não pode ser desfeita.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 
   return (
@@ -532,10 +694,15 @@ export default function AddLiquidityPage() {
             <div className="flex justify-end">
               <Button
                 onClick={handleNext}
-                className="bg-yellow-500 text-black hover:bg-yellow-600 px-6 py-3 rounded-lg"
-                disabled={currentStep === 3}
+                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  currentStep === 1 && !isStep1Valid()
+                    ? "bg-slate-600 text-slate-400 cursor-not-allowed"
+                    : "bg-yellow-500 text-black hover:bg-yellow-600 shadow-lg"
+                }`}
+                disabled={currentStep === 1 && !isStep1Valid()}
               >
-                <ArrowRight className="w-5 h-5" />
+                {currentStep === 3 ? 'Finalizar' : 'Próximo'}
+                <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
           </div>
