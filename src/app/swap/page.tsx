@@ -464,18 +464,21 @@ export default function SwapPage() {
     
     // Validação específica para BRZ (token brasileiro)
     if (token.symbol.toLowerCase() === 'brz') {
-      // BRZ já deve vir em R$ da API
-      console.log('🔍 DEBUG BRZ: Using API price:', price);
+      // BRZ sempre deve ser 1:1 (1 BRZ = R$ 1,00)
+      price = 1.0; // 1 BRZ = R$ 1,00
+      console.log('🔍 DEBUG BRZ: Using 1:1 rate (1 BRZ = R$ 1,00):', price);
     }
     
+    const result = numAmount * price;
     console.log('🔍 DEBUG calculateFiatValue:', {
       token: token.symbol,
       amount: numAmount,
       price: price,
-      result: numAmount * price
+      result: result,
+      formatted: formatFiatAmount(result)
     });
     
-    return numAmount * price;
+    return result;
   };
 
   // Estado para taxa USD/BRL
@@ -664,7 +667,7 @@ export default function SwapPage() {
           {/* Valor em R$ e saldo */}
           <div className="flex items-center justify-between">
             <div className="text-slate-400 text-sm">
-              {fromAmount ? "Calculado automaticamente" : `~${formatFiatAmount(calculateFiatValue(toAmount, currentToToken))}`}
+              {fromAmount ? `~${formatFiatAmount(calculateFiatValue(toAmount, currentToToken))}` : `~${formatFiatAmount(calculateFiatValue(toAmount, currentToToken))}`}
             </div>
             <div className="text-slate-400 text-sm">
               Saldo: {formatBalance(currentToToken?.balance || "0", currentToToken?.symbol || "TOKEN", currentToToken?.decimals)}
