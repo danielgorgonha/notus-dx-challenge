@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { notusAPI } from '@/lib/api/client';
@@ -11,6 +11,29 @@ import { ArrowLeft, ArrowRight, RefreshCw, ZoomOut, ZoomIn, Plus, Info, Trending
 import { AppLayout } from '@/components/layout/app-layout';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine } from 'recharts';
+
+// Função para processar dados dos tokens (movida para fora do componente)
+const processTokensData = (tokens: any[], walletBalances?: {[key: string]: number}) => {
+  const result: {[key: string]: any} = {};
+  
+  tokens.forEach(token => {
+    const symbol = token.symbol.toUpperCase();
+    if (symbol === 'USDC' || symbol === 'BRZ') {
+      result[symbol] = {
+        symbol: token.symbol,
+        name: token.name,
+        address: token.address,
+        decimals: token.decimals,
+        logo: token.logo,
+        balance: walletBalances?.[symbol] || (symbol === 'USDC' ? 1000.00 : 25.00),
+        chain: token.chain
+      };
+    }
+  });
+
+  console.log('🎯 Tokens processados:', result);
+  return result;
+};
 
 interface Token {
   symbol: string;
@@ -46,6 +69,13 @@ export default function AddLiquidityPage() {
   const [maxPrice, setMaxPrice] = useState(0.06111094);
   const [selectedToken, setSelectedToken] = useState<'USDC.E' | 'LINK'>('USDC.E');
   const [priceRange, setPriceRange] = useState<'± 10%' | '± 15%' | '± 20%' | 'Total' | null>(null);
+  const [selectedInputToken, setSelectedInputToken] = useState<'USDC' | 'BRZ' | null>(null);
+  const [inputAmount, setInputAmount] = useState<string>('');
+  const [countdown, setCountdown] = useState(117); // 1:57 em segundos
+  const [tokenBalances, setTokenBalances] = useState<{[key: string]: number}>({
+    USDC: 1000.00,
+    BRZ: 25.00
+  });
 
   // Dados mock para o gráfico
   const chartData = [
@@ -61,6 +91,96 @@ export default function AddLiquidityPage() {
     { date: '05/10/2025', price: 0.055 },
     { date: '06/10/2025', price: 0.055 }
   ];
+
+  // Query para buscar tokens da Polygon
+  const { data: polygonTokens, isLoading: tokensLoading, error: tokensError } = useQuery({
+    queryKey: ['polygon-tokens'],
+    queryFn: async () => {
+      console.log('🔍 Buscando tokens USDC e BRZ na Polygon...');
+      
+      try {
+        // Tentativa 1: Busca múltipla (USDC,BRZ)
+        try {
+          const multiSearchResponse = await fetch('/api/crypto/tokens?search=USDC,BRZ&filterByChainId=137&filterWhitelist=false&page=1&perPage=100');
+          if (multiSearchResponse.ok) {
+            const multiData = await multiSearchResponse.json();
+            console.log('✅ Busca múltipla bem-sucedida:', multiData);
+            return processTokensData(multiData.tokens, walletBalances);
+          }
+        } catch (error) {
+          console.log('⚠️ Busca múltipla falhou, tentando buscas separadas...');
+        }
+
+        // Tentativa 2: Buscas separadas
+        console.log('🔄 Executando buscas separadas para USDC e BRZ...');
+        const [usdcResponse, brzResponse] = await Promise.all([
+          fetch('/api/crypto/tokens?search=USDC&filterByChainId=137&filterWhitelist=false&page=1&perPage=100'),
+          fetch('/api/crypto/tokens?search=BRZ&filterByChainId=137&filterWhitelist=false&page=1&perPage=100')
+        ]);
+
+        const [usdcData, brzData] = await Promise.all([
+          usdcResponse.json(),
+          brzResponse.json()
+        ]);
+
+        console.log('📊 Dados USDC:', usdcData);
+        console.log('📊 Dados BRZ:', brzData);
+
+        const allTokens = [...usdcData.tokens, ...brzData.tokens];
+        return processTokensData(allTokens, walletBalances);
+
+      } catch (error) {
+        console.error('❌ Erro ao buscar tokens:', error);
+        // Fallback para dados mock em caso de erro
+        return {
+          USDC: {
+            symbol: 'USDC',
+            name: 'USD Coin',
+            address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
+            decimals: 6,
+            logo: 'https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png',
+            balance: 1000.00
+          },
+          BRZ: {
+            symbol: 'BRZ',
+            name: 'Brazilian Digital Token',
+            address: '0x4e0603e2a27a30480e5e3a4fe548e29ef12f64be',
+            decimals: 4,
+            logo: 'https://assets.coingecko.com/coins/images/10119/large/brz.png',
+            balance: 25.00
+          }
+        };
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+  });
+
+  // Query para buscar saldos da smart wallet
+  const { data: walletBalances, isLoading: balancesLoading } = useQuery({
+    queryKey: ['wallet-balances'],
+    queryFn: async () => {
+      console.log('💰 Buscando saldos da smart wallet...');
+      
+      try {
+        // TODO: Implementar endpoint real para saldos da smart wallet
+        // Por enquanto, usando dados mock
+        return {
+          USDC: 1000.00,
+          BRZ: 25.00
+        };
+      } catch (error) {
+        console.error('❌ Erro ao buscar saldos:', error);
+        return {
+          USDC: 1000.00,
+          BRZ: 25.00
+        };
+      }
+    },
+    staleTime: 30 * 1000, // 30 segundos (saldos mudam frequentemente)
+    gcTime: 60 * 1000, // 1 minuto
+  });
+
 
   // Query para buscar detalhes do pool
   const { data: poolData, isLoading, error } = useQuery<PoolData>({
@@ -180,6 +300,26 @@ export default function AddLiquidityPage() {
 
   const isStep1Valid = () => {
     return minPrice > 0 && maxPrice > 0 && minPrice < maxPrice && selectedToken;
+  };
+
+  const isStep2Valid = () => {
+    return selectedInputToken && inputAmount && parseFloat(inputAmount) > 0;
+  };
+
+  // Countdown timer
+  useEffect(() => {
+    if (currentStep === 2 && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown, currentStep]);
+
+  const formatCountdown = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleBack = () => {
@@ -501,80 +641,205 @@ export default function AddLiquidityPage() {
   );
 
   const renderStep2 = () => (
-    <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
-      <CardContent className="p-6">
-        <div className="space-y-6">
-          <div className="text-center">
-            <h2 className="text-white text-xl font-bold mb-2">Configuração de Valores</h2>
-            <p className="text-slate-400">Defina os valores que deseja adicionar à liquidez</p>
+    <div className="space-y-6">
+      {/* Token Selection */}
+      <div className="space-y-4">
+        <h3 className="text-white font-medium">Escolha como vai adicionar a liquidez</h3>
+        
+        {/* Loading State */}
+        {tokensLoading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+            <span className="ml-3 text-slate-400">Carregando tokens...</span>
           </div>
+        )}
 
-          {/* Token Amount Inputs */}
-          <div className="space-y-4">
-            <div className="bg-slate-700/50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-400 text-sm">Valor em {selectedToken}</span>
-                <span className="text-slate-400 text-sm">Saldo: 1,000.00</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="number"
-                  placeholder="0.00"
-                  className="flex-1 bg-transparent text-white text-lg font-mono border-none outline-none"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
-                >
-                  MAX
-                </Button>
-              </div>
-            </div>
-
-            <div className="bg-slate-700/50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-400 text-sm">Valor em {selectedToken === 'USDC.E' ? 'LINK' : 'USDC.E'}</span>
-                <span className="text-slate-400 text-sm">Saldo: 500.00</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="number"
-                  placeholder="0.00"
-                  className="flex-1 bg-transparent text-white text-lg font-mono border-none outline-none"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
-                >
-                  MAX
-                </Button>
-              </div>
-            </div>
+        {/* Error State */}
+        {tokensError && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+            <p className="text-red-400 text-sm">
+              Erro ao carregar tokens. Usando dados padrão.
+            </p>
           </div>
+        )}
 
-          {/* Summary */}
-          <div className="bg-slate-700/30 rounded-lg p-4">
-            <h3 className="text-white font-medium mb-3">Resumo da Posição</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Preço mínimo:</span>
-                <span className="text-white">{minPrice.toFixed(8)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Preço máximo:</span>
-                <span className="text-white">{maxPrice.toFixed(8)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Taxa:</span>
-                <span className="text-white">{poolData.fee}%</span>
-              </div>
+        <div className="grid grid-cols-2 gap-4">
+          {/* USDC Option */}
+          <Button
+            variant="outline"
+            onClick={() => setSelectedInputToken('USDC')}
+            className={`p-6 h-auto flex flex-col items-center space-y-3 ${
+              selectedInputToken === 'USDC'
+                ? "bg-yellow-500/20 border-yellow-500 text-white"
+                : "bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+            }`}
+          >
+            {polygonTokens?.USDC?.logo ? (
+              <img 
+                src={polygonTokens.USDC.logo} 
+                alt="USDC"
+                className="w-12 h-12 rounded-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (nextElement) nextElement.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div 
+              className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center"
+              style={{ display: polygonTokens?.USDC?.logo ? 'none' : 'flex' }}
+            >
+              <span className="text-white text-xl font-bold">$</span>
             </div>
-          </div>
+            <span className="font-medium">Utilizar USDC</span>
+          </Button>
+
+          {/* BRZ Option */}
+          <Button
+            variant="outline"
+            onClick={() => setSelectedInputToken('BRZ')}
+            className={`p-6 h-auto flex flex-col items-center space-y-3 ${
+              selectedInputToken === 'BRZ'
+                ? "bg-yellow-500/20 border-yellow-500 text-white"
+                : "bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+            }`}
+          >
+            {polygonTokens?.BRZ?.logo ? (
+              <img 
+                src={polygonTokens.BRZ.logo} 
+                alt="BRZ"
+                className="w-12 h-12 rounded-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (nextElement) nextElement.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div 
+              className="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-yellow-500 flex items-center justify-center"
+              style={{ display: polygonTokens?.BRZ?.logo ? 'none' : 'flex' }}
+            >
+              <span className="text-white text-sm font-bold">BRZ</span>
+            </div>
+            <span className="font-medium">Utilizar BRZ</span>
+          </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Amount Input Section */}
+      {selectedInputToken && polygonTokens && (
+        <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
+          <CardContent className="p-6">
+            <div className="space-y-6">
+              <h3 className="text-white font-medium">Escolha quanto vai adicionar</h3>
+              
+              {/* Amount Input */}
+              <div className="bg-slate-700/50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-slate-400 text-sm">Total</span>
+                  <span className="text-slate-400 text-sm">
+                    Saldo: {polygonTokens[selectedInputToken]?.balance.toFixed(2)} {selectedInputToken}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    value={inputAmount}
+                    onChange={(e) => setInputAmount(e.target.value)}
+                    placeholder="0,00"
+                    className="flex-1 bg-transparent text-white text-2xl font-mono border-none outline-none"
+                  />
+                  <div className="flex items-center space-x-2">
+                    {polygonTokens[selectedInputToken]?.logo ? (
+                      <img 
+                        src={polygonTokens[selectedInputToken].logo} 
+                        alt={selectedInputToken}
+                        className="w-6 h-6 rounded-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (nextElement) nextElement.style.display = 'block';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                        selectedInputToken === 'USDC' 
+                          ? 'bg-blue-500' 
+                          : 'bg-gradient-to-r from-green-500 to-yellow-500'
+                      }`}
+                      style={{ display: polygonTokens[selectedInputToken]?.logo ? 'none' : 'block' }}
+                    >
+                      <span className="text-white text-xs font-bold">
+                        {selectedInputToken === 'USDC' ? '$' : 'B'}
+                      </span>
+                    </div>
+                    <span className="text-white font-medium">{selectedInputToken}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setInputAmount(polygonTokens[selectedInputToken]?.balance.toString() || '0')}
+                    className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+                  >
+                    MAX
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-slate-400 text-sm">
+                    R${(parseFloat(inputAmount || '0') * 0.9944).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Token Breakdown */}
+              {inputAmount && parseFloat(inputAmount) > 0 && (
+                <div className="bg-slate-700/30 rounded-lg p-4">
+                  <h4 className="text-white font-medium mb-3">Composição da liquidez</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                          <span className="text-blue-400 text-sm">$</span>
+                        </div>
+                        <span className="text-white font-medium">USDC.E</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-white font-mono">{(parseFloat(inputAmount) * 0.427).toFixed(3)}</div>
+                        <div className="text-slate-400 text-sm">R$11.64</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                          <span className="text-purple-400 text-sm">L</span>
+                        </div>
+                        <span className="text-white font-medium">LINK</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-white font-mono">{(parseFloat(inputAmount) * 0.0262).toFixed(3)}</div>
+                        <div className="text-slate-400 text-sm">R$12.89</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Countdown Timer */}
+              <div className="flex items-center space-x-2 text-yellow-400">
+                <div className="w-4 h-4 rounded-full bg-yellow-500 flex items-center justify-center">
+                  <span className="text-black text-xs">⏰</span>
+                </div>
+                <span className="text-sm">O preço será atualizado em:</span>
+                <span className="text-yellow-400 font-mono text-lg">{formatCountdown(countdown)}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 
   const renderStep3 = () => (
@@ -695,11 +960,11 @@ export default function AddLiquidityPage() {
               <Button
                 onClick={handleNext}
                 className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                  currentStep === 1 && !isStep1Valid()
+                  (currentStep === 1 && !isStep1Valid()) || (currentStep === 2 && !isStep2Valid())
                     ? "bg-slate-600 text-slate-400 cursor-not-allowed"
                     : "bg-yellow-500 text-black hover:bg-yellow-600 shadow-lg"
                 }`}
-                disabled={currentStep === 1 && !isStep1Valid()}
+                disabled={(currentStep === 1 && !isStep1Valid()) || (currentStep === 2 && !isStep2Valid())}
               >
                 {currentStep === 3 ? 'Finalizar' : 'Próximo'}
                 <ArrowRight className="w-5 h-5 ml-2" />
