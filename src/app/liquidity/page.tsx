@@ -93,9 +93,43 @@ export default function LiquidityPage() {
     staleTime: 300000, // 5 minutos
   });
 
-  const handlePoolClick = (pool: any) => {
+  // Buscar dados históricos do pool selecionado
+  const { data: historicalData, isLoading: historicalLoading } = useQuery({
+    queryKey: ['pool-historical', selectedPool?.id],
+    queryFn: async () => {
+      if (!selectedPool?.id) return null;
+      return await liquidityActions.getHistoricalData(selectedPool.id, { days: 30 });
+    },
+    enabled: !!selectedPool?.id,
+    staleTime: 300000, // 5 minutos
+  });
+
+  // Buscar quantidades de liquidez do usuário
+  const { data: userAmounts, isLoading: amountsLoading } = useQuery({
+    queryKey: ['user-amounts', selectedPool?.id, walletAddress],
+    queryFn: async () => {
+      if (!selectedPool?.id || !walletAddress) return null;
+      return await liquidityActions.getAmounts({
+        poolId: selectedPool.id,
+        walletAddress: walletAddress
+      });
+    },
+    enabled: !!selectedPool?.id && !!walletAddress,
+    staleTime: 60000, // 1 minuto
+  });
+
+  const handlePoolClick = async (pool: any) => {
     setSelectedPool(pool);
     setCurrentView("pool-details");
+    
+    // Buscar detalhes reais do pool
+    try {
+      const poolDetails = await liquidityActions.getPool(pool.id);
+      setSelectedPool({ ...pool, ...poolDetails });
+    } catch (error) {
+      console.error('Erro ao buscar detalhes do pool:', error);
+      // Manter dados mockados em caso de erro
+    }
   };
 
   const handleAddLiquidity = async () => {
@@ -132,6 +166,75 @@ export default function LiquidityPage() {
       toast({
         title: "Erro",
         description: "Falha ao adicionar liquidez",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Função para alterar liquidez (adicionar/remover)
+  const handleChangeLiquidity = async (liquidityAmount: string, action: 'add' | 'remove') => {
+    if (!walletAddress || !selectedPool?.id) {
+      toast({
+        title: "Erro",
+        description: "Dados insuficientes",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const result = await liquidityActions.changeLiquidity({
+        poolId: selectedPool.id,
+        liquidityAmount: action === 'remove' ? `-${liquidityAmount}` : liquidityAmount,
+        walletAddress: walletAddress,
+        chainId: 137, // Polygon
+        slippageTolerance: 0.5
+      });
+
+      toast({
+        title: "Sucesso",
+        description: `Liquidez ${action === 'add' ? 'adicionada' : 'removida'} com sucesso!`,
+      });
+
+      // Atualizar dados do usuário
+      // Refetch user amounts
+    } catch (error) {
+      console.error('Erro ao alterar liquidez:', error);
+      toast({
+        title: "Erro",
+        description: `Falha ao ${action === 'add' ? 'adicionar' : 'remover'} liquidez`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Função para coletar taxas
+  const handleCollectFees = async () => {
+    if (!walletAddress || !selectedPool?.id) {
+      toast({
+        title: "Erro",
+        description: "Dados insuficientes",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const result = await liquidityActions.collectFees({
+        poolId: selectedPool.id,
+        walletAddress: walletAddress,
+        chainId: 137 // Polygon
+      });
+
+      toast({
+        title: "Sucesso",
+        description: "Taxas coletadas com sucesso!",
+      });
+    } catch (error) {
+      console.error('Erro ao coletar taxas:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao coletar taxas",
         variant: "destructive",
       });
     }
@@ -240,7 +343,7 @@ export default function LiquidityPage() {
           className="text-slate-400 hover:text-white"
         >
           <ArrowRight className="h-5 w-5 rotate-180" />
-        </Button>
+              </Button>
         <div className="flex items-center space-x-3">
           <div className="flex -space-x-2">
             <div className={`w-10 h-10 rounded-full bg-${selectedPool?.token1.color}-500/20 flex items-center justify-center border-2 border-slate-800`}>
@@ -265,7 +368,7 @@ export default function LiquidityPage() {
         <Badge className="bg-slate-700/50 text-slate-300 border-slate-600/50">
           R${selectedPool?.volume24h.replace('$', '').replace(' K', 'K')} Tarifas
         </Badge>
-      </div>
+            </div>
 
       {/* Rentabilidade */}
       <Card className="bg-slate-800/50 border-slate-700/50 rounded-xl">
@@ -274,12 +377,12 @@ export default function LiquidityPage() {
             <div className="flex items-center space-x-2">
               <span className="text-white font-semibold">Rentabilidade estimada</span>
               <Info className="h-4 w-4 text-slate-400" />
-            </div>
+                  </div>
             <div className="flex items-center space-x-2">
               <span className="text-3xl font-bold text-green-400">{selectedPool?.rentabilidade}</span>
               <DollarSign className="h-6 w-6 text-green-400" />
-            </div>
-          </div>
+                  </div>
+                </div>
         </CardContent>
       </Card>
 
@@ -321,15 +424,15 @@ export default function LiquidityPage() {
                 style={{ width: selectedPool?.composition?.link || selectedPool?.composition?.usdt || "80%" }}
               ></div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
 
       {/* Informações */}
       <Card className="bg-slate-800/50 border-slate-700/50 rounded-xl">
-        <CardHeader>
+          <CardHeader>
           <CardTitle className="text-white">Informações</CardTitle>
-        </CardHeader>
+          </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex justify-between">
             <span className="text-slate-400">TVL:</span>
@@ -378,13 +481,68 @@ export default function LiquidityPage() {
         </CardContent>
       </Card>
 
+      {/* Dados do Usuário */}
+      {userAmounts && (
+        <Card className="bg-slate-800/50 border-slate-700/50 rounded-xl">
+          <CardHeader>
+            <CardTitle className="text-white">Sua Posição</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-slate-400">Liquidez Total:</span>
+              <span className="text-white">{userAmounts.totalLiquidity || '0'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Taxas Acumuladas:</span>
+              <span className="text-white">{userAmounts.accumulatedFees || '0'}</span>
+            </div>
+            {userAmounts.accumulatedFees && parseFloat(userAmounts.accumulatedFees) > 0 && (
+              <Button 
+                onClick={handleCollectFees}
+                className="w-full bg-green-600 hover:bg-green-700 text-white mt-4"
+              >
+                Coletar Taxas
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Dados Históricos */}
+      {historicalData && (
+        <Card className="bg-slate-800/50 border-slate-700/50 rounded-xl">
+          <CardHeader>
+            <CardTitle className="text-white">Dados Históricos (30 dias)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {historicalLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-500"></div>
+                <span className="ml-2 text-slate-300">Carregando dados...</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Volume Total:</span>
+                  <span className="text-white">{historicalData.totalVolume || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Taxas Geradas:</span>
+                  <span className="text-white">{historicalData.totalFees || 'N/A'}</span>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Botão Adicionar Liquidez */}
       <Button
         onClick={handleAddLiquidity}
         className="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-4 rounded-xl"
       >
         Adicionar liquidez
-      </Button>
+                </Button>
     </div>
   );
 
@@ -485,7 +643,7 @@ export default function LiquidityPage() {
                   <span className="text-slate-400 text-sm">Saldo: 25,00 BRZ</span>
                   <Button size="sm" variant="outline" className="text-xs">
                     MAX
-                  </Button>
+                </Button>
                 </div>
               </div>
             </div>
@@ -914,7 +1072,7 @@ export default function LiquidityPage() {
         </div>
         
         {showSortModal && renderSortModal()}
-      </AppLayout>
+    </AppLayout>
     </ProtectedRoute>
   );
 }
