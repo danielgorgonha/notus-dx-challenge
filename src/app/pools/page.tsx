@@ -49,6 +49,8 @@ export default function PoolsPage() {
           rangeInDays: 30
         });
         console.log('✅ Chamada para liquidityActions.listPools concluída!');
+        console.log('🔍 Response type:', typeof response);
+        console.log('🔍 Response value:', response);
         
         console.log('🔍 API Response completa:', response);
         console.log('🔍 Tipo da resposta:', typeof response);
@@ -86,7 +88,7 @@ export default function PoolsPage() {
           return [];
         }
         
-        return apiResponse.pools.map((pool: any, index: number) => {
+        const processedPools = apiResponse.pools.map((pool: any, index: number) => {
           console.log(`📋 Processando pool ${index + 1}:`, {
             id: pool.id,
             address: pool.address,
@@ -113,7 +115,7 @@ export default function PoolsPage() {
           if (pool.tokens && Array.isArray(pool.tokens)) {
             console.log(`📋 Estrutura completa dos tokens do pool ${index + 1}:`, JSON.stringify(pool.tokens, null, 2));
             
-            pool.tokens.forEach((token, tokenIndex) => {
+            pool.tokens.forEach((token: any, tokenIndex: number) => {
               console.log(`🪙 Token ${tokenIndex + 1} do pool ${index + 1}:`, {
                 index: tokenIndex,
                 token: token,
@@ -247,9 +249,12 @@ export default function PoolsPage() {
           return result;
         });
         
-        console.log('🎉 Todos os pools processados com sucesso!');
+        console.log('🎯 Pools processados:', processedPools);
+        return processedPools;
+        
       } catch (error) {
-        console.error('Erro ao buscar pools:', error);
+        console.error('❌ Erro ao buscar pools:', error);
+        console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
         throw error; // Re-throw para mostrar erro real
       }
     },
@@ -297,7 +302,7 @@ export default function PoolsPage() {
   const handlePoolClick = (pool: any) => {
     setSelectedPool(pool);
     // Navegar para a próxima tela (detalhes do pool)
-    router.push(`/liquidity/pool/${pool.id}`);
+    router.push(`/pools/${pool.id}`);
   };
 
   const renderPoolsList = () => (
@@ -438,11 +443,14 @@ export default function PoolsPage() {
                             src={pool.token1.logo} 
                             alt={pool.token1.symbol || 'Token1'} 
                             className="w-8 h-8 rounded-full object-cover"
-                            onError={(e) => {
-                              console.log('❌ Erro ao carregar logo do token1:', pool.token1.logo);
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling.style.display = 'block';
-                            }}
+                      onError={(e) => {
+                        console.log('❌ Erro ao carregar logo do token1:', pool.token1.logo);
+                        e.currentTarget.style.display = 'none';
+                        const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (nextElement) {
+                          nextElement.style.display = 'block';
+                        }
+                      }}
                           />
                         ) : null}
                         <span className="text-xl" style={{ display: pool.token1.logo && typeof pool.token1.logo === 'string' && pool.token1.logo.startsWith('http') ? 'none' : 'block' }}>
@@ -455,11 +463,14 @@ export default function PoolsPage() {
                             src={pool.token2.logo} 
                             alt={pool.token2.symbol || 'Token2'} 
                             className="w-8 h-8 rounded-full object-cover"
-                            onError={(e) => {
-                              console.log('❌ Erro ao carregar logo do token2:', pool.token2.logo);
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling.style.display = 'block';
-                            }}
+                      onError={(e) => {
+                        console.log('❌ Erro ao carregar logo do token2:', pool.token2.logo);
+                        e.currentTarget.style.display = 'none';
+                        const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (nextElement) {
+                          nextElement.style.display = 'block';
+                        }
+                      }}
                           />
                         ) : null}
                         <span className="text-xl" style={{ display: pool.token2.logo && typeof pool.token2.logo === 'string' && pool.token2.logo.startsWith('http') ? 'none' : 'block' }}>
