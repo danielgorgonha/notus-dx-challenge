@@ -335,7 +335,6 @@ export function TokenSelector({
               </div>
               <div className="text-left">
                 <div className={`text-white font-semibold ${compact ? 'text-sm' : ''}`}>{selectedToken.symbol}</div>
-                {!compact && <div className="text-slate-400 text-sm">{selectedToken.name}</div>}
               </div>
             </>
           ) : (
@@ -401,7 +400,6 @@ export function TokenSelector({
                     </div>
                     <div className="text-left">
                       <div className="text-white font-semibold">{token.symbol}</div>
-                      <div className="text-slate-400 text-sm">{token.name}</div>
                     </div>
                   </div>
                   
