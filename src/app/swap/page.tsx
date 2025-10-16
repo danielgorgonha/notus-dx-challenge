@@ -170,6 +170,14 @@ export default function SwapPage() {
     fetchUSDBRLRate();
   }, []);
 
+  // Validações com dados reais
+  const isValidAmount = (amount: string) => {
+    if (!currentFromToken) return false;
+    const numAmount = parseFloat(amount);
+    const tokenBalance = parseFloat(currentFromToken.balance || "0");
+    return numAmount > 0 && numAmount <= tokenBalance;
+  };
+
   // Declarar canProceed antes de usar no handleGetQuote
   const canProceed = fromAmount && currentFromToken && currentToToken && 
     isValidAmount(fromAmount) && currentFromToken.symbol !== currentToToken.symbol;
@@ -329,13 +337,6 @@ export default function SwapPage() {
   };
 
 
-  // Validações com dados reais
-  const isValidAmount = (amount: string) => {
-    if (!currentFromToken) return false;
-    const numAmount = parseFloat(amount);
-    const tokenBalance = parseFloat(currentFromToken.balance || "0");
-    return numAmount > 0 && numAmount <= tokenBalance;
-  };
 
 
   const handleSwapTokens = () => {
