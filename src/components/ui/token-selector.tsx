@@ -334,7 +334,7 @@ export function TokenSelector({
                 )}
               </div>
               <div className="text-left">
-                <div className={`text-white font-semibold ${compact ? 'text-sm' : ''}`}>{selectedToken.symbol}</div>
+                <div className={`text-white font-semibold ${compact ? 'text-sm' : ''}`}>{selectedToken.symbol.toUpperCase()}</div>
               </div>
             </>
           ) : (
@@ -361,7 +361,7 @@ export function TokenSelector({
           </div>
 
           {/* Lista de tokens */}
-          <div className="max-h-60 overflow-y-auto">
+          <div className="max-h-60 overflow-y-auto token-selector-scroll">
             {tokensLoading ? (
               <div className="flex items-center justify-center p-6">
                 <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
@@ -399,7 +399,7 @@ export function TokenSelector({
                       )}
                     </div>
                     <div className="text-left">
-                      <div className="text-white font-semibold">{token.symbol}</div>
+                      <div className="text-white font-semibold">{token.symbol.toUpperCase()}</div>
                     </div>
                   </div>
                   
