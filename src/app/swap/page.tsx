@@ -434,6 +434,7 @@ export default function SwapPage() {
               walletAddress={walletAddress}
               placeholder="Selecionar token"
               showBalance={false}
+              autoSelectSymbol="BRZ"
               compact={true}
             />
               </div>
@@ -504,6 +505,7 @@ export default function SwapPage() {
               walletAddress={walletAddress}
               placeholder="Selecionar token"
               showBalance={false}
+              autoSelectSymbol="USDC"
               compact={true}
             />
           </div>
