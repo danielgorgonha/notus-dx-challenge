@@ -347,18 +347,29 @@ export default function LiquidityPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-4 gap-4 text-center">
                 <div>
                   <p className="text-slate-400 text-sm">TVL</p>
                   <p className="text-white font-semibold">{pool.tvl}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 text-sm">Tarifa</p>
-                  <p className="text-white font-semibold">{pool.tarifa}</p>
+                  <p className="text-slate-400 text-sm">Volume 24h</p>
+                  <p className="text-white font-semibold">{pool.volume24h}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 text-sm">Volume (24h)</p>
-                  <p className="text-white font-semibold">{pool.volume24h}</p>
+                  <p className="text-slate-400 text-sm">Sua Liquidez</p>
+                  <p className="text-white font-semibold">{pool.userLiquidity || "-"}</p>
+                </div>
+                <div className="flex justify-end">
+                  <Button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddLiquidity();
+                    }}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+                  >
+                    + Adicionar
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -367,6 +378,67 @@ export default function LiquidityPage() {
           })
         )}
       </div>
+
+      {/* Cards de Resumo */}
+      <div className="grid grid-cols-3 gap-4 mt-6">
+        <Card className="bg-slate-800/50 border-slate-700/50 rounded-xl">
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                <Clock className="h-4 w-4 text-purple-400" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-white">{poolsData?.length || 0}</p>
+            <p className="text-slate-400 text-sm">Pools Disponíveis</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-800/50 border-slate-700/50 rounded-xl">
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-green-400" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-white">15.7%</p>
+            <p className="text-slate-400 text-sm">Maior APR</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-800/50 border-slate-700/50 rounded-xl">
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-blue-400" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-white">$0</p>
+            <p className="text-slate-400 text-sm">Sua Liquidez Total</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Card de Funcionalidade em Implementação */}
+      <Card className="bg-slate-800/50 border-slate-700/50 rounded-xl">
+        <CardContent className="p-6 text-center">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
+              <span className="text-2xl">∞</span>
+            </div>
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">Funcionalidade em Implementação</h3>
+          <p className="text-slate-400 mb-4">
+            A integração com a API da Notus para adicionar liquidez será implementada na próxima fase do projeto.
+          </p>
+          <Button 
+            variant="outline" 
+            className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            onClick={() => setCurrentView("pools")}
+          >
+            Fechar
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 
