@@ -90,18 +90,7 @@ export function TokenSelector({
     const supportedTokens = tokensData?.tokens || [];
     const portfolioTokens = portfolioData?.tokens || [];
     
-    console.log('🔍 DEBUG TokenSelector:');
-    console.log('- chainId:', chainId);
-    console.log('- supportedTokens:', supportedTokens.length);
-    console.log('- portfolioTokens:', portfolioTokens.length);
-    console.log('- tokensData:', tokensData);
-    console.log('- portfolioData:', portfolioData);
     
-    // Verificar estrutura dos tokens
-    if (supportedTokens.length > 0) {
-      console.log('🔍 DEBUG First token structure:', supportedTokens[0]);
-      console.log('🔍 DEBUG First token chain:', (supportedTokens[0] as any).chain);
-    }
     
     
     // 1. Mapear tokens suportados com saldos do portfolio
@@ -121,15 +110,14 @@ export function TokenSelector({
         price: token.priceUsd !== undefined ? parseFloat(token.priceUsd) : undefined,
         isNative: token.address === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         balance: portfolioToken?.balanceFormatted || portfolioToken?.balance || "0",
-        balanceUsd: portfolioToken?.balanceUsd || "0"
+        balanceUsd: portfolioToken?.balanceUsd || "0",
+        chain: token.chain
       };
       
-      console.log('🔍 DEBUG Token mapping:', token.symbol, 'chainId:', (token as any).chain?.id, 'mapped:', mappedToken.chainId);
       
       return mappedToken;
     });
     
-    console.log('✅ DEBUG supportedWithBalances:', supportedWithBalances.length);
     
     // 2. Adicionar tokens do portfolio que não estão na lista suportada
     const portfolioOnlyTokens = portfolioTokens
@@ -150,8 +138,9 @@ export function TokenSelector({
         price: pt.priceUsd ? parseFloat(pt.priceUsd) : undefined,
         isNative: false,
         balance: pt.balanceFormatted || pt.balance || "0",
-        balanceUsd: pt.balanceUsd || "0"
-      }));
+        balanceUsd: pt.balanceUsd || "0",
+        chain: pt.chain
+      }) as Token);
     
     
     // 3. Combinar e remover duplicatas
@@ -186,8 +175,6 @@ export function TokenSelector({
       const tokenChainId = token.chainId || token.chain?.id;
       const match = tokenChainId === chainId;
       
-      console.log('🔍 DEBUG Chain filter:');
-      console.log('- token:', token.symbol, 'tokenChainId:', tokenChainId, 'target:', chainId, 'match:', match);
       
       return match;
     });
@@ -199,67 +186,40 @@ export function TokenSelector({
       return balanceB - balanceA; // Maior saldo primeiro
     });
     
-    console.log('✅ DEBUG Final tokens:', finalTokens.length);
-    console.log('- sameChainTokens:', sameChainTokens.length);
-    console.log('- finalTokens:', finalTokens.slice(0, 3));
     
     return finalTokens;
   }, [tokensData, portfolioData]);
 
   // Auto-selecionar token quando disponível
   React.useEffect(() => {
-    console.log('🔍 DEBUG TokenSelector auto-select:', {
-      autoSelectSymbol,
-      selectedToken: selectedToken?.symbol,
-      tokensCount: tokensWithBalances.length,
-      availableTokens: tokensWithBalances.map(t => t.symbol).slice(0, 5)
-    });
     
     if (autoSelectSymbol && !selectedToken && tokensWithBalances.length > 0) {
       const tokenToSelect = tokensWithBalances.find(token => 
         token.symbol.toLowerCase() === autoSelectSymbol.toLowerCase()
       );
       
-      console.log('🔍 DEBUG TokenSelector search:', {
-        lookingFor: autoSelectSymbol,
-        found: tokenToSelect?.symbol,
-        allSymbols: tokensWithBalances.map(t => t.symbol)
-      });
-      
       if (tokenToSelect) {
-        console.log('✅ DEBUG TokenSelector auto-selecting:', tokenToSelect.symbol);
         onTokenSelect(tokenToSelect);
-      } else {
-        console.log('❌ DEBUG TokenSelector token not found:', autoSelectSymbol);
       }
     }
   }, [autoSelectSymbol, selectedToken, tokensWithBalances, onTokenSelect]);
 
   // Filtrar tokens por busca
   const filteredTokens = React.useMemo(() => {
-    console.log('🔍 DEBUG filteredTokens:');
-    console.log('- tokensWithBalances:', tokensWithBalances.length);
-    console.log('- searchQuery:', searchQuery);
-    
     if (!searchQuery) {
-      console.log('✅ DEBUG: Retornando todos os tokens');
       return tokensWithBalances;
     }
     
     const query = searchQuery.toLowerCase();
-    const filtered = tokensWithBalances.filter(token => 
+    return tokensWithBalances.filter(token => 
       token.symbol.toLowerCase().includes(query) ||
       token.name.toLowerCase().includes(query) ||
       token.address.toLowerCase().includes(query)
     );
-    
-    console.log('✅ DEBUG: Filtrados', filtered.length, 'tokens');
-    return filtered;
   }, [tokensWithBalances, searchQuery]);
 
 
   const handleTokenSelect = (token: Token) => {
-    console.log('🔍 DEBUG: Token selecionado:', token.symbol);
     onTokenSelect(token);
     setIsOpen(false);
     setSearchQuery("");
@@ -287,9 +247,6 @@ export function TokenSelector({
 
   // Se não há tokens, mostrar mensagem
   if (!tokensWithBalances || tokensWithBalances.length === 0) {
-    console.log('❌ DEBUG: Nenhum token disponível');
-    console.log('- tokensWithBalances:', tokensWithBalances);
-    console.log('- length:', tokensWithBalances?.length);
     return (
       <div className="flex items-center justify-center p-4">
         <span className="text-sm text-gray-500">Nenhum token disponível</span>
@@ -297,13 +254,6 @@ export function TokenSelector({
     );
   }
   
-  console.log('✅ DEBUG: Renderizando TokenSelector com', tokensWithBalances.length, 'tokens');
-  console.log('🔍 DEBUG TokenSelector render:', {
-    isOpen,
-    searchQuery,
-    tokensWithBalances: tokensWithBalances?.length,
-    filteredTokens: filteredTokens?.length
-  });
 
 
   const formatBalance = (balance: string, decimals: number) => {
@@ -319,7 +269,6 @@ export function TokenSelector({
       {/* Botão de seleção */}
       <Button
         onClick={() => {
-          console.log('🔍 DEBUG: Clique no botão, isOpen:', isOpen, '->', !isOpen);
           setIsOpen(!isOpen);
         }}
         variant="outline"
@@ -378,16 +327,11 @@ export function TokenSelector({
               </div>
             ) : (
               (() => {
-                console.log('🔍 DEBUG: Renderizando', filteredTokens.length, 'tokens');
-                console.log('- filteredTokens:', filteredTokens.slice(0, 3));
-                console.log('- filteredTokens[0]:', filteredTokens[0]);
                 return filteredTokens.map((token) => {
-                  console.log('🔍 DEBUG: Renderizando token:', token.symbol);
                   return (
                 <button
                   key={`${token.address}-${token.chainId || 'unknown'}-${token.symbol}`}
                   onClick={() => {
-                    console.log('🔍 DEBUG: Clique no token:', token.symbol);
                     handleTokenSelect(token);
                   }}
                   className="w-full flex items-center justify-between p-3 hover:bg-slate-700/50 transition-colors"

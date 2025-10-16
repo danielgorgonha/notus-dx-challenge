@@ -27,9 +27,15 @@ interface Token {
   name: string;
   decimals: number;
   chainId: number;
+  logo?: string;
   logoUrl?: string;
   price?: number;
   isNative: boolean;
+  chain?: {
+    id: number;
+    name: string;
+    logo: string;
+  };
 }
 
 interface ChainsResponse {

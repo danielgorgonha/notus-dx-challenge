@@ -47,7 +47,7 @@ export default function SwapPage() {
   const [toToken, setToToken] = useState<any>(null);
 
   // Funções para seleção de tokens com validação
-  const handleFromTokenSelect = (token: any) => {
+  const handleFromTokenSelect = useCallback((token: any) => {
     if (toToken && token.address === toToken.address && token.chainId === toToken.chainId) {
       // Se o token selecionado é o mesmo do "Para", troca os tokens
       setFromToken(toToken);
@@ -55,9 +55,9 @@ export default function SwapPage() {
     } else {
       setFromToken(token);
     }
-  };
+  }, [toToken, fromToken]);
 
-  const handleToTokenSelect = (token: any) => {
+  const handleToTokenSelect = useCallback((token: any) => {
     if (fromToken && token.address === fromToken.address && token.chainId === fromToken.chainId) {
       // Se o token selecionado é o mesmo do "De", troca os tokens
       setFromToken(toToken);
@@ -65,7 +65,7 @@ export default function SwapPage() {
     } else {
       setToToken(token);
     }
-  };
+  }, [fromToken, toToken]);
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("");
   const [slippage, setSlippage] = useState(0.5);
@@ -847,11 +847,13 @@ export default function SwapPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  {fromToken.symbol.charAt(0)}
-                </div>
+                <img 
+                  src={fromToken.logoUrl || fromToken.logo } 
+                  alt={fromToken.symbol}
+                  className="w-12 h-12 rounded-full"
+                />
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">∞</span>
+                  <img src={fromToken.chain?.logo || ''} alt="Polygon" className="w-4 h-4" />
                 </div>
               </div>
               <div>
@@ -870,11 +872,13 @@ export default function SwapPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="relative">
-                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  $
-                </div>
+                <img 
+                  src={toToken.logoUrl || toToken.logo} 
+                  alt={toToken.symbol}
+                  className="w-12 h-12 rounded-full"
+                />
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">∞</span>
+                  <img src={fromToken.chain?.logo || ''} alt="Polygon" className="w-4 h-4" />
                 </div>
               </div>
               <div>
@@ -981,11 +985,13 @@ export default function SwapPage() {
             <span className="text-white font-medium">Envia</span>
             <div className="flex items-center space-x-2">
               <div className="relative">
-                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                  {fromToken.symbol.charAt(0)}
-                </div>
+                <img 
+                  src={fromToken.logoUrl || fromToken.logo } 
+                  alt={fromToken.symbol}
+                  className="w-8 h-8 rounded-full"
+                />
                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">∞</span>
+                  <img src={fromToken.chain?.logo || ''} alt="Polygon" className="w-3 h-3" />
                 </div>
               </div>
               <span className="text-white">{fromToken.symbol}</span>
@@ -997,10 +1003,8 @@ export default function SwapPage() {
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Rede:</span>
                 <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">∞</span>
-                  </div>
-                  <span className="text-white">Polygon</span>
+                  <img src={fromToken.chain?.logo || ''} alt="Polygon" className="w-6 h-6" />
+                  <span className="text-white">{fromToken.chain?.name || 'Polygon'}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
@@ -1030,11 +1034,13 @@ export default function SwapPage() {
             <span className="text-white font-medium">Recebe</span>
             <div className="flex items-center space-x-2">
               <div className="relative">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                  $
-                </div>
+                <img 
+                  src={toToken.logoUrl || toToken.logo} 
+                  alt={toToken.symbol}
+                  className="w-8 h-8 rounded-full"
+                />
                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">∞</span>
+                  <img src={toToken.chain?.logo || ''} alt="Polygon" className="w-3 h-3" />
                 </div>
               </div>
               <span className="text-white">{toToken.symbol}</span>
@@ -1046,10 +1052,8 @@ export default function SwapPage() {
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Rede:</span>
                 <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">∞</span>
-                  </div>
-                  <span className="text-white">Polygon</span>
+                  <img src={fromToken.chain?.logo} alt="Polygon" className="w-6 h-6" />
+                  <span className="text-white">{fromToken.chain?.name || 'Polygon'}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
