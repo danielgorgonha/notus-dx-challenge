@@ -25,7 +25,7 @@ const processTokensData = (tokens: any[], walletBalances?: {[key: string]: numbe
         address: token.address,
         decimals: token.decimals,
         logo: token.logo,
-        balance: walletBalances?.[symbol] || (symbol === 'USDC' ? 1000.00 : 25.00),
+        balance: walletBalances?.[symbol] || 0,
         chain: token.chain
       };
     }
@@ -72,12 +72,9 @@ export default function AddLiquidityPage() {
   const [selectedInputToken, setSelectedInputToken] = useState<'USDC' | 'BRZ' | null>(null);
   const [inputAmount, setInputAmount] = useState<string>('');
   const [countdown, setCountdown] = useState(117); // 1:57 em segundos
-  const [tokenBalances, setTokenBalances] = useState<{[key: string]: number}>({
-    USDC: 1000.00,
-    BRZ: 25.00
-  });
+  // Removido: tokenBalances mock - usando dados reais da API
 
-  // Dados mock para o gráfico
+  // TODO: Implementar busca de dados históricos reais do pool
   const chartData = [
     { date: '26/09/2025', price: 0.049 },
     { date: '27/09/2025', price: 0.051 },
@@ -131,25 +128,7 @@ export default function AddLiquidityPage() {
 
       } catch (error) {
         console.error('❌ Erro ao buscar tokens:', error);
-        // Fallback para dados mock em caso de erro
-        return {
-          USDC: {
-            symbol: 'USDC',
-            name: 'USD Coin',
-            address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
-            decimals: 6,
-            logo: 'https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png',
-            balance: 1000.00
-          },
-          BRZ: {
-            symbol: 'BRZ',
-            name: 'Brazilian Digital Token',
-            address: '0x4e0603e2a27a30480e5e3a4fe548e29ef12f64be',
-            decimals: 4,
-            logo: 'https://assets.coingecko.com/coins/images/10119/large/brz.png',
-            balance: 25.00
-          }
-        };
+        throw error; // Não usar fallback, deixar o erro aparecer
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
@@ -163,18 +142,19 @@ export default function AddLiquidityPage() {
       console.log('💰 Buscando saldos da smart wallet...');
       
       try {
-        // TODO: Implementar endpoint real para saldos da smart wallet
-        // Por enquanto, usando dados mock
-        return {
-          USDC: 1000.00,
-          BRZ: 25.00
-        };
+        // TODO: Implementar busca do endereço da wallet do usuário
+        const walletAddress = '0x1234567890123456789012345678901234567890'; // Mock address por enquanto
+        
+        const response = await fetch(`/api/wallet/balances?address=${walletAddress}&chainId=137`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('✅ Saldos da smart wallet:', data);
+        return data.balances;
       } catch (error) {
         console.error('❌ Erro ao buscar saldos:', error);
-        return {
-          USDC: 1000.00,
-          BRZ: 25.00
-        };
+        throw error; // Não usar fallback, deixar o erro aparecer
       }
     },
     staleTime: 30 * 1000, // 30 segundos (saldos mudam frequentemente)
@@ -186,6 +166,10 @@ export default function AddLiquidityPage() {
   const { data: poolData, isLoading, error } = useQuery<PoolData>({
     queryKey: ['pool-details', poolId],
     queryFn: async () => {
+      if (!poolId) {
+        throw new Error('Pool ID não fornecido');
+      }
+      
       console.log('🔍 Buscando detalhes do pool para adicionar liquidez:', poolId);
       
       try {
@@ -240,44 +224,9 @@ export default function AddLiquidityPage() {
         throw error;
       }
     },
-    enabled: !!poolId,
     staleTime: 5 * 60 * 1000, // 5 minutos
     gcTime: 10 * 60 * 1000, // 10 minutos
   });
-
-  if (isLoading) {
-    return (
-      <ProtectedRoute>
-        <AppLayout
-          title="Adicionar Liquidez"
-          description="Configure sua posição de liquidez"
-        >
-          <div className="w-full max-w-4xl mx-auto px-6">
-            <div className="flex items-center justify-center h-64">
-              <div className="text-white">Carregando...</div>
-            </div>
-          </div>
-        </AppLayout>
-      </ProtectedRoute>
-    );
-  }
-
-  if (error || !poolData) {
-    return (
-      <ProtectedRoute>
-        <AppLayout
-          title="Adicionar Liquidez"
-          description="Configure sua posição de liquidez"
-        >
-          <div className="w-full max-w-4xl mx-auto px-6">
-            <div className="flex items-center justify-center h-64">
-              <div className="text-red-400">Erro ao carregar dados do pool</div>
-            </div>
-          </div>
-        </AppLayout>
-      </ProtectedRoute>
-    );
-  }
 
   const timeframes = [
     { key: '1D', label: '1D' },
@@ -315,6 +264,40 @@ export default function AddLiquidityPage() {
       return () => clearTimeout(timer);
     }
   }, [countdown, currentStep]);
+
+  if (isLoading) {
+    return (
+      <ProtectedRoute>
+        <AppLayout
+          title="Adicionar Liquidez"
+          description="Configure sua posição de liquidez"
+        >
+          <div className="w-full max-w-4xl mx-auto px-6">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-white">Carregando...</div>
+            </div>
+          </div>
+        </AppLayout>
+      </ProtectedRoute>
+    );
+  }
+
+  if (error || !poolData) {
+    return (
+      <ProtectedRoute>
+        <AppLayout
+          title="Adicionar Liquidez"
+          description="Configure sua posição de liquidez"
+        >
+          <div className="w-full max-w-4xl mx-auto px-6">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-red-400">Erro ao carregar dados do pool</div>
+            </div>
+          </div>
+        </AppLayout>
+      </ProtectedRoute>
+    );
+  }
 
   const formatCountdown = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -667,7 +650,10 @@ export default function AddLiquidityPage() {
           {/* USDC Option */}
           <Button
             variant="outline"
-            onClick={() => setSelectedInputToken('USDC')}
+            onClick={() => {
+              console.log('🔄 Selecionando USDC, dados disponíveis:', polygonTokens?.USDC);
+              setSelectedInputToken('USDC');
+            }}
             className={`p-6 h-auto flex flex-col items-center space-y-3 ${
               selectedInputToken === 'USDC'
                 ? "bg-yellow-500/20 border-yellow-500 text-white"
@@ -693,12 +679,20 @@ export default function AddLiquidityPage() {
               <span className="text-white text-xl font-bold">$</span>
             </div>
             <span className="font-medium">Utilizar USDC</span>
+            {polygonTokens?.USDC && (
+              <span className="text-xs text-slate-400">
+                Saldo: {polygonTokens.USDC.balance.toFixed(2)} {polygonTokens.USDC.symbol}
+              </span>
+            )}
           </Button>
 
           {/* BRZ Option */}
           <Button
             variant="outline"
-            onClick={() => setSelectedInputToken('BRZ')}
+            onClick={() => {
+              console.log('🔄 Selecionando BRZ, dados disponíveis:', polygonTokens?.BRZ);
+              setSelectedInputToken('BRZ');
+            }}
             className={`p-6 h-auto flex flex-col items-center space-y-3 ${
               selectedInputToken === 'BRZ'
                 ? "bg-yellow-500/20 border-yellow-500 text-white"
@@ -724,6 +718,11 @@ export default function AddLiquidityPage() {
               <span className="text-white text-sm font-bold">BRZ</span>
             </div>
             <span className="font-medium">Utilizar BRZ</span>
+            {polygonTokens?.BRZ && (
+              <span className="text-xs text-slate-400">
+                Saldo: {polygonTokens.BRZ.balance.toFixed(2)} {polygonTokens.BRZ.symbol}
+              </span>
+            )}
           </Button>
         </div>
       </div>
