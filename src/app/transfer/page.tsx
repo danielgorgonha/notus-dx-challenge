@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,11 @@ import {
   Wallet,
   Coins,
   Clock,
-  Zap
+  Zap,
+  QrCode,
+  ArrowLeft,
+  ExternalLink,
+  ChevronRight
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
@@ -28,6 +32,8 @@ import { createTransferQuote } from "@/lib/actions/transfer";
 import { executeUserOperation } from "@/lib/actions/user-operation";
 import { usePrivy } from "@privy-io/react-auth";
 import { TokenSelector } from "@/components/ui/token-selector";
+import { listChains } from "@/lib/actions/blockchain";
+import { useQuery } from "@tanstack/react-query";
 
 
 export default function TransferPage() {
@@ -36,7 +42,8 @@ export default function TransferPage() {
   const { signMessage } = usePrivy();
   const toast = useToast();
   
-  const [currentStep, setCurrentStep] = useState<"form" | "preview" | "executing" | "success">("form");
+  const [currentStep, setCurrentStep] = useState<"network" | "address" | "form" | "preview" | "executing" | "success">("network");
+  const [selectedNetwork, setSelectedNetwork] = useState<any>(null);
   const [selectedToken, setSelectedToken] = useState<any>(null);
   const [toAddress, setToAddress] = useState("");
   const [amount, setAmount] = useState("");
@@ -47,6 +54,13 @@ export default function TransferPage() {
   const [userOperationHash, setUserOperationHash] = useState("");
 
   const walletAddress = wallet?.accountAbstraction;
+
+  // Carregar chains disponíveis
+  const { data: chainsData, isLoading: isLoadingChains } = useQuery({
+    queryKey: ['chains'],
+    queryFn: () => listChains({ page: 1, perPage: 50 }),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
 
   // Validações
   const isValidAddress = (address: string) => {
@@ -180,7 +194,9 @@ export default function TransferPage() {
   };
 
   const resetForm = () => {
-    setCurrentStep("form");
+    setCurrentStep("network");
+    setSelectedNetwork(null);
+    setSelectedToken(null);
     setToAddress("");
     setAmount("");
     setMemo("");
@@ -188,6 +204,287 @@ export default function TransferPage() {
     setTransactionHash("");
     setUserOperationHash("");
   };
+
+  // Dados das redes disponíveis
+  const availableNetworks = useMemo(() => {
+    if (!chainsData?.chains) return [];
+    
+    const chains = chainsData.chains;
+    
+    // Encontrar Polygon (nativa)
+    const polygon = chains.find(chain => chain.id === 137) || {
+      id: 137,
+      name: 'Polygon',
+      logo: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM4MjQ3RUEiLz4KPHBhdGggZD0iTTE2IDZMMjAgMTBIMTZWNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyNkwyMCAyMkgxNlYyNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAxMEwyMCAxNEgxNlYxMFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyMkwyMCAyNkgxNlYyMloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo='
+    };
+    
+    // Encontrar BNB
+    const bnb = chains.find(chain => chain.id === 56) || {
+      id: 56,
+      name: 'BNB Smart Chain',
+      logo: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNGM0I5MDAiLz4KPHBhdGggZD0iTTE2IDZMMjAgMTBIMTZWNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyNkwyMCAyMkgxNlYyNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAxMEwyMCAxNEgxNlYxMFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyMkwyMCAyNkgxNlYyMloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo='
+    };
+    
+    // Encontrar Avalanche
+    const avalanche = chains.find(chain => chain.id === 43114) || {
+      id: 43114,
+      name: 'Avalanche',
+      logo: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNFODQ0NDQiLz4KPHBhdGggZD0iTTE2IDZMMjAgMTBIMTZWNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyNkwyMCAyMkgxNlYyNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAxMEwyMCAxNEgxNlYxMFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyMkwyMCAyNkgxNlYyMloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo='
+    };
+    
+    return [
+      {
+        id: 'polygon',
+        name: polygon.name,
+        logo: polygon.logo,
+        description: 'Na Chainless, este ativo é custodiado na POLYGON',
+        minWithdrawal: '0.1',
+        estimatedTime: '~0min',
+        cost: '$1,00',
+        isNative: true,
+        chainId: polygon.id
+      },
+      {
+        id: 'bnb',
+        name: bnb.name,
+        logo: bnb.logo,
+        description: 'Você pode enviar seu token para outra rede. Nós faremos a bridge para você.',
+        minWithdrawal: '0.1',
+        estimatedTime: '~3min',
+        cost: '$3,00',
+        isBridge: true,
+        chainId: bnb.id
+      },
+      {
+        id: 'avalanche',
+        name: avalanche.name,
+        logo: avalanche.logo,
+        description: 'Você pode enviar seu token para outra rede. Nós faremos a bridge para você.',
+        minWithdrawal: '0.1',
+        estimatedTime: '~3min',
+        cost: '$3,00',
+        isBridge: true,
+        chainId: avalanche.id
+      }
+    ];
+  }, [chainsData]);
+
+  const renderNetworkSelectionStep = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-white mb-2">Para qual rede você quer enviar?</h1>
+        <p className="text-slate-300">Envio de BRZ</p>
+      </div>
+
+      {/* Rede do Token */}
+      <div className="space-y-4">
+        <h2 className="text-white text-lg">Rede do Token</h2>
+        <p className="text-slate-400 text-sm">Na Chainless, este ativo é custodiado na POLYGON</p>
+        
+        <Card 
+          className={`cursor-pointer transition-all duration-200 ${
+            selectedNetwork?.id === 'polygon' 
+              ? 'bg-slate-700/50 border-blue-500/50' 
+              : 'bg-slate-800/50 border-slate-600/50 hover:bg-slate-700/30'
+          }`}
+          onClick={() => setSelectedNetwork(availableNetworks[0])}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
+                  <img 
+                    src={availableNetworks[0]?.logo} 
+                    alt={availableNetworks[0]?.name} 
+                    className="w-8 h-8 rounded-full"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                  <span className="text-2xl hidden">🟣</span>
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-lg">Polygon</h3>
+                  <p className="text-slate-400 text-sm">Saque Mínimo</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-white font-bold">~0min</p>
+                <p className="text-slate-400 text-sm">$1,00</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Saque Cross-Chain */}
+      <div className="space-y-4">
+        <h2 className="text-white text-lg">Saque Cross-Chain</h2>
+        <p className="text-slate-400 text-sm">Você pode enviar seu token para outra rede. Nós faremos a bridge para você.</p>
+        
+        {/* Visual da Bridge */}
+        <div className="flex items-center justify-center space-x-4 py-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
+              <span className="text-white text-sm">B</span>
+            </div>
+            <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center">
+              <span className="text-white text-xs">P</span>
+            </div>
+          </div>
+          <ArrowRight className="h-5 w-5 text-slate-400" />
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-400 to-blue-500 border-2 border-dashed border-slate-400"></div>
+          </div>
+        </div>
+
+        {/* Opções de Bridge */}
+        <div className="space-y-3">
+          {availableNetworks.slice(1).map((network) => (
+            <Card 
+              key={network.id}
+              className={`cursor-pointer transition-all duration-200 ${
+                selectedNetwork?.id === network.id 
+                  ? 'bg-slate-700/50 border-blue-500/50' 
+                  : 'bg-slate-800/50 border-slate-600/50 hover:bg-slate-700/30'
+              }`}
+              onClick={() => setSelectedNetwork(network)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                      <img 
+                        src={network.logo} 
+                        alt={network.name} 
+                        className="w-8 h-8 rounded-full"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                      <span className="text-2xl hidden">{network.logo}</span>
+                    </div>
+                    <div>
+                      <h3 className="text-white font-semibold text-lg">{network.name}</h3>
+                      <p className="text-slate-400 text-sm">Saque Mínimo</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-white font-bold">{network.estimatedTime}</p>
+                    <p className="text-slate-400 text-sm">{network.cost}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Botão Continuar */}
+      <Button
+        onClick={() => setCurrentStep("address")}
+        disabled={!selectedNetwork}
+        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <div className="flex items-center space-x-2">
+          <span>Continuar</span>
+          <ChevronRight className="h-5 w-5" />
+        </div>
+      </Button>
+    </div>
+  );
+
+  const renderAddressSelectionStep = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-white mb-2">Para qual endereço você quer enviar?</h1>
+        <p className="text-slate-300">Envio de BRZ na {selectedNetwork?.name?.toUpperCase()}</p>
+      </div>
+
+      {/* Input de Endereço */}
+      <Card className="bg-slate-800/50 border-slate-700/50 rounded-xl">
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            <Label className="text-white text-lg">Endereço da carteira</Label>
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Digite o endereço da carteira"
+                value={toAddress}
+                onChange={(e) => setToAddress(e.target.value)}
+                className="bg-slate-700/50 border-slate-600/50 text-white text-lg py-4 pr-20"
+              />
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-slate-400 hover:text-white hover:bg-slate-600/50 px-3 py-1"
+                >
+                  Colar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-slate-400 hover:text-white hover:bg-slate-600/50 p-2"
+                >
+                  <QrCode className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            {toAddress && !isValidAddress(toAddress) && (
+              <p className="text-red-400 text-sm flex items-center space-x-1">
+                <AlertCircle className="h-4 w-4" />
+                <span>Endereço inválido</span>
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Endereços Cripto */}
+      <div className="space-y-4">
+        <h2 className="text-white text-lg">Endereços Cripto</h2>
+        
+        <Card className="bg-slate-800/50 border-slate-700/50 rounded-xl cursor-pointer hover:bg-slate-700/30 transition-all duration-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white font-mono text-sm">0x29...c0a</p>
+                <p className="text-slate-400 text-sm">POLYGON</p>
+              </div>
+              <ExternalLink className="h-4 w-4 text-slate-400" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Botões de Ação */}
+      <div className="flex space-x-4">
+        <Button
+          onClick={() => setCurrentStep("network")}
+          variant="outline"
+          className="flex-1 border-slate-600/50 text-slate-400 hover:bg-slate-700/30 hover:border-slate-500 hover:text-slate-300 transition-all duration-200"
+        >
+          <div className="flex items-center space-x-2">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Voltar</span>
+          </div>
+        </Button>
+        <Button
+          onClick={() => setCurrentStep("form")}
+          disabled={!toAddress || !isValidAddress(toAddress)}
+          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <div className="flex items-center space-x-2">
+            <span>Continuar</span>
+            <ChevronRight className="h-5 w-5" />
+          </div>
+        </Button>
+      </div>
+    </div>
+  );
 
   const renderFormStep = () => (
     <div className="space-y-6">
@@ -526,11 +823,23 @@ export default function TransferPage() {
   return (
     <ProtectedRoute>
       <AppLayout 
-        title="Transferir Tokens"
-        description="Envie tokens para qualquer endereço"
+        title={currentStep === "network" ? "Selecionar Rede" : 
+               currentStep === "address" ? "Selecionar Endereço" :
+               currentStep === "form" ? "Transferir Tokens" :
+               currentStep === "preview" ? "Revisar Transferência" :
+               currentStep === "executing" ? "Executando" :
+               "Transferência Concluída"}
+        description={currentStep === "network" ? "Escolha a rede de destino" :
+                    currentStep === "address" ? "Digite ou escaneie o endereço" :
+                    currentStep === "form" ? "Configure os detalhes da transferência" :
+                    currentStep === "preview" ? "Confirme os detalhes antes de executar" :
+                    currentStep === "executing" ? "Processando sua transação" :
+                    "Sua transação foi processada com sucesso"}
       >
         <div className="flex justify-center">
           <div className="w-full max-w-2xl space-y-6">
+            {currentStep === "network" && renderNetworkSelectionStep()}
+            {currentStep === "address" && renderAddressSelectionStep()}
             {currentStep === "form" && renderFormStep()}
             {currentStep === "preview" && renderPreviewStep()}
             {currentStep === "executing" && renderExecutingStep()}
