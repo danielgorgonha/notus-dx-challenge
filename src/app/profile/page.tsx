@@ -18,6 +18,8 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
 import { useState } from "react";
 import { toast } from "sonner";
+import { walletActions } from "@/lib/actions/wallet";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -25,6 +27,30 @@ export default function ProfilePage() {
   const { wallet } = useSmartWallet();
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
+
+  // Buscar portfolio da wallet
+  const { data: portfolio, isLoading: portfolioLoading } = useQuery({
+    queryKey: ['wallet-portfolio', wallet?.accountAbstraction],
+    queryFn: async () => {
+      if (!wallet?.accountAbstraction) return null;
+      return await walletActions.getPortfolio(wallet.accountAbstraction);
+    },
+    enabled: !!wallet?.accountAbstraction,
+    staleTime: 60000, // 1 minuto
+  });
+
+  // Buscar histórico de transações
+  const { data: history, isLoading: historyLoading } = useQuery({
+    queryKey: ['wallet-history', wallet?.accountAbstraction],
+    queryFn: async () => {
+      if (!wallet?.accountAbstraction) return null;
+      return await walletActions.getHistory(wallet.accountAbstraction, {
+        take: 10
+      });
+    },
+    enabled: !!wallet?.accountAbstraction,
+    staleTime: 30000, // 30 segundos
+  });
 
   const handleCopyAddress = async () => {
     if (wallet?.accountAbstraction) {

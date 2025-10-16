@@ -29,6 +29,7 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { SUPPORTED_CHAINS } from "@/lib/client";
 import { createSwapQuote } from "@/lib/actions/swap";
 import { executeUserOperation } from "@/lib/actions/user-operation";
+import { listChains } from "@/lib/actions/blockchain";
 import { usePrivy } from "@privy-io/react-auth";
 import { Copy, ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -86,6 +87,13 @@ export default function SwapPage() {
   const [usdBRLRate, setUsdBRLRate] = useState(5.45); // Valor padrão
 
   const walletAddress = wallet?.accountAbstraction;
+
+  // Buscar chains reais da API
+  const { data: chainsData } = useQuery({
+    queryKey: ['chains'],
+    queryFn: () => listChains({ page: 1, perPage: 50 }),
+    staleTime: 300000, // 5 minutos
+  });
 
   // Atualizar tokens selecionados com dados reais
   const currentFromToken = fromToken;
