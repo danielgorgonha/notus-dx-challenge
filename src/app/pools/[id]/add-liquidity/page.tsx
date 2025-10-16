@@ -14,10 +14,11 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 // Função para processar dados dos tokens (mesma abordagem do TokenSelector)
-const processTokensData = (tokens: any[], portfolioTokens: any[]) => {
+const processTokensData = (tokens: any[], portfolioTokens: any) => {
   console.log('🔄 [ADD-LIQUIDITY] Processando tokens:', {
-    supportedTokens: tokens.length,
-    portfolioTokens: portfolioTokens.length
+    supportedTokens: tokens?.length || 0,
+    portfolioTokens: portfolioTokens?.tokens?.length || 0,
+    hasBalances: !!portfolioTokens?.balances
   });
   
   const result: {[key: string]: any} = {};
@@ -39,14 +40,25 @@ const processTokensData = (tokens: any[], portfolioTokens: any[]) => {
     brz: brzToken ? { symbol: brzToken.symbol, name: brzToken.name } : null
   });
   
+  // Verificar se os dados estão disponíveis
+  if (!tokens || !Array.isArray(tokens)) {
+    console.log('❌ [ADD-LIQUIDITY] Tokens não disponíveis');
+    return result;
+  }
+
+  if (!portfolioTokens || !portfolioTokens.balances) {
+    console.log('❌ [ADD-LIQUIDITY] Portfolio não disponível');
+    return result;
+  }
+
   // Buscar saldos no portfolio (agora vem do endpoint /api/wallet/balances)
-  const usdcBalance = portfolioTokens?.balances?.USDC || 0;
-  const brzBalance = portfolioTokens?.balances?.BRZ || 0;
+  const usdcBalance = portfolioTokens.balances.USDC || 0;
+  const brzBalance = portfolioTokens.balances.BRZ || 0;
   
   console.log('💰 [ADD-LIQUIDITY] Saldos encontrados no portfolio:', {
     usdc: usdcBalance,
     brz: brzBalance,
-    balances: portfolioTokens?.balances
+    balances: portfolioTokens.balances
   });
   
   if (usdcToken) {
@@ -117,7 +129,8 @@ export default function AddLiquidityPage() {
   const [priceRange, setPriceRange] = useState<'± 10%' | '± 15%' | '± 20%' | 'Total' | null>(null);
   const [selectedInputToken, setSelectedInputToken] = useState<'USDC' | 'BRZ' | null>(null);
   const [inputAmount, setInputAmount] = useState<string>('');
-  const [countdown, setCountdown] = useState(117); // 1:57 em segundos
+  const [countdown, setCountdown] = useState(0); // Inicia zerado
+  const [timerActive, setTimerActive] = useState(false); // Controla se o timer está ativo
   // Removido: tokenBalances mock - usando dados reais da API
 
   // TODO: Implementar busca de dados históricos reais do pool
@@ -342,15 +355,45 @@ export default function AddLiquidityPage() {
     return selectedInputToken && inputAmount && parseFloat(inputAmount) > 0;
   };
 
-  // Countdown timer
+  const startTimer = () => {
+    setCountdown(120); // Inicia com 2 minutos
+    setTimerActive(true); // Ativa o timer
+  };
+
+  const refetchData = () => {
+    // Refetch dos dados quando o timer zerar
+    console.log('🔄 [ADD-LIQUIDITY] Refazendo busca de dados...');
+    // Aqui você pode adicionar lógica para refetch dos dados se necessário
+  };
+
+  // Countdown timer - só funciona quando ativo
   useEffect(() => {
-    if (currentStep === 2 && countdown > 0) {
+    if (timerActive && countdown > 0) {
       const timer = setTimeout(() => {
         setCountdown(countdown - 1);
       }, 1000);
       return () => clearTimeout(timer);
+    } else if (timerActive && countdown === 0) {
+      // Quando zerar, buscar dados atualizados e resetar timer
+      console.log('🔄 [ADD-LIQUIDITY] Timer zerou, buscando dados atualizados...');
+      refetchData();
+      setCountdown(120); // Reset para 2 minutos
     }
-  }, [countdown, currentStep]);
+  }, [countdown, timerActive]);
+
+  // Iniciar timer automaticamente quando o usuário digitar no input
+  useEffect(() => {
+    if (inputAmount && parseFloat(inputAmount) > 0) {
+      if (!timerActive) {
+        console.log('⏰ [ADD-LIQUIDITY] Usuário informou valor, iniciando timer...');
+        startTimer();
+      } else {
+        // Se já está ativo, resetar o timer para 2 minutos
+        console.log('⏰ [ADD-LIQUIDITY] Valor alterado, resetando timer...');
+        setCountdown(120);
+      }
+    }
+  }, [inputAmount]);
 
   if (isLoading || tokensLoading || portfolioLoading) {
     return (
@@ -914,14 +957,16 @@ export default function AddLiquidityPage() {
                 </div>
               )}
 
-              {/* Countdown Timer */}
-              <div className="flex items-center space-x-2 text-yellow-400">
-                <div className="w-4 h-4 rounded-full bg-yellow-500 flex items-center justify-center">
-                  <span className="text-black text-xs">⏰</span>
+              {/* Countdown Timer - só aparece quando ativo */}
+              {timerActive && (
+                <div className="flex items-center space-x-2 text-yellow-400">
+                  <div className="w-4 h-4 rounded-full bg-yellow-500 flex items-center justify-center">
+                    <span className="text-black text-xs">⏰</span>
+                  </div>
+                  <span className="text-sm">O preço será atualizado em:</span>
+                  <span className="text-yellow-400 font-mono text-lg">{formatCountdown(countdown)}</span>
                 </div>
-                <span className="text-sm">O preço será atualizado em:</span>
-                <span className="text-yellow-400 font-mono text-lg">{formatCountdown(countdown)}</span>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
