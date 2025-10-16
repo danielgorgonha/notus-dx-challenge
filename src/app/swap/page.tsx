@@ -589,6 +589,24 @@ export default function SwapPage() {
     return usdBRLRate;
   };
 
+  // Função para validar e formatar entrada de valor
+  const validateAndFormatInput = (value: string, decimals: number = 18) => {
+    // Remover caracteres não numéricos exceto ponto e vírgula
+    const cleaned = value.replace(/[^\d.,]/g, '');
+    
+    // Substituir vírgula por ponto
+    const normalized = cleaned.replace(',', '.');
+    
+    // Verificar se é um número válido
+    const numValue = parseFloat(normalized);
+    if (isNaN(numValue)) return '';
+    
+    // Limitar casas decimais
+    const formatted = numValue.toFixed(decimals);
+    
+    return formatted;
+  };
+
   // Função para validar conversão fiat
   const validateFiatConversion = (token: any, amount: string) => {
     const numAmount = parseFloat(amount);
@@ -646,19 +664,29 @@ export default function SwapPage() {
         <div className="bg-slate-800/50 rounded-lg p-4 space-y-4">
           {/* Input principal com token selector à direita */}
           <div className="flex items-center space-x-3">
-            <div className="flex-1">
-                <Input 
+            <div className="flex-1 relative">
+              <Input 
                 type="text"
                 placeholder="0"
                 value={fromAmount ? formatTokenAmount(fromAmount, currentFromToken?.decimals, true) : ""}
                 onChange={(e) => {
-                  const rawValue = e.target.value.replace(/[^\d.,]/g, '').replace(',', '.');
-                  setFromAmount(rawValue);
+                  const formattedValue = validateAndFormatInput(e.target.value, currentFromToken?.decimals || 18);
+                  setFromAmount(formattedValue);
                 }}
-                className="bg-transparent border-none text-white text-3xl font-bold text-right p-0 h-auto focus:ring-0 focus:outline-none"
+                className="bg-transparent border-none text-white text-3xl font-bold text-right p-0 h-auto focus:ring-0 focus:outline-none placeholder:text-slate-500 transition-all duration-200 hover:bg-slate-700/30 focus:bg-slate-700/50 rounded-lg px-3 py-2"
                 disabled={!currentFromToken}
-                />
-              </div>
+                onFocus={(e) => e.target.select()}
+                onBlur={(e) => {
+                  // Validar e formatar valor ao sair do campo
+                  if (e.target.value && !isNaN(parseFloat(e.target.value))) {
+                    const formatted = parseFloat(e.target.value).toFixed(currentFromToken?.decimals || 18);
+                    setFromAmount(formatted);
+                  }
+                }}
+              />
+              {/* Indicador de foco */}
+              <div className="absolute inset-0 pointer-events-none rounded-lg border-2 border-transparent transition-all duration-200 focus-within:border-blue-500/50"></div>
+            </div>
             <TokenSelector
               selectedToken={currentFromToken}
               onTokenSelect={handleFromTokenSelect}
@@ -684,12 +712,12 @@ export default function SwapPage() {
                 onClick={handleMaxAmount}
                 size="sm"
                 variant="outline"
-                className="text-xs px-2 py-1 h-auto bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                className="text-xs px-2 py-1 h-auto bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 transition-all duration-200 hover:scale-105"
               >
                 MAX
               </Button>
             </div>
-            </div>
+          </div>
 
           {fromAmount && !isValidAmount(fromAmount) && (
             <p className="text-red-400 text-sm flex items-center space-x-1">
@@ -717,22 +745,45 @@ export default function SwapPage() {
         <div className="bg-slate-800/50 rounded-lg p-4 space-y-4">
           {/* Input principal com token selector à direita */}
           <div className="flex items-center space-x-3">
-            <div className="flex-1">
-                <Input 
+            <div className="flex-1 relative">
+              <Input 
                 type="text"
                 placeholder="0"
                 value={toAmount ? formatTokenAmount(toAmount, currentToToken?.decimals, true) : ""}
                 onChange={(e) => {
                   // Só permitir edição se não há valor no campo enviar
                   if (!fromAmount) {
-                    const rawValue = e.target.value.replace(/[^\d.,]/g, '').replace(',', '.');
-                    setToAmount(rawValue);
+                    const formattedValue = validateAndFormatInput(e.target.value, currentToToken?.decimals || 18);
+                    setToAmount(formattedValue);
                   }
                 }}
-                className="bg-transparent border-none text-white text-3xl font-bold text-right p-0 h-auto focus:ring-0 focus:outline-none"
+                className={`bg-transparent border-none text-white text-3xl font-bold text-right p-0 h-auto focus:ring-0 focus:outline-none placeholder:text-slate-500 transition-all duration-200 rounded-lg px-3 py-2 ${
+                  fromAmount && fromAmount !== "" 
+                    ? "bg-slate-700/30 cursor-not-allowed opacity-75" 
+                    : "hover:bg-slate-700/30 focus:bg-slate-700/50"
+                }`}
                 disabled={!currentToToken || !!(fromAmount && fromAmount !== "")}
                 readOnly={!!(fromAmount && fromAmount !== "")}
+                onFocus={(e) => {
+                  if (!fromAmount) {
+                    e.target.select();
+                  }
+                }}
+                onBlur={(e) => {
+                  // Validar e formatar valor ao sair do campo
+                  if (e.target.value && !isNaN(parseFloat(e.target.value)) && !fromAmount) {
+                    const formatted = parseFloat(e.target.value).toFixed(currentToToken?.decimals || 18);
+                    setToAmount(formatted);
+                  }
+                }}
               />
+              {/* Indicador de foco */}
+              <div className={`absolute inset-0 pointer-events-none rounded-lg border-2 border-transparent transition-all duration-200 ${
+                fromAmount && fromAmount !== "" 
+                  ? "border-slate-600/50" 
+                  : "focus-within:border-blue-500/50"
+              }`}></div>
+              
             </div>
             <TokenSelector
               selectedToken={currentToToken}
