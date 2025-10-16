@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,6 +82,9 @@ export default function SwapPage() {
   const [isToTokenDetailsOpen, setIsToTokenDetailsOpen] = useState(false);
   const [quoteTimer, setQuoteTimer] = useState(47); // Timer em segundos
   const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
+  
+  // Estado para taxa USD/BRL
+  const [usdBRLRate, setUsdBRLRate] = useState(5.45); // Valor padrão
 
   const walletAddress = wallet?.accountAbstraction;
 
@@ -103,17 +106,9 @@ export default function SwapPage() {
     }
   }, [walletAddress, fromToken, toToken]);
 
-  // Calcular taxa de câmbio (só se ambos tokens têm preço)
-  const exchangeRate = (() => {
-    console.log('🔍 DEBUG exchangeRate calculation:', {
-      currentFromToken: currentFromToken?.symbol,
-      currentToToken: currentToToken?.symbol,
-      fromTokenPrice: currentFromToken?.price,
-      toTokenPrice: currentToToken?.price
-    });
-    
+  // Calcular taxa de câmbio (memoizado para evitar recálculos)
+  const exchangeRate = useMemo(() => {
     if (!currentFromToken || !currentToToken) {
-      console.log('❌ DEBUG exchangeRate: Missing tokens');
       return 0;
     }
     
@@ -127,42 +122,56 @@ export default function SwapPage() {
     // Fallback: se não há preços, usar taxa fixa temporária para BRZ/USDC
     if (rate === 0 && currentFromToken.symbol.toLowerCase() === 'brz' && currentToToken.symbol.toLowerCase() === 'usdc') {
       rate = 0.18; // 1 BRZ = 0.18 USDC (aproximadamente)
-      console.log('✅ DEBUG exchangeRate: Using fallback rate:', rate);
     }
     
     // Fallback adicional: se USDC não tem preço mas BRZ tem, usar preço do BRZ
     if (rate === 0 && fromPrice > 0 && toPrice === 0 && currentFromToken.symbol.toLowerCase() === 'brz' && currentToToken.symbol.toLowerCase() === 'usdc') {
       rate = fromPrice; // Usar preço do BRZ como taxa
-      console.log('✅ DEBUG exchangeRate: Using BRZ price as rate:', rate);
     }
     
-    console.log('✅ DEBUG exchangeRate final:', rate);
     return rate;
-  })();
+  }, [currentFromToken, currentToToken]);
 
+  // Calcular valor de destino baseado no valor de origem (memoizado)
+  const calculateToAmount = useCallback((fromValue: string) => {
+    if (!fromValue || !exchangeRate || !currentFromToken || !currentToToken) {
+      return "";
+    }
+    
+    const fromNum = parseFloat(fromValue);
+    if (isNaN(fromNum) || fromNum <= 0) {
+      return "";
+    }
+    
+    // Aplicar taxa de câmbio diretamente (sem conversão de decimais)
+    const toAmount = fromNum * exchangeRate;
+    
+    return toAmount.toString();
+  }, [exchangeRate, currentFromToken, currentToToken]);
+
+  // Calcular valor de origem baseado no valor de destino (memoizado)
+  const calculateFromAmount = useCallback((toValue: string) => {
+    if (!toValue || !exchangeRate || !currentFromToken || !currentToToken) return "";
+    
+    const toNum = parseFloat(toValue);
+    if (isNaN(toNum) || toNum <= 0) return "";
+    
+    // Aplicar taxa de câmbio inversa diretamente (sem conversão de decimais)
+    const fromAmount = toNum / exchangeRate;
+    
+    return fromAmount.toString();
+  }, [exchangeRate, currentFromToken, currentToToken]);
 
   // Recalcular valores quando tokens ou exchangeRate mudarem
   useEffect(() => {
-    console.log('🔍 DEBUG Auto-calculation:', {
-      fromAmount,
-      exchangeRate,
-      currentFromToken: currentFromToken?.symbol,
-      currentToToken: currentToToken?.symbol,
-      fromTokenPrice: currentFromToken?.price,
-      toTokenPrice: currentToToken?.price
-    });
-    
     if (fromAmount && exchangeRate > 0 && currentFromToken && currentToToken) {
       const calculatedTo = calculateToAmount(fromAmount);
-      console.log('✅ DEBUG Calculated toAmount:', calculatedTo);
       setToAmount(calculatedTo);
     } else if (!fromAmount) {
       // Limpar campo receber quando campo enviar estiver vazio
       setToAmount("");
-    } else {
-      console.log('❌ DEBUG Conditions not met for auto-calculation');
     }
-  }, [fromAmount, currentFromToken, currentToToken, exchangeRate]);
+  }, [fromAmount, exchangeRate, currentFromToken, currentToToken, calculateToAmount]);
 
   // Recalcular fromAmount quando toAmount mudar
   useEffect(() => {
@@ -170,7 +179,7 @@ export default function SwapPage() {
       const calculatedFrom = calculateFromAmount(toAmount);
       setFromAmount(calculatedFrom);
     }
-  }, [toAmount, currentFromToken, currentToToken, exchangeRate]);
+  }, [toAmount, exchangeRate, currentFromToken, currentToToken, calculateFromAmount]);
 
   // Buscar taxa USD/BRL ao carregar o componente
   useEffect(() => {
@@ -320,46 +329,6 @@ export default function SwapPage() {
       validateFiatConversion(currentToToken, toAmount);
     }
   }, [fromAmount, toAmount, currentFromToken, currentToToken]);
-
-  // Calcular valor de destino baseado no valor de origem
-  const calculateToAmount = (fromValue: string) => {
-    console.log('🔍 DEBUG calculateToAmount called:', {
-      fromValue,
-      exchangeRate,
-      currentFromToken: currentFromToken?.symbol,
-      currentToToken: currentToToken?.symbol
-    });
-    
-    if (!fromValue || !exchangeRate || !currentFromToken || !currentToToken) {
-      console.log('❌ DEBUG calculateToAmount: Missing required values');
-      return "";
-    }
-    
-    const fromNum = parseFloat(fromValue);
-    if (isNaN(fromNum) || fromNum <= 0) {
-      console.log('❌ DEBUG calculateToAmount: Invalid fromNum:', fromNum);
-      return "";
-    }
-    
-    // Aplicar taxa de câmbio diretamente (sem conversão de decimais)
-    const toAmount = fromNum * exchangeRate;
-    console.log('✅ DEBUG calculateToAmount result:', toAmount);
-    
-    return toAmount.toString();
-  };
-
-  // Calcular valor de origem baseado no valor de destino
-  const calculateFromAmount = (toValue: string) => {
-    if (!toValue || !exchangeRate || !currentFromToken || !currentToToken) return "";
-    
-    const toNum = parseFloat(toValue);
-    if (isNaN(toNum) || toNum <= 0) return "";
-    
-    // Aplicar taxa de câmbio inversa diretamente (sem conversão de decimais)
-    const fromAmount = toNum / exchangeRate;
-    
-    return fromAmount.toString();
-  };
 
 
 
@@ -523,8 +492,8 @@ export default function SwapPage() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Calcular valor em R$ baseado no preço do token
-  const calculateFiatValue = (amount: string, token: any) => {
+  // Calcular valor em R$ baseado no preço do token (memoizado)
+  const calculateFiatValue = useCallback((amount: string, token: any) => {
     if (!amount || !token || amount === "0") return 0;
     
     const numAmount = parseFloat(amount);
@@ -538,7 +507,6 @@ export default function SwapPage() {
       // Se USDC não tem preço, usar taxa USD/BRL dinâmica
       if (price === 0) {
         price = getUSDBRLRate(); // Taxa USD/BRL dinâmica
-        console.log('🔍 DEBUG USDC: Using dynamic USD/BRL rate:', price);
       }
     }
     
@@ -546,23 +514,11 @@ export default function SwapPage() {
     if (token.symbol.toLowerCase() === 'brz') {
       // BRZ sempre deve ser 1:1 (1 BRZ = R$ 1,00)
       price = 1.0; // 1 BRZ = R$ 1,00
-      console.log('🔍 DEBUG BRZ: Using 1:1 rate (1 BRZ = R$ 1,00):', price);
     }
     
     const result = numAmount * price;
-    console.log('🔍 DEBUG calculateFiatValue:', {
-      token: token.symbol,
-      amount: numAmount,
-      price: price,
-      result: result,
-      formatted: formatFiatAmount(result)
-    });
-    
     return result;
-  };
-
-  // Estado para taxa USD/BRL
-  const [usdBRLRate, setUsdBRLRate] = useState(5.45); // Valor padrão
+  }, [usdBRLRate]);
 
   // Função para buscar taxa USD/BRL atual
   const fetchUSDBRLRate = async () => {
@@ -572,11 +528,10 @@ export default function SwapPage() {
       const data = await response.json();
       const rate = data.rates.BRL;
       
-      console.log('🔍 DEBUG USD/BRL Rate fetched:', rate);
       setUsdBRLRate(rate);
       return rate;
     } catch (error) {
-      console.error('❌ DEBUG Error fetching USD/BRL rate:', error);
+      console.error('Error fetching USD/BRL rate:', error);
       // Manter valor padrão em caso de erro
       return 5.45;
     }
