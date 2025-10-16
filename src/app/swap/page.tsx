@@ -170,14 +170,89 @@ export default function SwapPage() {
     fetchUSDBRLRate();
   }, []);
 
+  // Declarar canProceed antes de usar no handleGetQuote
+  const canProceed = fromAmount && currentFromToken && currentToToken && 
+    isValidAmount(fromAmount) && currentFromToken.symbol !== currentToToken.symbol;
+
+  // Declarar handleGetQuote antes de usar no useEffect
+  const handleGetQuote = React.useCallback(async () => {
+    if (!canProceed || !walletAddress) {
+      toast.error(
+        'Erro',
+        'Carteira não conectada ou valor inválido.',
+        3000
+      );
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      
+      const swapQuote = await createSwapQuote({
+        amountIn: fromAmount,
+        chainIdIn: SUPPORTED_CHAINS.POLYGON, // Polygon
+        chainIdOut: SUPPORTED_CHAINS.POLYGON, // Polygon (mesmo chain)
+        tokenIn: currentFromToken.address,
+        tokenOut: currentToToken.address,
+        walletAddress: walletAddress,
+        toAddress: walletAddress,
+        slippage: slippage,
+        gasFeePaymentMethod: 'ADD_TO_AMOUNT',
+        payGasFeeToken: currentFromToken.address
+      });
+
+      
+      const quoteData = {
+        ...swapQuote.swap,
+        fromToken,
+        toToken,
+        fromAmount,
+        toAmount: swapQuote.swap.minAmountOut,
+        exchangeRate: parseFloat(swapQuote.swap.minAmountOut) / parseFloat(fromAmount),
+        slippage,
+        estimatedGasFee: swapQuote.swap.estimatedGasFees.gasFeeTokenAmount,
+        gasFeeToken: fromToken.symbol,
+        estimatedTime: "~3 minutes",
+      };
+      
+      setQuote(quoteData);
+      setUserOperationHash(swapQuote.swap.userOperationHash);
+      setToAmount(swapQuote.swap.minAmountOut);
+      setCurrentStep("preview");
+      
+      toast.success(
+        'Cotação Gerada',
+        'Cotação de swap criada com sucesso!',
+        3000
+      );
+    } catch (error) {
+      console.error("❌ Erro ao obter cotação:", error);
+      toast.error(
+        'Erro na Cotação',
+        error instanceof Error ? error.message : 'Não foi possível obter a cotação. Tente novamente.',
+        5000
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [canProceed, walletAddress, fromAmount, currentFromToken, currentToToken, slippage, toast]);
+
   // Timer dinâmico para atualização de preço
   useEffect(() => {
+    // Limpar timer anterior se existir
+    if (timerInterval) {
+      clearInterval(timerInterval);
+    }
+
     if (quoteTimer > 0) {
       const interval = setInterval(() => {
         setQuoteTimer(prev => {
           if (prev <= 1) {
             // Timer chegou a zero, obter nova cotação
-            handleGetQuote();
+            // Usar setTimeout para evitar chamada durante renderização
+            setTimeout(() => {
+              handleGetQuote();
+            }, 0);
             return 47; // Reset para 47 segundos
           }
           return prev - 1;
@@ -192,7 +267,7 @@ export default function SwapPage() {
         clearInterval(timerInterval);
       }
     };
-  }, [quoteTimer]);
+  }, [quoteTimer]); // Remover handleGetQuote das dependências para evitar loop
 
   // Limpar timer ao desmontar componente
   useEffect(() => {
@@ -262,8 +337,6 @@ export default function SwapPage() {
     return numAmount > 0 && numAmount <= tokenBalance;
   };
 
-  const canProceed = fromAmount && currentFromToken && currentToToken && 
-    isValidAmount(fromAmount) && currentFromToken.symbol !== currentToToken.symbol;
 
   const handleSwapTokens = () => {
     const tempToken = fromToken;
@@ -272,68 +345,6 @@ export default function SwapPage() {
     setToToken(tempToken);
     setFromAmount(toAmount);
     setToAmount(tempAmount);
-  };
-
-  const handleGetQuote = async () => {
-    if (!canProceed || !walletAddress) {
-      toast.error(
-        'Erro',
-        'Carteira não conectada ou valor inválido.',
-        3000
-      );
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      
-      const swapQuote = await createSwapQuote({
-        amountIn: fromAmount,
-        chainIdIn: SUPPORTED_CHAINS.POLYGON, // Polygon
-        chainIdOut: SUPPORTED_CHAINS.POLYGON, // Polygon (mesmo chain)
-        tokenIn: currentFromToken.address,
-        tokenOut: currentToToken.address,
-        walletAddress: walletAddress,
-        toAddress: walletAddress,
-        slippage: slippage,
-        gasFeePaymentMethod: 'ADD_TO_AMOUNT',
-        payGasFeeToken: currentFromToken.address
-      });
-
-      
-      const quoteData = {
-        ...swapQuote.swap,
-        fromToken,
-        toToken,
-        fromAmount,
-        toAmount: swapQuote.swap.minAmountOut,
-        exchangeRate: parseFloat(swapQuote.swap.minAmountOut) / parseFloat(fromAmount),
-        slippage,
-        estimatedGasFee: swapQuote.swap.estimatedGasFees.gasFeeTokenAmount,
-        gasFeeToken: fromToken.symbol,
-        estimatedTime: "~3 minutes",
-      };
-      
-      setQuote(quoteData);
-      setUserOperationHash(swapQuote.swap.userOperationHash);
-      setToAmount(swapQuote.swap.minAmountOut);
-      setCurrentStep("preview");
-      
-      toast.success(
-        'Cotação Gerada',
-        'Cotação de swap criada com sucesso!',
-        3000
-      );
-    } catch (error) {
-      console.error("❌ Erro ao obter cotação:", error);
-      toast.error(
-        'Erro na Cotação',
-        error instanceof Error ? error.message : 'Não foi possível obter a cotação. Tente novamente.',
-        5000
-      );
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handleExecuteSwap = async () => {
