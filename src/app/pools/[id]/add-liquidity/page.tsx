@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { notusAPI } from '@/lib/api/client';
 import { liquidityActions } from '@/lib/actions/liquidity';
+import { listTokensByChain } from '@/lib/actions/blockchain';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight, RefreshCw, ZoomOut, ZoomIn, Plus, Info, TrendingUp } from 'lucide-react';
@@ -12,26 +13,71 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine } from 'recharts';
 
-// Função para processar dados dos tokens (movida para fora do componente)
-const processTokensData = (tokens: any[], walletBalances?: {[key: string]: number}) => {
+// Função para processar dados dos tokens (mesma abordagem do TokenSelector)
+const processTokensData = (tokens: any[], portfolioTokens: any[]) => {
+  console.log('🔄 [ADD-LIQUIDITY] Processando tokens:', {
+    supportedTokens: tokens.length,
+    portfolioTokens: portfolioTokens.length
+  });
+  
   const result: {[key: string]: any} = {};
   
-  tokens.forEach(token => {
-    const symbol = token.symbol.toUpperCase();
-    if (symbol === 'USDC' || symbol === 'BRZ') {
-      result[symbol] = {
-        symbol: token.symbol,
-        name: token.name,
-        address: token.address,
-        decimals: token.decimals,
-        logo: token.logo,
-        balance: walletBalances?.[symbol] || 0,
-        chain: token.chain
-      };
-    }
+  // Buscar USDC e BRZ nos tokens suportados
+  const usdcToken = tokens.find(token => 
+    token.symbol.toUpperCase() === 'USDC' || 
+    token.symbol.toUpperCase() === 'USDC.E' ||
+    token.name.toLowerCase().includes('usdc')
+  );
+  
+  const brzToken = tokens.find(token => 
+    token.symbol.toUpperCase() === 'BRZ' ||
+    token.name.toLowerCase().includes('brazilian')
+  );
+  
+  console.log('🔍 [ADD-LIQUIDITY] Tokens encontrados:', {
+    usdc: usdcToken ? { symbol: usdcToken.symbol, name: usdcToken.name } : null,
+    brz: brzToken ? { symbol: brzToken.symbol, name: brzToken.name } : null
   });
-
-  console.log('🎯 Tokens processados:', result);
+  
+  // Buscar saldos no portfolio (agora vem do endpoint /api/wallet/balances)
+  const usdcBalance = portfolioTokens?.balances?.USDC || 0;
+  const brzBalance = portfolioTokens?.balances?.BRZ || 0;
+  
+  console.log('💰 [ADD-LIQUIDITY] Saldos encontrados no portfolio:', {
+    usdc: usdcBalance,
+    brz: brzBalance,
+    balances: portfolioTokens?.balances
+  });
+  
+  if (usdcToken) {
+    const balance = usdcBalance;
+    result['USDC'] = {
+      symbol: usdcToken.symbol,
+      name: usdcToken.name,
+      address: usdcToken.address,
+      decimals: usdcToken.decimals,
+      logo: usdcToken.logo || usdcToken.logoUrl,
+      balance: balance,
+      chain: usdcToken.chain
+    };
+    console.log('✅ [ADD-LIQUIDITY] USDC processado:', { symbol: usdcToken.symbol, balance });
+  }
+  
+  if (brzToken) {
+    const balance = brzBalance;
+    result['BRZ'] = {
+      symbol: brzToken.symbol,
+      name: brzToken.name,
+      address: brzToken.address,
+      decimals: brzToken.decimals,
+      logo: brzToken.logo || brzToken.logoUrl,
+      balance: balance,
+      chain: brzToken.chain
+    };
+    console.log('✅ [ADD-LIQUIDITY] BRZ processado:', { symbol: brzToken.symbol, balance });
+  }
+  
+  console.log('🎯 [ADD-LIQUIDITY] Resultado final:', result);
   return result;
 };
 
@@ -89,77 +135,111 @@ export default function AddLiquidityPage() {
     { date: '06/10/2025', price: 0.055 }
   ];
 
-  // Query para buscar tokens da Polygon
-  const { data: polygonTokens, isLoading: tokensLoading, error: tokensError } = useQuery({
-    queryKey: ['polygon-tokens'],
+  // Usar o endereço real da wallet que tem saldo de BRZ
+  const walletAddress = '0x29275940040857bf0ffe8d875622c85aaaec5c0a';
+
+  // Query para buscar tokens USDC e BRZ específicos da Polygon
+  const { data: tokensData, isLoading: tokensLoading, error: tokensError } = useQuery({
+    queryKey: ['tokens-usdc-brz', 137],
     queryFn: async () => {
-      console.log('🔍 Buscando tokens USDC e BRZ na Polygon...');
+      console.log('🔍 [ADD-LIQUIDITY] Iniciando busca de tokens USDC e BRZ...');
       
-      try {
-        // Tentativa 1: Busca múltipla (USDC,BRZ)
-        try {
-          const multiSearchResponse = await fetch('/api/crypto/tokens?search=USDC,BRZ&filterByChainId=137&filterWhitelist=false&page=1&perPage=100');
-          if (multiSearchResponse.ok) {
-            const multiData = await multiSearchResponse.json();
-            console.log('✅ Busca múltipla bem-sucedida:', multiData);
-            return processTokensData(multiData.tokens, walletBalances);
-          }
-        } catch (error) {
-          console.log('⚠️ Busca múltipla falhou, tentando buscas separadas...');
-        }
+      // Buscar USDC e BRZ separadamente
+      console.log('📡 [ADD-LIQUIDITY] Fazendo requisições para API de tokens...');
+      const [usdcResponse, brzResponse] = await Promise.all([
+        fetch('/api/crypto/tokens?search=USDC&filterByChainId=137&filterWhitelist=false&page=1&perPage=100'),
+        fetch('/api/crypto/tokens?search=BRZ&filterByChainId=137&filterWhitelist=false&page=1&perPage=100')
+      ]);
 
-        // Tentativa 2: Buscas separadas
-        console.log('🔄 Executando buscas separadas para USDC e BRZ...');
-        const [usdcResponse, brzResponse] = await Promise.all([
-          fetch('/api/crypto/tokens?search=USDC&filterByChainId=137&filterWhitelist=false&page=1&perPage=100'),
-          fetch('/api/crypto/tokens?search=BRZ&filterByChainId=137&filterWhitelist=false&page=1&perPage=100')
-        ]);
+      console.log('📊 [ADD-LIQUIDITY] Status das respostas:', {
+        usdc: usdcResponse.status,
+        brz: brzResponse.status
+      });
 
-        const [usdcData, brzData] = await Promise.all([
-          usdcResponse.json(),
-          brzResponse.json()
-        ]);
-
-        console.log('📊 Dados USDC:', usdcData);
-        console.log('📊 Dados BRZ:', brzData);
-
-        const allTokens = [...usdcData.tokens, ...brzData.tokens];
-        return processTokensData(allTokens, walletBalances);
-
-      } catch (error) {
-        console.error('❌ Erro ao buscar tokens:', error);
-        throw error; // Não usar fallback, deixar o erro aparecer
+      if (!usdcResponse.ok || !brzResponse.ok) {
+        console.error('❌ [ADD-LIQUIDITY] Erro nas requisições de tokens');
+        throw new Error(`Erro nas requisições: USDC ${usdcResponse.status}, BRZ ${brzResponse.status}`);
       }
+
+      const [usdcData, brzData] = await Promise.all([
+        usdcResponse.json(),
+        brzResponse.json()
+      ]);
+
+      console.log('✅ [ADD-LIQUIDITY] Dados USDC recebidos:', {
+        tokens: usdcData.tokens?.length || 0,
+        total: usdcData.total
+      });
+      
+      console.log('✅ [ADD-LIQUIDITY] Dados BRZ recebidos:', {
+        tokens: brzData.tokens?.length || 0,
+        total: brzData.total
+      });
+
+      // Combinar os tokens encontrados
+      const combinedTokens = [...usdcData.tokens, ...brzData.tokens];
+      console.log('🎯 [ADD-LIQUIDITY] Tokens combinados:', {
+        total: combinedTokens.length,
+        symbols: combinedTokens.map(t => t.symbol)
+      });
+
+      return {
+        tokens: combinedTokens,
+        total: usdcData.total + brzData.total
+      };
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    refetchInterval: 300000, // 5 minutos
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 300000, // 5 minutos
+    gcTime: 600000, // 10 minutos
   });
 
-  // Query para buscar saldos da smart wallet
-  const { data: walletBalances, isLoading: balancesLoading } = useQuery({
-    queryKey: ['wallet-balances'],
+  // Query para buscar portfolio do usuário via endpoint corrigido
+  const { data: portfolioData, isLoading: portfolioLoading, error: portfolioError } = useQuery({
+    queryKey: ['portfolio', walletAddress],
     queryFn: async () => {
-      console.log('💰 Buscando saldos da smart wallet...');
-      
+      console.log('💰 [ADD-LIQUIDITY] Buscando portfolio da wallet:', walletAddress);
       try {
-        // TODO: Implementar busca do endereço da wallet do usuário
-        const walletAddress = '0x1234567890123456789012345678901234567890'; // Mock address por enquanto
-        
         const response = await fetch(`/api/wallet/balances?address=${walletAddress}&chainId=137`);
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`Erro na requisição: ${response.status}`);
         }
         const data = await response.json();
-        console.log('✅ Saldos da smart wallet:', data);
-        return data.balances;
+        console.log('✅ [ADD-LIQUIDITY] Portfolio recebido:', {
+          balances: data.balances,
+          tokens: data.portfolio?.tokens?.length || 0
+        });
+        console.log('📊 [ADD-LIQUIDITY] Saldos extraídos:', data.balances);
+        return data;
       } catch (error) {
-        console.error('❌ Erro ao buscar saldos:', error);
-        throw error; // Não usar fallback, deixar o erro aparecer
+        console.error('❌ [ADD-LIQUIDITY] Erro ao buscar portfolio:', error);
+        throw error;
       }
     },
-    staleTime: 30 * 1000, // 30 segundos (saldos mudam frequentemente)
-    gcTime: 60 * 1000, // 1 minuto
+    enabled: !!walletAddress,
+    refetchInterval: 30000, // 30 segundos
   });
+
+  // Combinar tokens suportados com saldos do portfolio (mesma lógica do TokenSelector)
+  const polygonTokens = React.useMemo(() => {
+    console.log('🔄 [ADD-LIQUIDITY] Combinando dados de tokens e portfolio...');
+    
+    const supportedTokens = tokensData?.tokens || [];
+    const portfolioTokens = portfolioData?.tokens || [];
+    
+    console.log('📊 [ADD-LIQUIDITY] Dados disponíveis:', {
+      supportedTokens: supportedTokens.length,
+      portfolioTokens: portfolioTokens.length,
+      tokensDataExists: !!tokensData,
+      portfolioDataExists: !!portfolioData
+    });
+    
+    const result = processTokensData(supportedTokens, portfolioData);
+    
+    console.log('🎯 [ADD-LIQUIDITY] Resultado da combinação:', result);
+    return result;
+  }, [tokensData, portfolioData]);
 
 
   // Query para buscar detalhes do pool
@@ -167,14 +247,21 @@ export default function AddLiquidityPage() {
     queryKey: ['pool-details', poolId],
     queryFn: async () => {
       if (!poolId) {
+        console.error('❌ [ADD-LIQUIDITY] Pool ID não fornecido');
         throw new Error('Pool ID não fornecido');
       }
       
-      console.log('🔍 Buscando detalhes do pool para adicionar liquidez:', poolId);
+      console.log('🔍 [ADD-LIQUIDITY] Buscando detalhes do pool:', poolId);
       
       try {
         const response = await liquidityActions.getPool(poolId, 365);
-        console.log('✅ Resposta da API para detalhes do pool:', response);
+        console.log('✅ [ADD-LIQUIDITY] Resposta da API para detalhes do pool:', {
+          poolId: response?.pool?.address,
+          provider: response?.pool?.provider,
+          fee: response?.pool?.fee,
+          tvl: response?.pool?.totalValueLockedUSD,
+          tokens: response?.pool?.tokens?.length || 0
+        });
 
         if (!response) {
           throw new Error('Pool não encontrado');
@@ -265,7 +352,7 @@ export default function AddLiquidityPage() {
     }
   }, [countdown, currentStep]);
 
-  if (isLoading) {
+  if (isLoading || tokensLoading || portfolioLoading) {
     return (
       <ProtectedRoute>
         <AppLayout
@@ -282,7 +369,7 @@ export default function AddLiquidityPage() {
     );
   }
 
-  if (error || !poolData) {
+  if (error || !poolData || tokensError || portfolioError) {
     return (
       <ProtectedRoute>
         <AppLayout
@@ -646,12 +733,13 @@ export default function AddLiquidityPage() {
           </div>
         )}
 
+
         <div className="grid grid-cols-2 gap-4">
           {/* USDC Option */}
           <Button
             variant="outline"
             onClick={() => {
-              console.log('🔄 Selecionando USDC, dados disponíveis:', polygonTokens?.USDC);
+              console.log('🔄 [ADD-LIQUIDITY] Selecionando USDC, dados disponíveis:', polygonTokens?.USDC);
               setSelectedInputToken('USDC');
             }}
             className={`p-6 h-auto flex flex-col items-center space-y-3 ${
@@ -690,7 +778,7 @@ export default function AddLiquidityPage() {
           <Button
             variant="outline"
             onClick={() => {
-              console.log('🔄 Selecionando BRZ, dados disponíveis:', polygonTokens?.BRZ);
+              console.log('🔄 [ADD-LIQUIDITY] Selecionando BRZ, dados disponíveis:', polygonTokens?.BRZ);
               setSelectedInputToken('BRZ');
             }}
             className={`p-6 h-auto flex flex-col items-center space-y-3 ${
