@@ -19,7 +19,8 @@ import {
   Clock,
   Zap,
   TrendingUp,
-  Settings
+  Settings,
+  ExternalLink
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
@@ -48,18 +49,22 @@ export default function SwapPage() {
   // Funções para seleção de tokens com validação
   const handleFromTokenSelect = (token: any) => {
     if (toToken && token.address === toToken.address && token.chainId === toToken.chainId) {
-      // Se o token selecionado é o mesmo do "Para", limpa o "Para"
-      setToToken(null);
+      // Se o token selecionado é o mesmo do "Para", troca os tokens
+      setFromToken(toToken);
+      setToToken(fromToken);
+    } else {
+      setFromToken(token);
     }
-    setFromToken(token);
   };
 
   const handleToTokenSelect = (token: any) => {
     if (fromToken && token.address === fromToken.address && token.chainId === fromToken.chainId) {
-      // Se o token selecionado é o mesmo do "De", limpa o "De"
-      setFromToken(null);
+      // Se o token selecionado é o mesmo do "De", troca os tokens
+      setFromToken(toToken);
+      setToToken(fromToken);
+    } else {
+      setToToken(token);
     }
-    setToToken(token);
   };
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("");
@@ -73,6 +78,8 @@ export default function SwapPage() {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [tempSlippage, setTempSlippage] = useState(0.5);
   const [isQuoteDetailsOpen, setIsQuoteDetailsOpen] = useState(false);
+  const [isFromTokenDetailsOpen, setIsFromTokenDetailsOpen] = useState(false);
+  const [isToTokenDetailsOpen, setIsToTokenDetailsOpen] = useState(false);
   const [quoteTimer, setQuoteTimer] = useState(47); // Timer em segundos
   const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
 
@@ -874,125 +881,240 @@ export default function SwapPage() {
   const renderPreviewStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-white mb-2">Revisar Swap</h1>
-        <p className="text-slate-300">Confirme os detalhes antes de executar</p>
-            </div>
+        <h1 className="text-3xl font-bold text-white mb-2">Confirme os detalhes da transação</h1>
+        <p className="text-slate-300">Conversão de {fromToken.symbol} para {toToken.symbol}</p>
+      </div>
 
-      <Card className="glass-card">
-        <CardContent className="p-6 space-y-6">
-          {/* Resumo do Swap - Estilo Chainless */}
-          <div className="space-y-4">
-            {/* Você pagará */}
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="text-2xl">{fromToken.icon}</div>
-                  <div>
-                    <p className="text-white font-semibold">Você pagará</p>
-                  </div>
+      {/* Cards principais - Estilo Chainless */}
+      <div className="space-y-4">
+        {/* Você pagará */}
+        <div className="bg-slate-800/50 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                  {fromToken.symbol.charAt(0)}
                 </div>
-                <div className="text-right">
-                  <p className="text-white font-bold text-xl">{fromAmount} {fromToken.symbol}</p>
-                  <p className="text-slate-400 text-sm">{formatFiatAmount(calculateFiatValue(fromAmount, fromToken))}</p>
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">∞</span>
                 </div>
               </div>
-            </div>
-
-            {/* Você receberá no mínimo */}
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="text-2xl">{toToken.icon}</div>
-                  <div>
-                    <p className="text-white font-semibold">Você receberá no mínimo</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-white font-bold text-xl">{toAmount} {toToken.symbol}</p>
-                  <p className="text-slate-400 text-sm">{formatFiatAmount(calculateFiatValue(toAmount, toToken))}</p>
-                </div>
+              <div>
+                <p className="text-white font-semibold">Você pagará</p>
+                <p className="text-slate-400 text-sm">{fromAmount} {fromToken.symbol}</p>
               </div>
             </div>
-          </div>
-
-          {/* Taxa de Conversão - Igual à Chainless */}
-          <div className="bg-slate-800/50 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-white font-medium">Taxa de conversão</span>
-              <ChevronDown className="h-4 w-4 text-slate-400" />
-            </div>
-            <div className="text-center">
-              <p className="text-white text-lg font-semibold">
-                1 {toToken.symbol} = {exchangeRate.toFixed(3)} {fromToken.symbol}
-              </p>
-              <p className="text-slate-400 text-sm">
-                ({formatFiatAmount(calculateFiatValue("1", toToken))})
-              </p>
+            <div className="text-right">
+              <p className="text-white font-bold text-xl">{formatFiatAmount(calculateFiatValue(fromAmount, fromToken))}</p>
             </div>
           </div>
+        </div>
 
-          {/* Composição do Preço Efetivo - Expandível */}
-          <div className="bg-slate-800/50 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-white font-medium">Composição do Preço Efetivo</span>
-              <ChevronDown className="h-4 w-4 text-slate-400" />
+        {/* Você receberá no mínimo */}
+        <div className="bg-slate-800/50 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                  $
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">∞</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-white font-semibold">Você receberá no mínimo</p>
+                <p className="text-slate-400 text-sm">{toAmount} {toToken.symbol}</p>
+              </div>
             </div>
-            
-            <div className="space-y-3">
+            <div className="text-right">
+              <p className="text-white font-bold text-xl">{formatFiatAmount(calculateFiatValue(toAmount, toToken))}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Taxa de conversão */}
+        <div className="bg-slate-800/50 rounded-lg p-4">
+          <div className="text-center">
+            <p className="text-white text-lg font-semibold">
+              1 {toToken.symbol} = {exchangeRate.toFixed(3)} {fromToken.symbol}
+            </p>
+            <p className="text-slate-400 text-sm">
+              ({formatFiatAmount(calculateFiatValue("1", toToken))})
+            </p>
+          </div>
+        </div>
+
+        {/* Composição do Preço Efetivo - Expandível */}
+        <div className="bg-slate-800/50 rounded-lg p-4">
+          <div 
+            className="flex items-center justify-between mb-4 cursor-pointer"
+            onClick={() => setIsQuoteDetailsOpen(!isQuoteDetailsOpen)}
+          >
+            <span className="text-white font-medium">Composição do Preço Efetivo</span>
+            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isQuoteDetailsOpen ? 'rotate-180' : ''}`} />
+          </div>
+          
+          {isQuoteDetailsOpen && (
+            <div className="mt-4 space-y-3 pt-4 border-t border-slate-700">
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Câmbio do Provedor:</span>
-                <span className="text-white">1 {toToken.symbol} = {(exchangeRate * 0.99).toFixed(3)} {fromToken.symbol}</span>
-            </div>
-
-
+                <span className="text-white">
+                  1 {toToken.symbol} = {quote?.exchangeRate?.toFixed(3) || exchangeRate.toFixed(3)} {fromToken.symbol}
+                </span>
+              </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Tolerância a Slippage:</span>
                 <span className="text-yellow-400">{slippage}%</span>
               </div>
-              
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Taxa da Rede:</span>
                 <div className="text-right">
-                  <span className="text-white">0,0427 {fromToken.symbol}</span>
-                  <p className="text-slate-400 text-xs">R$0,04</p>
+                  <span className="text-white">
+                    {quote?.estimatedGasFees?.gasFeeTokenAmount ? parseFloat(quote.estimatedGasFees.gasFeeTokenAmount).toFixed(4) : '0.0000'} {fromToken.symbol}
+                  </span>
+                  <p className="text-slate-400 text-xs">
+                    {quote?.estimatedGasFees?.gasFeeTokenAmountUSD ? formatFiatAmount(parseFloat(quote.estimatedGasFees.gasFeeTokenAmountUSD) * usdBRLRate) : 'R$0,00'}
+                  </p>
                 </div>
               </div>
-              
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Taxa da Chainless:</span>
+                <span className="text-slate-400">Taxa da Notus DX:</span>
                 <div className="text-right">
-                  <span className="text-white">0,100 {fromToken.symbol}</span>
-                  <p className="text-slate-400 text-xs">R$0,10 (0,5%)</p>
+                  <span className="text-white">
+                    {quote?.estimatedCollectedFee?.notusCollectedFee ? parseFloat(quote.estimatedCollectedFee.notusCollectedFee).toFixed(4) : '0.0000'} {fromToken.symbol}
+                  </span>
+                  <p className="text-slate-400 text-xs">
+                    {quote?.estimatedCollectedFee?.notusCollectedFee ? formatFiatAmount(parseFloat(quote.estimatedCollectedFee.notusCollectedFee) * usdBRLRate) : 'R$0,00'}
+                  </p>
                 </div>
               </div>
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Detalhes da Operação */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-slate-400">Operação</span>
-                <AlertCircle className="h-4 w-4 text-slate-400" />
-              </div>
-              <span className="text-white">Swap</span>
+        {/* Detalhes da Operação */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-slate-400">Operação</span>
+              <AlertCircle className="h-4 w-4 text-slate-400" />
             </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-slate-400">Provedor</span>
-                <AlertCircle className="h-4 w-4 text-slate-400" />
-              </div>
-              <span className="text-white">Odos</span>
+            <span className="text-white">Swap</span>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-slate-400">Provedor</span>
+              <AlertCircle className="h-4 w-4 text-slate-400" />
             </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400">Tempo estimado:</span>
-              <span className="text-white">~1min</span>
+            <span className="text-white">{quote?.swapProvider || 'Odos'}</span>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400">Tempo estimado:</span>
+            <span className="text-white">~1min</span>
+          </div>
+        </div>
+
+        {/* Envia */}
+        <div className="bg-slate-800/50 rounded-lg p-4">
+          <div 
+            className="flex items-center justify-between cursor-pointer"
+            onClick={() => setIsFromTokenDetailsOpen(!isFromTokenDetailsOpen)}
+          >
+            <span className="text-white font-medium">Envia</span>
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                  {fromToken.symbol.charAt(0)}
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">∞</span>
+                </div>
+              </div>
+              <span className="text-white">{fromToken.symbol}</span>
+              <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isFromTokenDetailsOpen ? 'rotate-180' : ''}`} />
             </div>
           </div>
-        </CardContent>
-      </Card>
+          {isFromTokenDetailsOpen && (
+            <div className="mt-3 space-y-2 pt-3 border-t border-slate-700">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Rede:</span>
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">∞</span>
+                  </div>
+                  <span className="text-white">Polygon</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Contrato do token:</span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-white text-sm">{fromToken.address ? `${fromToken.address.slice(0, 6)}...${fromToken.address.slice(-4)}` : 'N/A'}</span>
+                  <a 
+                    href={`https://polygonscan.com/token/${fromToken.address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Recebe */}
+        <div className="bg-slate-800/50 rounded-lg p-4">
+          <div 
+            className="flex items-center justify-between cursor-pointer"
+            onClick={() => setIsToTokenDetailsOpen(!isToTokenDetailsOpen)}
+          >
+            <span className="text-white font-medium">Recebe</span>
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                  $
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">∞</span>
+                </div>
+              </div>
+              <span className="text-white">{toToken.symbol}</span>
+              <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isToTokenDetailsOpen ? 'rotate-180' : ''}`} />
+            </div>
+          </div>
+          {isToTokenDetailsOpen && (
+            <div className="mt-3 space-y-2 pt-3 border-t border-slate-700">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Rede:</span>
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">∞</span>
+                  </div>
+                  <span className="text-white">Polygon</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Contrato do token:</span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-white text-sm">{toToken.address ? `${toToken.address.slice(0, 6)}...${toToken.address.slice(-4)}` : 'N/A'}</span>
+                  <a 
+                    href={`https://polygonscan.com/token/${toToken.address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Timer de atualização de preço - Estilo Chainless */}
       <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4">
@@ -1018,20 +1140,17 @@ export default function SwapPage() {
         <Button
           onClick={handleExecuteSwap}
           disabled={isLoading}
-          className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
         >
           {isLoading ? (
             <div className="flex items-center space-x-2">
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
               <span>Executando...</span>
             </div>
           ) : (
-            <div className="flex items-center space-x-2">
-              <Zap className="h-5 w-5" />
-              <span>Confirmar</span>
-            </div>
+            "Confirmar"
           )}
-            </Button>
+        </Button>
       </div>
     </div>
   );
