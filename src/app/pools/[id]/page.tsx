@@ -350,82 +350,82 @@ export default function PoolDetailsPage() {
           </CardContent>
         </Card>
 
-        {/* Composição da Pool */}
-        <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl mb-6">
-          <CardContent className="p-6">
-            <h3 className="text-white font-bold text-lg mb-4">Composição da Pool</h3>
-            
-            <div className="space-y-4">
-              {/* Token 1 */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                    {poolData.tokens[0]?.logo && (poolData.tokens[0].logo.startsWith('http') || poolData.tokens[0].logo.startsWith('data:')) ? (
-                      <img 
-                        src={poolData.tokens[0].logo} 
-                        alt={poolData.tokens[0].symbol} 
-                        className="w-8 h-8 rounded-full object-cover"
-                        onError={(e) => {
-                          console.log('❌ Erro ao carregar logo do token0:', poolData.tokens[0].symbol);
-                          e.currentTarget.style.display = 'none';
-                          const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
-                          if (nextElement) {
-                            nextElement.style.display = 'block';
-                          }
-                        }}
-                      />
-                    ) : null}
-                    <span className="text-lg" style={{ display: poolData.tokens[0]?.logo && (poolData.tokens[0].logo.startsWith('http') || poolData.tokens[0].logo.startsWith('data:')) ? 'none' : 'block' }}>
-                      💙
-                    </span>
-                  </div>
-                  <span className="text-white font-medium">{String(poolData.tokens?.[0]?.symbol || 'TOKEN1')} {token0Percentage}%</span>
-                </div>
-              </div>
+         {/* Composição da Pool */}
+         <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl mb-6">
+           <CardContent className="p-6">
+             <h3 className="text-white font-bold text-lg mb-4">Composição da Pool</h3>
+             
+             {/* Layout com tokens nas extremidades e barra no centro */}
+             <div className="flex items-center justify-between">
+               {/* Token 1 - Esquerda */}
+               <div className="flex flex-col items-center space-y-2">
+                 <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                   {poolData.tokens[0]?.logo && (poolData.tokens[0].logo.startsWith('http') || poolData.tokens[0].logo.startsWith('data:')) ? (
+                     <img 
+                       src={poolData.tokens[0].logo} 
+                       alt={poolData.tokens[0].symbol} 
+                       className="w-8 h-8 rounded-full object-cover"
+                       onError={(e) => {
+                         e.currentTarget.style.display = 'none';
+                         const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                         if (nextElement) nextElement.style.display = 'block';
+                       }}
+                     />
+                   ) : null}
+                   <span className="text-lg" style={{ display: poolData.tokens[0]?.logo && (poolData.tokens[0].logo.startsWith('http') || poolData.tokens[0].logo.startsWith('data:')) ? 'none' : 'block' }}>
+                     💙
+                   </span>
+                 </div>
+                 <div className="text-center">
+                   <div className="text-white font-medium text-sm">{String(poolData.tokens?.[0]?.symbol || 'TOKEN1')}</div>
+                   <div className="text-white font-bold text-sm">{token0Percentage.toFixed(2)}%</div>
+                 </div>
+               </div>
 
-              {/* Progress Bar */}
-              <div className="w-full bg-slate-700 rounded-full h-3">
-                <div className="flex h-full">
-                  <div 
-                    className="bg-red-500 rounded-l-full" 
-                    style={{ width: `${token0Percentage}%` }}
-                  ></div>
-                  <div 
-                    className="bg-blue-500 rounded-r-full" 
-                    style={{ width: `${token1Percentage}%` }}
-                  ></div>
-                </div>
-              </div>
+               {/* Barra de progresso central */}
+               <div className="flex-1 mx-6">
+                 <div className="w-full bg-slate-700 rounded-full h-4 relative">
+                   <div 
+                     className="bg-red-500 h-4 rounded-l-full" 
+                     style={{ width: `${token0Percentage}%` }}
+                   ></div>
+                   <div 
+                     className="bg-blue-500 h-4 rounded-r-full absolute top-0" 
+                     style={{ 
+                       left: `${token0Percentage}%`,
+                       width: `${token1Percentage}%`
+                     }}
+                   ></div>
+                 </div>
+               </div>
 
-              {/* Token 2 */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                    {poolData.tokens[1]?.logo && (poolData.tokens[1].logo.startsWith('http') || poolData.tokens[1].logo.startsWith('data:')) ? (
-                      <img 
-                        src={poolData.tokens[1].logo} 
-                        alt={poolData.tokens[1].symbol} 
-                        className="w-8 h-8 rounded-full object-cover"
-                        onError={(e) => {
-                          console.log('❌ Erro ao carregar logo do token1:', poolData.tokens[1].symbol);
-                          e.currentTarget.style.display = 'none';
-                          const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
-                          if (nextElement) {
-                            nextElement.style.display = 'block';
-                          }
-                        }}
-                      />
-                    ) : null}
-                    <span className="text-lg" style={{ display: poolData.tokens[1]?.logo && (poolData.tokens[1].logo.startsWith('http') || poolData.tokens[1].logo.startsWith('data:')) ? 'none' : 'block' }}>
-                      💚
-                    </span>
-                  </div>
-                  <span className="text-white font-medium">{String(poolData.tokens?.[1]?.symbol || 'TOKEN2')} {token1Percentage}%</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+               {/* Token 2 - Direita */}
+               <div className="flex flex-col items-center space-y-2">
+                 <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                   {poolData.tokens[1]?.logo && (poolData.tokens[1].logo.startsWith('http') || poolData.tokens[1].logo.startsWith('data:')) ? (
+                     <img 
+                       src={poolData.tokens[1].logo} 
+                       alt={poolData.tokens[1].symbol} 
+                       className="w-8 h-8 rounded-full object-cover"
+                       onError={(e) => {
+                         e.currentTarget.style.display = 'none';
+                         const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                         if (nextElement) nextElement.style.display = 'block';
+                       }}
+                     />
+                   ) : null}
+                   <span className="text-lg" style={{ display: poolData.tokens[1]?.logo && (poolData.tokens[1].logo.startsWith('http') || poolData.tokens[1].logo.startsWith('data:')) ? 'none' : 'block' }}>
+                     💚
+                   </span>
+                 </div>
+                 <div className="text-center">
+                   <div className="text-white font-medium text-sm">{String(poolData.tokens?.[1]?.symbol || 'TOKEN2')}</div>
+                   <div className="text-white font-bold text-sm">{token1Percentage.toFixed(2)}%</div>
+                 </div>
+               </div>
+             </div>
+           </CardContent>
+         </Card>
 
         {/* Informações */}
         <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl mb-6">
