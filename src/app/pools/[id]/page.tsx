@@ -55,6 +55,11 @@ export default function PoolDetailsPage() {
         // Processar dados da API - a resposta vem em {pool: {...}}
         const apiResponse = (response as any).pool;
         console.log('📊 Dados do pool da API:', apiResponse);
+        
+        if (!apiResponse) {
+          throw new Error('Dados do pool não encontrados na resposta');
+        }
+        
         console.log('🔍 Provider (objeto):', apiResponse.provider);
         console.log('🔍 Chain (objeto):', apiResponse.chain);
         console.log('🔍 Estrutura dos tokens:', apiResponse.tokens);
@@ -120,6 +125,10 @@ export default function PoolDetailsPage() {
         };
 
         console.log('🎯 Pool processado:', processedPool);
+        console.log('🎯 Pool processado - ID:', processedPool.id);
+        console.log('🎯 Pool processado - Tokens:', processedPool.tokens);
+        console.log('🎯 Pool processado - Provider:', processedPool.provider);
+        console.log('🎯 Pool processado - Chain:', processedPool.chain);
         return processedPool;
 
       } catch (error) {
@@ -226,7 +235,7 @@ export default function PoolDetailsPage() {
             <div className="flex items-center -space-x-2">
               {poolData.tokens.map((token, index) => (
                 <div key={index} className="w-10 h-10 rounded-full bg-slate-700 border-2 border-slate-600 flex items-center justify-center">
-                  {token.logo && token.logo.startsWith('data:') ? (
+                  {token.logo && (token.logo.startsWith('http') || token.logo.startsWith('data:')) ? (
                     <img 
                       src={token.logo} 
                       alt={String(token.symbol || `TOKEN${index + 1}`)} 
@@ -241,7 +250,7 @@ export default function PoolDetailsPage() {
                       }}
                     />
                   ) : null}
-                  <span className="text-sm" style={{ display: token.logo && token.logo.startsWith('data:') ? 'none' : 'block' }}>
+                  <span className="text-sm" style={{ display: token.logo && (token.logo.startsWith('http') || token.logo.startsWith('data:')) ? 'none' : 'block' }}>
                     {index === 0 ? '💙' : '💚'}
                   </span>
                 </div>
@@ -303,7 +312,7 @@ export default function PoolDetailsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                    {poolData.tokens[0]?.logo && poolData.tokens[0].logo.startsWith('data:') ? (
+                    {poolData.tokens[0]?.logo && (poolData.tokens[0].logo.startsWith('http') || poolData.tokens[0].logo.startsWith('data:')) ? (
                       <img 
                         src={poolData.tokens[0].logo} 
                         alt={poolData.tokens[0].symbol} 
@@ -318,7 +327,7 @@ export default function PoolDetailsPage() {
                         }}
                       />
                     ) : null}
-                    <span className="text-lg" style={{ display: poolData.tokens[0]?.logo && poolData.tokens[0].logo.startsWith('data:') ? 'none' : 'block' }}>
+                    <span className="text-lg" style={{ display: poolData.tokens[0]?.logo && (poolData.tokens[0].logo.startsWith('http') || poolData.tokens[0].logo.startsWith('data:')) ? 'none' : 'block' }}>
                       💙
                     </span>
                   </div>
@@ -344,7 +353,7 @@ export default function PoolDetailsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                    {poolData.tokens[1]?.logo && poolData.tokens[1].logo.startsWith('data:') ? (
+                    {poolData.tokens[1]?.logo && (poolData.tokens[1].logo.startsWith('http') || poolData.tokens[1].logo.startsWith('data:')) ? (
                       <img 
                         src={poolData.tokens[1].logo} 
                         alt={poolData.tokens[1].symbol} 
@@ -359,7 +368,7 @@ export default function PoolDetailsPage() {
                         }}
                       />
                     ) : null}
-                    <span className="text-lg" style={{ display: poolData.tokens[1]?.logo && poolData.tokens[1].logo.startsWith('data:') ? 'none' : 'block' }}>
+                    <span className="text-lg" style={{ display: poolData.tokens[1]?.logo && (poolData.tokens[1].logo.startsWith('http') || poolData.tokens[1].logo.startsWith('data:')) ? 'none' : 'block' }}>
                       💚
                     </span>
                   </div>
@@ -402,7 +411,7 @@ export default function PoolDetailsPage() {
                   {poolData.tokens.map((token, index) => (
                     <div key={index} className="flex items-center space-x-1">
                       <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center">
-                        {token.logo && token.logo.startsWith('data:') ? (
+                        {token.logo && (token.logo.startsWith('http') || token.logo.startsWith('data:')) ? (
                           <img src={token.logo} alt={String(token.symbol || `TOKEN${index + 1}`)} className="w-3 h-3 rounded-full" />
                         ) : (
                           <span className="text-xs">💙</span>
@@ -438,7 +447,7 @@ export default function PoolDetailsPage() {
                   {poolData.tokens.map((token, index) => (
                     <div key={index} className="flex items-center space-x-1">
                       <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center">
-                        {token.logo && token.logo.startsWith('data:') ? (
+                        {token.logo && (token.logo.startsWith('http') || token.logo.startsWith('data:')) ? (
                           <img src={token.logo} alt={String(token.symbol || `TOKEN${index + 1}`)} className="w-3 h-3 rounded-full" />
                         ) : (
                           <span className="text-xs">💙</span>
