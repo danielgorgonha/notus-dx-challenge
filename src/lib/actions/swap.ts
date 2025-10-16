@@ -23,8 +23,39 @@ interface SwapParams {
   metadata?: Record<string, string>;
 }
 
-interface SwapQuote {
-  swap: {
+export interface SwapQuote {
+  quotes: Array<{
+    userOperationHash: string;
+    walletAddress: string;
+    tokenIn: string;
+    amountIn: string;
+    tokenOut: string;
+    chainIn: number;
+    chainOut: number;
+    minAmountOut: string;
+    estimatedExecutionTime: string;
+    estimatedGasFees: {
+      payGasFeeToken: string;
+      maxGasFeeToken: string;
+      gasFeeTokenAmount: string;
+      gasFeeTokenAmountUSD: string;
+      maxGasFeeNative: string;
+    };
+    estimatedCollectedFee: {
+      collectedFeeToken: string;
+      collectedFee: string;
+      collectedFeePercent: string;
+      notusCollectedFee: string;
+      notusCollectedFeePercent: string;
+    };
+    amountInUSD: string;
+    amountOutUSD: string;
+    tokenInPrice: string;
+    swapProvider: string;
+    expiresAt: number;
+  }>;
+  // Manter compatibilidade com estrutura antiga
+  swap?: {
     userOperationHash: string;
     walletAddress: string;
     tokenIn: string;

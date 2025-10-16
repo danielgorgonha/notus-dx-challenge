@@ -225,22 +225,25 @@ export default function SwapPage() {
       });
 
       
+      // A API retorna { quotes: [...] }, então pegamos o primeiro quote
+      const quote = swapQuote.quotes?.[0] || swapQuote.swap;
+      
       const quoteData = {
-        ...swapQuote.swap,
+        ...quote,
         fromToken,
         toToken,
         fromAmount,
-        toAmount: swapQuote.swap.minAmountOut,
-        exchangeRate: parseFloat(swapQuote.swap.minAmountOut) / parseFloat(fromAmount),
+        toAmount: quote.minAmountOut,
+        exchangeRate: parseFloat(quote.minAmountOut) / parseFloat(fromAmount),
         slippage,
-        estimatedGasFee: swapQuote.swap.estimatedGasFees.gasFeeTokenAmount,
+        estimatedGasFee: quote.estimatedGasFees?.gasFeeTokenAmount,
         gasFeeToken: fromToken.symbol,
         estimatedTime: "~3 minutes",
       };
       
       setQuote(quoteData);
-      setUserOperationHash(swapQuote.swap.userOperationHash);
-      setToAmount(swapQuote.swap.minAmountOut);
+      setUserOperationHash(quote.userOperationHash);
+      setToAmount(quote.minAmountOut);
       setCurrentStep("preview");
       
       toast.success(
@@ -805,7 +808,7 @@ export default function SwapPage() {
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Taxa da Chainless:</span>
+                <span className="text-slate-400">Taxa da Notus DX:</span>
                 <div className="text-right">
                   <span className="text-white">
                     {quote?.estimatedCollectedFee?.notusCollectedFee ? 
