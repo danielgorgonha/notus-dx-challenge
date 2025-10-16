@@ -15,6 +15,8 @@ interface PoolDetails {
   address: string;
   chain: string;
   provider: string;
+  fee: number;
+  totalValueLockedUSD: number;
   tokens: Array<{
     symbol: string;
     logo: string;
@@ -22,13 +24,10 @@ interface PoolDetails {
     address: string;
     decimals: number;
   }>;
-  totalValueLockedUSD: number;
-  stats: {
-    volumeInUSD: number;
-    feesInUSD: number;
+  stats?: {
+    volumeInUSD?: number;
+    feesInUSD?: number;
   };
-  fee: number;
-  apr: number;
 }
 
 export default function PoolDetailsPage() {
@@ -37,47 +36,96 @@ export default function PoolDetailsPage() {
   const poolId = params.id as string;
 
   // Query para buscar detalhes do pool
-  const { data: poolData, isLoading, error } = useQuery({
-    queryKey: ['pool', poolId],
+  const { data: poolData, isLoading, error } = useQuery<PoolDetails>({
+    queryKey: ['pool-details', poolId],
     queryFn: async () => {
       console.log('🔍 Buscando detalhes do pool:', poolId);
       
-      // Simular dados baseados no ID do pool
-      // Em uma implementação real, você faria uma chamada para a API
-      const mockPoolData: PoolDetails = {
-        id: poolId,
-        address: '0x94a...bfbe',
-        chain: 'Polygon',
-        provider: 'Uniswap V3',
-        tokens: [
-          {
-            symbol: 'USDC.E',
-            logo: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiMwMDUyQjkiLz4KPHBhdGggZD0iTTE2IDZMMjAgMTBIMTZWNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyNkwyMCAyMkgxNlYyNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAxMEwyMCAxNEgxNlYxMFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyMkwyMCAyNkgxNlYyMloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=',
-            name: 'USD Coin',
-            address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
-            decimals: 6
-          },
-          {
-            symbol: 'LINK',
-            logo: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiMyQTVBRkYiLz4KPHBhdGggZD0iTTE2IDZMMjAgMTBIMTZWNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyNkwyMCAyMkgxNlYyNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAxMEwyMCAxNEgxNlYxMFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAyMkwyMCAyNkgxNlYyMloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=',
-            name: 'Chainlink',
-            address: '0x53E0bca35eC356BD5ddDFebbD1Fc0fD03FaBad39',
-            decimals: 18
-          }
-        ],
-        totalValueLockedUSD: 486400,
-        stats: {
-          volumeInUSD: 371900,
-          feesInUSD: 1100
-        },
-        fee: 0.30,
-        apr: 83.71
-      };
+      try {
+        // Fazer chamada direta para a API da Notus com o endpoint correto
+        const response = await notusAPI.get(`liquidity/pools/${poolId}?rangeInDays=30`).json();
+        console.log('✅ Resposta da API para detalhes do pool:', response);
+        console.log('📊 Tipo da resposta:', typeof response);
+        console.log('📊 Chaves da resposta:', Object.keys(response || {}));
 
-      console.log('📊 Dados mockados do pool:', mockPoolData);
-      console.log('📊 Tipo dos dados:', typeof mockPoolData);
-      console.log('📊 Chaves dos dados:', Object.keys(mockPoolData));
-      return mockPoolData;
+        if (!response) {
+          throw new Error('Pool não encontrado');
+        }
+
+        // Processar dados da API - a resposta vem em {pool: {...}}
+        const apiResponse = (response as any).pool;
+        console.log('📊 Dados do pool da API:', apiResponse);
+        console.log('🔍 Provider (objeto):', apiResponse.provider);
+        console.log('🔍 Chain (objeto):', apiResponse.chain);
+        console.log('🔍 Estrutura dos tokens:', apiResponse.tokens);
+        console.log('🔍 Tipo dos tokens:', typeof apiResponse.tokens);
+        console.log('🔍 Array dos tokens:', Array.isArray(apiResponse.tokens));
+        
+        // Log detalhado de cada token
+        if (apiResponse.tokens && Array.isArray(apiResponse.tokens)) {
+          apiResponse.tokens.forEach((token: any, index: number) => {
+            console.log(`🔍 Token ${index}:`, {
+              symbol: token.symbol,
+              logo: token.logo,
+              name: token.name,
+              address: token.address,
+              decimals: token.decimals,
+              symbolType: typeof token.symbol,
+              logoType: typeof token.logo,
+              nameType: typeof token.name
+            });
+          });
+        }
+        
+        const processedPool: PoolDetails = {
+          id: apiResponse.id || poolId,
+          address: apiResponse.address || 'N/A',
+          chain: typeof apiResponse.chain === 'object' ? apiResponse.chain.name : (apiResponse.chain || 'Polygon'),
+          provider: typeof apiResponse.provider === 'object' ? apiResponse.provider.name : (apiResponse.provider || 'Uniswap V3'),
+          fee: typeof apiResponse.fee === 'number' ? apiResponse.fee : parseFloat(apiResponse.fee) || 0,
+          totalValueLockedUSD: typeof apiResponse.totalValueLockedUSD === 'number' 
+            ? apiResponse.totalValueLockedUSD 
+            : parseFloat(apiResponse.totalValueLockedUSD) || 0,
+          tokens: Array.isArray(apiResponse.tokens) ? apiResponse.tokens.map((token: any, index: number) => {
+            console.log(`🔧 Processando token ${index}:`, token);
+            
+            // Verificar se token é um objeto válido
+            if (!token || typeof token !== 'object') {
+              console.log(`⚠️ Token ${index} inválido:`, token);
+              return {
+                symbol: `TOKEN${index + 1}`,
+                logo: '',
+                name: `Token ${index + 1}`,
+                address: '',
+                decimals: 18
+              };
+            }
+            
+            return {
+              symbol: typeof token.symbol === 'string' ? token.symbol.toUpperCase() : `TOKEN${index + 1}`,
+              logo: typeof token.logo === 'string' ? token.logo : '',
+              name: typeof token.name === 'string' ? token.name : `Token ${index + 1}`,
+              address: typeof token.address === 'string' ? token.address : '',
+              decimals: typeof token.decimals === 'number' ? token.decimals : 18
+            };
+          }) : [],
+          stats: {
+            volumeInUSD: typeof apiResponse.stats?.volumeInUSD === 'number' 
+              ? apiResponse.stats.volumeInUSD 
+              : parseFloat(apiResponse.stats?.volumeInUSD) || 0,
+            feesInUSD: typeof apiResponse.stats?.feesInUSD === 'number' 
+              ? apiResponse.stats.feesInUSD 
+              : parseFloat(apiResponse.stats?.feesInUSD) || 0
+          }
+        };
+
+        console.log('🎯 Pool processado:', processedPool);
+        return processedPool;
+
+      } catch (error) {
+        console.error('❌ Erro ao buscar detalhes do pool:', error);
+        throw error;
+      }
     },
     enabled: !!poolId,
     staleTime: 30000,
@@ -121,7 +169,27 @@ export default function PoolDetailsPage() {
     }).format(value);
   };
 
-  // Calcular composição da pool (simulado)
+  // Calcular APR baseado nos dados reais
+  const calculateAPR = () => {
+    if (!poolData) return 0;
+    
+    const tvl = poolData.totalValueLockedUSD;
+    const volume24h = poolData.stats?.volumeInUSD || 0;
+    const fee = poolData.fee;
+    
+    if (tvl > 0 && volume24h > 0) {
+      const dailyFees = volume24h * (fee / 100);
+      const annualFees = dailyFees * 365;
+      return (annualFees / tvl) * 100;
+    }
+    
+    return 0;
+  };
+
+  const apr = calculateAPR();
+
+  // Calcular composição da pool baseada nos dados reais
+  // Por enquanto, vamos usar valores simulados até termos dados de composição da API
   const token0Percentage = 20.05;
   const token1Percentage = 79.95;
 
@@ -140,7 +208,7 @@ export default function PoolDetailsPage() {
         </Link>
         <ChevronRight className="h-4 w-4" />
         <span className="text-white">
-          {poolData.tokens[0]?.symbol}/{poolData.tokens[1]?.symbol}
+          {String(poolData.tokens?.[0]?.symbol || 'TOKEN1')}/{String(poolData.tokens?.[1]?.symbol || 'TOKEN2')}
         </span>
       </div>
 
@@ -161,10 +229,10 @@ export default function PoolDetailsPage() {
                   {token.logo && token.logo.startsWith('data:') ? (
                     <img 
                       src={token.logo} 
-                      alt={token.symbol} 
+                      alt={String(token.symbol || `TOKEN${index + 1}`)} 
                       className="w-8 h-8 rounded-full object-cover"
                       onError={(e) => {
-                        console.log('❌ Erro ao carregar logo do token:', token.symbol, token.logo);
+                        console.log('❌ Erro ao carregar logo do token:', String(token.symbol || `TOKEN${index + 1}`), token.logo);
                         e.currentTarget.style.display = 'none';
                         const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
                         if (nextElement) {
@@ -181,9 +249,9 @@ export default function PoolDetailsPage() {
             </div>
             <div>
               <h1 className="text-white font-bold text-2xl">
-                {poolData.tokens[0]?.symbol}/{poolData.tokens[1]?.symbol}
+                {String(poolData.tokens?.[0]?.symbol || 'TOKEN1')}/{String(poolData.tokens?.[1]?.symbol || 'TOKEN2')}
               </h1>
-              <p className="text-slate-400 text-sm">{poolData.provider}</p>
+              <p className="text-slate-400 text-sm">{String(poolData.provider || 'Unknown')}</p>
             </div>
           </div>
         </div>
@@ -201,7 +269,7 @@ export default function PoolDetailsPage() {
           </div>
           <div className="flex-1 bg-slate-800 rounded-xl p-3 text-center">
             <p className="text-slate-400 text-sm">Tarifas</p>
-            <p className="text-white font-bold">{formatCurrency(poolData.stats.feesInUSD)}</p>
+            <p className="text-white font-bold">{formatCurrency(poolData.stats?.feesInUSD || 0)}</p>
           </div>
         </div>
 
@@ -219,7 +287,7 @@ export default function PoolDetailsPage() {
                 <TrendingUp className="h-6 w-6 text-green-400" />
               </div>
               <div>
-                <p className="text-green-400 font-bold text-2xl">{poolData.apr}% a.a</p>
+                <p className="text-green-400 font-bold text-2xl">{apr.toFixed(2)}% a.a</p>
               </div>
             </div>
           </CardContent>
@@ -254,7 +322,7 @@ export default function PoolDetailsPage() {
                       💙
                     </span>
                   </div>
-                  <span className="text-white font-medium">{poolData.tokens[0]?.symbol} {token0Percentage}%</span>
+                  <span className="text-white font-medium">{String(poolData.tokens?.[0]?.symbol || 'TOKEN1')} {token0Percentage}%</span>
                 </div>
               </div>
 
@@ -295,7 +363,7 @@ export default function PoolDetailsPage() {
                       💚
                     </span>
                   </div>
-                  <span className="text-white font-medium">{poolData.tokens[1]?.symbol} {token1Percentage}%</span>
+                  <span className="text-white font-medium">{String(poolData.tokens?.[1]?.symbol || 'TOKEN2')} {token1Percentage}%</span>
                 </div>
               </div>
             </div>
@@ -315,12 +383,12 @@ export default function PoolDetailsPage() {
               
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Volume (24h)</span>
-                <span className="text-white">{formatValue(poolData.stats.volumeInUSD)}</span>
+                <span className="text-white">{formatValue(poolData.stats?.volumeInUSD || 0)}</span>
               </div>
               
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Tarifas (24h)</span>
-                <span className="text-white">{formatValue(poolData.stats.feesInUSD)}</span>
+                <span className="text-white">{formatValue(poolData.stats?.feesInUSD || 0)}</span>
               </div>
               
               <div className="flex justify-between items-center">
@@ -335,12 +403,12 @@ export default function PoolDetailsPage() {
                     <div key={index} className="flex items-center space-x-1">
                       <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center">
                         {token.logo && token.logo.startsWith('data:') ? (
-                          <img src={token.logo} alt={token.symbol} className="w-3 h-3 rounded-full" />
+                          <img src={token.logo} alt={String(token.symbol || `TOKEN${index + 1}`)} className="w-3 h-3 rounded-full" />
                         ) : (
                           <span className="text-xs">💙</span>
                         )}
                       </div>
-                      <span className="text-white text-sm">{token.symbol}</span>
+                      <span className="text-white text-sm">{String(token.symbol || `TOKEN${index + 1}`)}</span>
                     </div>
                   ))}
                 </div>
@@ -349,7 +417,7 @@ export default function PoolDetailsPage() {
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Protocolo</span>
                 <div className="flex items-center space-x-2">
-                  <span className="text-white">{poolData.provider}</span>
+                  <span className="text-white">{String(poolData.provider || 'Unknown')}</span>
                   <ExternalLink className="h-4 w-4 text-slate-400" />
                 </div>
               </div>
@@ -371,12 +439,12 @@ export default function PoolDetailsPage() {
                     <div key={index} className="flex items-center space-x-1">
                       <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center">
                         {token.logo && token.logo.startsWith('data:') ? (
-                          <img src={token.logo} alt={token.symbol} className="w-3 h-3 rounded-full" />
+                          <img src={token.logo} alt={String(token.symbol || `TOKEN${index + 1}`)} className="w-3 h-3 rounded-full" />
                         ) : (
                           <span className="text-xs">💙</span>
                         )}
                       </div>
-                      <span className="text-white text-sm">{token.symbol}</span>
+                      <span className="text-white text-sm">{String(token.symbol || `TOKEN${index + 1}`)}</span>
                       <ExternalLink className="h-3 w-3 text-slate-400" />
                     </div>
                   ))}

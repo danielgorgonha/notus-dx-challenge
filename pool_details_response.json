@@ -17,8 +17,8 @@
         "chainId": 137,
         "logo": "https://coin-images.coingecko.com/coins/images/39708/large/WETH.PNG?1723730343",
         "marketCap": 437957678,
-        "poolShareInPercentage": 69.86,
-        "poolShare": 608.3791751553853
+        "poolShareInPercentage": 68.25,
+        "poolShare": 593.1405320055406
       },
       {
         "address": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
@@ -28,8 +28,8 @@
         "chainId": 137,
         "logo": "https://coin-images.coingecko.com/coins/images/35023/large/USDT.png?1707233644",
         "marketCap": 1408923391,
-        "poolShareInPercentage": 30.14,
-        "poolShare": 1060200.983162
+        "poolShareInPercentage": 31.75,
+        "poolShare": 1119234.769358
       }
     ],
     "provider": {
@@ -37,12 +37,12 @@
       "logoUrl": "https://assets.notus.team/UniswapV3.png",
       "explorerURL": "https://app.uniswap.org/explore/pools/"
     },
-    "totalValueLockedUSD": "3513908.01517556898536800775414089",
+    "totalValueLockedUSD": "3522952.491358894925255919110848554383929485",
     "stats": {
       "rangeInDays": 30,
-      "feesInUSD": "173617.26329074464433833592211595",
-      "volumeInUSD": "57894469.31683530363872233522",
-      "transactionsCount": 33237
+      "feesInUSD": "174427.08347731428330118343279488",
+      "volumeInUSD": "58164332.99739221210792340715",
+      "transactionsCount": 33394
     }
   }
 }

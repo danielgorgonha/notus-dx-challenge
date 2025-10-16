@@ -64,7 +64,7 @@
           "chainId": 137,
           "logo": "https://coin-images.coingecko.com/coins/images/39787/large/dai.png?1724110678",
           "marketCap": 490657289,
-          "poolShareInPercentage": 16.18,
+          "poolShareInPercentage": 16.09,
           "poolShare": 6E-18
         },
         {
@@ -75,7 +75,7 @@
           "chainId": 137,
           "logo": "https://coin-images.coingecko.com/coins/images/14688/large/Logo_1_%28brighter%29.png?1734430693",
           "marketCap": 395259420,
-          "poolShareInPercentage": 83.82,
+          "poolShareInPercentage": 83.91,
           "poolShare": 6E-18
         }
       ],
@@ -156,7 +156,7 @@
           "chainId": 137,
           "logo": "https://coin-images.coingecko.com/coins/images/14073/large/matic.png?1696513797",
           "marketCap": 38363722,
-          "poolShareInPercentage": 6.68,
+          "poolShareInPercentage": 6.72,
           "poolShare": 0.010871810758103622
         },
         {
@@ -167,7 +167,7 @@
           "chainId": 137,
           "logo": "https://coin-images.coingecko.com/coins/images/9441/large/57421944_1371636006308255_3647136573922738176_n.jpg?1696509533",
           "marketCap": 10499031,
-          "poolShareInPercentage": 93.32,
+          "poolShareInPercentage": 93.28,
           "poolShare": 490.583495
         }
       ],
@@ -432,7 +432,7 @@
           "chainId": 137,
           "logo": "https://coin-images.coingecko.com/coins/images/14073/large/matic.png?1696513797",
           "marketCap": 38363722,
-          "poolShareInPercentage": 8.28,
+          "poolShareInPercentage": 8.34,
           "poolShare": 4E-18
         },
         {
@@ -443,7 +443,7 @@
           "chainId": 137,
           "logo": "https://coin-images.coingecko.com/coins/images/23532/large/gnft_200x200.png?1696522740",
           "marketCap": 0,
-          "poolShareInPercentage": 91.72,
+          "poolShareInPercentage": 91.66,
           "poolShare": 7E-18
         }
       ],

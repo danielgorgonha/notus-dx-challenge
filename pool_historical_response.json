@@ -335,15 +335,15 @@
         "transactionsCount": 1680
       },
       {
-        "timestamp": "2025-10-16T09:50:09.000Z",
-        "volumeInUSD": "1467161.7677105575382553122",
-        "feesInUSD": "4407.48868856962892697166633089",
+        "timestamp": "2025-10-16T12:48:39.000Z",
+        "volumeInUSD": "1737025.44826746600745638413",
+        "feesInUSD": "5217.30887513926788981917700982",
         "token0PerToken1Opening": "0",
-        "token0PerToken1Closing": "0.00024794287468628037",
+        "token0PerToken1Closing": "0.00024675958689431104",
         "token0PerToken1Highest": "0.00025346888421037053",
         "token0PerToken1Lowest": "0",
-        "totalValueLockedInUSD": "3513908.01517556898536800775414089",
-        "transactionsCount": 804
+        "totalValueLockedInUSD": "3522952.491358894925255919110848554383929485",
+        "transactionsCount": 961
       }
     ]
   }
