@@ -37,7 +37,7 @@ export default function PoolsPage() {
 
   // Buscar pools de liquidez da API
   const { data: poolsData, isLoading: poolsLoading, error: poolsError } = useQuery({
-    queryKey: ['liquidity-pools'],
+    queryKey: ['liquidity-pools', sortBy],
     queryFn: async () => {
       try {
         console.log('🚀 Fazendo chamada para API da Notus...');
@@ -250,7 +250,55 @@ export default function PoolsPage() {
         });
         
         console.log('🎯 Pools processados:', processedPools);
-        return processedPools;
+        
+        // Aplicar ordenação baseada no sortBy
+        const sortedPools = [...processedPools].sort((a, b) => {
+          console.log(`🔄 Ordenando por: ${sortBy}`);
+          
+          switch (sortBy) {
+            case 'rentabilidade':
+              // Extrair valor numérico da rentabilidade (remover % e a.a)
+              const aprA = parseFloat(a.rentabilidade.replace(/[% a.a]/g, '')) || 0;
+              const aprB = parseFloat(b.rentabilidade.replace(/[% a.a]/g, '')) || 0;
+              console.log(`📊 APR A: ${aprA}, APR B: ${aprB}`);
+              return aprB - aprA; // Maior para menor
+              
+            case 'tvl':
+              // Extrair valor numérico do TVL
+              const tvlA = parseFloat(a.tvl.replace(/[$,MK]/g, '')) || 0;
+              const tvlB = parseFloat(b.tvl.replace(/[$,MK]/g, '')) || 0;
+              const multiplierA = a.tvl.includes('M') ? 1000000 : a.tvl.includes('K') ? 1000 : 1;
+              const multiplierB = b.tvl.includes('M') ? 1000000 : b.tvl.includes('K') ? 1000 : 1;
+              const finalTvlA = tvlA * multiplierA;
+              const finalTvlB = tvlB * multiplierB;
+              console.log(`💰 TVL A: ${finalTvlA}, TVL B: ${finalTvlB}`);
+              return finalTvlB - finalTvlA; // Maior para menor
+              
+            case 'tarifa':
+              // Extrair valor numérico da tarifa
+              const feeA = parseFloat(a.tarifa.replace(/[%]/g, '')) || 0;
+              const feeB = parseFloat(b.tarifa.replace(/[%]/g, '')) || 0;
+              console.log(`💸 Fee A: ${feeA}, Fee B: ${feeB}`);
+              return feeB - feeA; // Maior para menor
+              
+            case 'volume':
+              // Extrair valor numérico do volume
+              const volA = parseFloat(a.volume24h.replace(/[$,MK]/g, '')) || 0;
+              const volB = parseFloat(b.volume24h.replace(/[$,MK]/g, '')) || 0;
+              const volMultiplierA = a.volume24h.includes('M') ? 1000000 : a.volume24h.includes('K') ? 1000 : 1;
+              const volMultiplierB = b.volume24h.includes('M') ? 1000000 : b.volume24h.includes('K') ? 1000 : 1;
+              const finalVolA = volA * volMultiplierA;
+              const finalVolB = volB * volMultiplierB;
+              console.log(`📈 Volume A: ${finalVolA}, Volume B: ${finalVolB}`);
+              return finalVolB - finalVolA; // Maior para menor
+              
+            default:
+              return 0;
+          }
+        });
+        
+        console.log('✅ Pools ordenados:', sortedPools);
+        return sortedPools;
         
       } catch (error) {
         console.error('❌ Erro ao buscar pools:', error);
@@ -316,9 +364,13 @@ export default function PoolsPage() {
         <Button
           onClick={() => setShowSortModal(true)}
           variant="outline"
-          className="border-slate-600 text-slate-300 hover:bg-slate-700 text-sm"
+          className="border-slate-600 text-slate-300 hover:text-white hover:border-slate-500 text-sm font-semibold px-6 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl bg-slate-800/50 hover:bg-slate-700/80 backdrop-blur-sm"
         >
-          Rentabilidade estimada ↓
+          <Filter className="h-4 w-4 mr-2" />
+          {sortBy === 'rentabilidade' && 'Rentabilidade estimada ↓'}
+          {sortBy === 'tvl' && 'TVL ↓'}
+          {sortBy === 'tarifa' && 'Tarifa ↓'}
+          {sortBy === 'volume' && 'Volume (24h) ↓'}
         </Button>
       </div>
 
@@ -557,8 +609,8 @@ export default function PoolsPage() {
   );
 
   const renderSortModal = () => (
-    <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
-      <div className="bg-slate-800 rounded-t-xl w-full max-w-md p-6">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-white font-bold text-lg">Classificação</h2>
           <Button
