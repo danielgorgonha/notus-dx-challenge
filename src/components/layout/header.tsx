@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { usePrivy } from "@privy-io/react-auth";
-import { Shield, LogOut, User, Menu, Loader2 } from "lucide-react";
+import { Shield, LogOut, User, Menu, Loader2, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -31,7 +31,7 @@ export function Header({ title, description, onMenuClick }: HeaderProps) {
   };
 
   return (
-    <header className="bg-slate-900/80 backdrop-blur-xl border-b border-slate-700/50">
+    <header className="bg-transparent">
       <div className="px-8 py-6">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -46,31 +46,32 @@ export function Header({ title, description, onMenuClick }: HeaderProps) {
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">{title}</h1>
               {description && (
-                <p className="text-slate-300">{description}</p>
+                <p className="text-slate-400">{description}</p>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            {!!user && (
-              <div className="flex items-center gap-2 text-slate-300">
-                <User className="h-4 w-4" />
-                <span className="text-sm">
-                  {(user as { email?: { address: string }; wallet?: { address: string } })?.email?.address || (user as { email?: { address: string }; wallet?: { address: string } })?.wallet?.address?.slice(0, 6)}...
-                </span>
-              </div>
-            )}
-            <Button 
-              variant="ghost" 
-              className="text-slate-300 hover:text-yellow-400 hover:bg-yellow-500/10"
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3 bg-slate-800/50 rounded-lg px-4 py-2">
+              <User className="h-5 w-5 text-slate-400" />
+              <span className="text-white text-sm">
+                {typeof user?.email === 'string' ? user.email : user?.email?.address || 'Usuário'}
+              </span>
+            </div>
+            <Button
               onClick={handleLogout}
+              variant="ghost"
+              className="flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-slate-800/50 px-4 py-2 rounded-lg transition-all duration-200"
               disabled={isLoggingOut}
             >
               {isLoggingOut ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <LogOut className="mr-2 h-4 w-4" />
+                <>
+                  <ChevronRight className="h-4 w-4" />
+                  <LogOut className="h-4 w-4" />
+                </>
               )}
-              {isLoggingOut ? 'Saindo...' : 'Logout'}
+              <span>{isLoggingOut ? 'Saindo...' : 'Logout'}</span>
             </Button>
           </div>
         </div>
