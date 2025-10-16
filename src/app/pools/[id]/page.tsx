@@ -427,6 +427,7 @@ export default function PoolDetailsPage() {
            </CardContent>
          </Card>
 
+
         {/* Informações */}
         <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl mb-6">
           <CardContent className="p-6">
@@ -547,16 +548,13 @@ export default function PoolDetailsPage() {
           </CardContent>
         </Card>
 
-           {/* Botão de Adicionar Liquidez */}
-           <Button
-             className="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-4 rounded-xl text-lg"
-             onClick={() => {
-               // Implementar lógica de adicionar liquidez
-               console.log('Adicionar liquidez para pool:', poolId);
-             }}
-           >
-             Adicionar liquidez
-           </Button>
+        {/* Botão de Adicionar Liquidez */}
+        <Button
+          className="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-4 rounded-xl text-lg"
+          onClick={() => router.push(`/pools/${poolId}/add-liquidity`)}
+        >
+          Adicionar liquidez
+        </Button>
           </div>
         </div>
       </AppLayout>
