@@ -184,12 +184,27 @@ export default function SwapPage() {
 
   // Declarar handleGetQuote antes de usar no useEffect
   const handleGetQuote = React.useCallback(async () => {
-    if (!canProceed || !walletAddress) {
-      toast.error(
-        'Erro',
-        'Carteira não conectada ou valor inválido.',
-        3000
-      );
+    // Verificar se há dados mínimos para executar a cotação
+    if (!walletAddress) {
+      console.log('🔍 DEBUG handleGetQuote: Wallet não conectada');
+      return;
+    }
+    
+    if (!fromAmount || !currentFromToken || !currentToToken) {
+      console.log('🔍 DEBUG handleGetQuote: Dados insuficientes', {
+        fromAmount,
+        currentFromToken: currentFromToken?.symbol,
+        currentToToken: currentToToken?.symbol
+      });
+      return;
+    }
+    
+    if (!canProceed) {
+      console.log('🔍 DEBUG handleGetQuote: Não pode prosseguir', {
+        canProceed,
+        isValidAmount: isValidAmount(fromAmount),
+        sameToken: currentFromToken.symbol === currentToToken.symbol
+      });
       return;
     }
 
