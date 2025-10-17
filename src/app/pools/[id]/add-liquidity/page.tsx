@@ -962,11 +962,22 @@ export default function AddLiquidityPage() {
   };
 
   const adjustPrice = (type: 'min' | 'max', direction: 'up' | 'down') => {
-    const step = 0.00000001;
+    // Calcular step baseado no preço atual (1% do preço médio)
+    const avgPrice = (minPrice + maxPrice) / 2;
+    const step = avgPrice * 0.01; // 1% do preço médio
+    
     if (type === 'min') {
-      setMinPrice(prev => direction === 'up' ? prev + step : prev - step);
+      setMinPrice(prev => {
+        const newPrice = direction === 'up' ? prev + step : prev - step;
+        // Garantir que minPrice não seja maior que maxPrice
+        return Math.max(0.0001, Math.min(newPrice, maxPrice - step));
+      });
     } else {
-      setMaxPrice(prev => direction === 'up' ? prev + step : prev - step);
+      setMaxPrice(prev => {
+        const newPrice = direction === 'up' ? prev + step : prev - step;
+        // Garantir que maxPrice não seja menor que minPrice
+        return Math.max(minPrice + step, newPrice);
+      });
     }
   };
 
@@ -1269,7 +1280,7 @@ export default function AddLiquidityPage() {
                     >
                       <span className="text-white font-bold">-</span>
                     </Button>
-                    <span className="text-white text-lg font-mono px-4">{minPrice.toFixed(8)}</span>
+                    <span className="text-white text-lg font-mono px-4">{minPrice.toFixed(4)}</span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1304,7 +1315,7 @@ export default function AddLiquidityPage() {
                     >
                       <span className="text-white font-bold">-</span>
                     </Button>
-                    <span className="text-white text-lg font-mono px-4">{maxPrice.toFixed(8)}</span>
+                    <span className="text-white text-lg font-mono px-4">{maxPrice.toFixed(4)}</span>
                     <Button
                       variant="ghost"
                       size="sm"
