@@ -504,6 +504,30 @@ export default function AddLiquidityPage() {
     return amountsData && selectedInputToken && inputAmount && parseFloat(inputAmount) > 0;
   };
 
+  // Função para calcular proporção baseada no preço do pool
+  const calculateTokenProportions = (inputAmount: string, selectedToken: string) => {
+    if (!poolData?.tokens || poolData.tokens.length < 2) {
+      return { token0Amount: '0', token1Amount: '0' };
+    }
+
+    const token0 = poolData.tokens[0];
+    const token1 = poolData.tokens[1];
+    
+    // Se o token selecionado é USDC e o token0 é USDC, usar todo o valor para token0
+    if (selectedToken === 'USDC' && token0.symbol?.toUpperCase().includes('USDC')) {
+      return { token0Amount: inputAmount, token1Amount: '0' };
+    }
+    
+    // Se o token selecionado é BRZ e o token1 é BRZ, usar todo o valor para token1
+    if (selectedToken === 'BRZ' && token1.symbol?.toUpperCase().includes('BRZ')) {
+      return { token0Amount: '0', token1Amount: inputAmount };
+    }
+    
+    // Fallback: dividir igualmente (não ideal, mas melhor que erro)
+    const halfAmount = (parseFloat(inputAmount) / 2).toFixed(6);
+    return { token0Amount: halfAmount, token1Amount: halfAmount };
+  };
+
   // Função para calcular quantidades usando a API
   const calculateAmounts = async () => {
     if (!poolData?.tokens || poolData.tokens.length < 2 || !selectedInputToken || !inputAmount) {
@@ -559,6 +583,16 @@ export default function AddLiquidityPage() {
       
     } catch (error) {
       console.error('❌ [ADD-LIQUIDITY] Erro ao calcular quantidades:', error);
+      // Em caso de erro, usar cálculo de fallback
+      const fallbackAmounts = calculateTokenProportions(inputAmount, selectedInputToken);
+      setAmountsData({
+        amounts: {
+          token0MaxAmount: {
+            token0Amount: fallbackAmounts.token0Amount,
+            token1Amount: fallbackAmounts.token1Amount
+          }
+        }
+      });
     }
   };
 
@@ -1174,12 +1208,14 @@ export default function AddLiquidityPage() {
                       <div className="text-right">
                         <div className="text-white font-mono">
                           {amountsData?.amounts?.token0MaxAmount?.token0Amount || 
-                           (parseFloat(inputAmount) * 0.5).toFixed(3)}
+                           calculateTokenProportions(inputAmount, selectedInputToken).token0Amount}
                         </div>
                         <div className="text-slate-400 text-sm">
                           {amountsData?.amounts?.token0MaxAmount?.token0Amount ? 
                             `~$${parseFloat(amountsData.amounts.token0MaxAmount.token0Amount).toFixed(2)}` : 
-                            'Calculando...'}
+                            parseFloat(calculateTokenProportions(inputAmount, selectedInputToken).token0Amount) > 0 ? 
+                              `~$${parseFloat(calculateTokenProportions(inputAmount, selectedInputToken).token0Amount).toFixed(2)}` : 
+                              'Calculando...'}
                         </div>
                       </div>
                     </div>
@@ -1193,12 +1229,14 @@ export default function AddLiquidityPage() {
                       <div className="text-right">
                         <div className="text-white font-mono">
                           {amountsData?.amounts?.token0MaxAmount?.token1Amount || 
-                           (parseFloat(inputAmount) * 0.5).toFixed(3)}
+                           calculateTokenProportions(inputAmount, selectedInputToken).token1Amount}
                         </div>
                         <div className="text-slate-400 text-sm">
                           {amountsData?.amounts?.token0MaxAmount?.token1Amount ? 
                             `~$${parseFloat(amountsData.amounts.token0MaxAmount.token1Amount).toFixed(2)}` : 
-                            'Calculando...'}
+                            parseFloat(calculateTokenProportions(inputAmount, selectedInputToken).token1Amount) > 0 ? 
+                              `~$${parseFloat(calculateTokenProportions(inputAmount, selectedInputToken).token1Amount).toFixed(2)}` : 
+                              'Calculando...'}
                         </div>
                       </div>
                     </div>
