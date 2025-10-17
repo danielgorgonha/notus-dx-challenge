@@ -141,6 +141,10 @@ export default function AddLiquidityPage() {
     adicionaPool: false,
     recebeNft: false
   });
+  
+  // Estados para controlar drag do intervalo de preço no gráfico
+  const [isDraggingMin, setIsDraggingMin] = useState(false);
+  const [isDraggingMax, setIsDraggingMax] = useState(false);
 
   // Buscar dados históricos reais do pool para o gráfico
   const { data: historicalData, isLoading: historicalLoading } = usePoolHistoricalData(poolId || '', 365);
@@ -1122,14 +1126,21 @@ export default function AddLiquidityPage() {
           {/* Price Chart */}
           <div className="space-y-3">
             {/* Chart Legend */}
-            <div className="flex items-center justify-center space-x-6 text-xs">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-0.5 bg-slate-400" style={{ borderTop: '2px dotted #94a3b8' }}></div>
-                <span className="text-slate-400">Preço atual</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-center space-x-6 text-xs">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-0.5 bg-slate-400" style={{ borderTop: '2px dotted #94a3b8' }}></div>
+                  <span className="text-slate-400">Preço atual</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-3 bg-purple-500/30 border border-purple-500/50 rounded-sm"></div>
+                  <span className="text-slate-400">Intervalo de preço</span>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-3 bg-purple-500/30 border border-purple-500/50 rounded-sm"></div>
-                <span className="text-slate-400">Intervalo de preço</span>
+              <div className="text-center">
+                <p className="text-slate-500 text-xs">
+                  💡 Use os botões +/- abaixo do gráfico para ajustar o intervalo de preço
+                </p>
               </div>
             </div>
             
