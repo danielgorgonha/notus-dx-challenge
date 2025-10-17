@@ -421,6 +421,27 @@ export default function AddLiquidityPage() {
     }
   }, [poolData, priceRange]);
 
+  // Recalcular preços quando tokens forem invertidos
+  useEffect(() => {
+    if (poolData?.tokens && poolData.tokens.length >= 2 && minPrice > 0 && maxPrice > 0) {
+      // Quando inverte, o preço deve ser o inverso (1/preço)
+      // Por exemplo: se era 0.0613 LINK por USDC.E, ao inverter fica ~16.3 USDC.E por LINK
+      const newMin = 1 / maxPrice;
+      const newMax = 1 / minPrice;
+      
+      setMinPrice(newMin);
+      setMaxPrice(newMax);
+      
+      console.log('🔄 [ADD-LIQUIDITY] Tokens invertidos, preços recalculados:', {
+        oldMin: minPrice,
+        oldMax: maxPrice,
+        newMin,
+        newMax,
+        inverted: tokensInverted
+      });
+    }
+  }, [tokensInverted]);
+
   // Calcular quantidades quando inputAmount mudar
   useEffect(() => {
     if (inputAmount && parseFloat(inputAmount) > 0 && selectedInputToken && poolData?.tokens) {
@@ -1012,6 +1033,25 @@ export default function AddLiquidityPage() {
     setSelectedToken(tokenSymbol);
   };
 
+  // Função para formatar preço baseado nos decimais do token
+  const formatPriceByDecimals = (price: number) => {
+    if (!poolData?.tokens || poolData.tokens.length < 2) return price.toFixed(4);
+    
+    const { first } = getOrderedTokens();
+    if (!first) return price.toFixed(4);
+    
+    // Determinar número de casas decimais baseado no token
+    // USDC.E tem 6 decimais, LINK tem 18 decimais
+    // Para preços pequenos (< 1), mostrar mais casas decimais
+    if (price < 0.0001) {
+      return price.toFixed(8);
+    } else if (price < 1) {
+      return price.toFixed(4);
+    } else {
+      return price.toFixed(2);
+    }
+  };
+
   // Função para ajustar preço diretamente no gráfico via clique
   const handleChartClick = (e: any) => {
     if (!e || !e.activePayload) return;
@@ -1346,7 +1386,7 @@ export default function AddLiquidityPage() {
                     >
                       <span className="text-white font-bold">-</span>
                     </Button>
-                    <span className="text-white text-lg font-mono px-4">{minPrice.toFixed(4)}</span>
+                    <span className="text-white text-lg font-mono px-4">{formatPriceByDecimals(minPrice)}</span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1384,7 +1424,7 @@ export default function AddLiquidityPage() {
                     >
                       <span className="text-white font-bold">-</span>
                     </Button>
-                    <span className="text-white text-lg font-mono px-4">{maxPrice.toFixed(4)}</span>
+                    <span className="text-white text-lg font-mono px-4">{formatPriceByDecimals(maxPrice)}</span>
                     <Button
                       variant="ghost"
                       size="sm"
