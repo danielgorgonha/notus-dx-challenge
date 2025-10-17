@@ -1085,53 +1085,106 @@ export default function AddLiquidityPage() {
           </div>
 
           {/* Price Chart */}
-          <div className="space-y-4">
-            {/* Chart */}
-            <div className="h-48 bg-slate-700/50 rounded-lg p-4">
+          <div className="space-y-3">
+            {/* Chart Legend - MOVIDA PARA CIMA */}
+            <div className="flex items-center justify-center space-x-6 text-xs">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-0.5 bg-slate-400" style={{ borderTop: '2px dotted #94a3b8' }}></div>
+                <span className="text-slate-400">Preço atual</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-3 bg-purple-500/30 border border-purple-500/50 rounded-sm"></div>
+                <span className="text-slate-400">Intervalo de preço</span>
+              </div>
+            </div>
+            
+            {/* Chart with draggable price range */}
+            <div className="h-48 bg-slate-900/60 border border-slate-800/80 rounded-lg p-4 relative">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
+                  <defs>
+                    <linearGradient id="priceRangeGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#a855f7" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#a855f7" stopOpacity={0.1} />
+                    </linearGradient>
+                  </defs>
                   <XAxis 
                     dataKey="date" 
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 12 }}
+                    tick={{ fill: '#475569', fontSize: 10 }}
                     interval="preserveStartEnd"
                   />
                   <YAxis 
-                    domain={[0.045, 0.065]}
+                    domain={['auto', 'auto']}
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 12 }}
-                    tickFormatter={(value) => value.toFixed(3)}
+                    tick={{ fill: '#475569', fontSize: 10 }}
+                    tickFormatter={(value) => value.toFixed(4)}
                   />
+                  {/* Área roxa do intervalo de preço */}
+                  {minPrice > 0 && maxPrice > 0 && (
+                    <rect
+                      x="0"
+                      y="0"
+                      width="100%"
+                      height="100%"
+                      fill="url(#priceRangeGradient)"
+                      opacity={0.5}
+                      style={{
+                        clipPath: `polygon(0 ${100 - ((maxPrice / (chartData[0]?.price || 1)) * 100)}%, 100% ${100 - ((maxPrice / (chartData[0]?.price || 1)) * 100)}%, 100% ${100 - ((minPrice / (chartData[0]?.price || 1)) * 100)}%, 0 ${100 - ((minPrice / (chartData[0]?.price || 1)) * 100)}%)`
+                      }}
+                    />
+                  )}
                   <Line 
                     type="monotone" 
                     dataKey="price" 
-                    stroke="#8b5cf6" 
+                    stroke="#a855f7" 
                     strokeWidth={2}
                     dot={false}
-                    activeDot={{ r: 4, fill: '#8b5cf6' }}
+                    activeDot={{ r: 4, fill: '#a855f7' }}
                   />
+                  {/* Linha pontilhada do preço atual */}
                   {chartData.length > 0 && (
                     <ReferenceLine 
                       y={chartData[chartData.length - 1]?.price || 0} 
-                      stroke="#64748b" 
-                      strokeDasharray="5 5" 
-                      label={{ value: "Preço atual", position: "top" as const, fill: "#64748b" }}
+                      stroke="#94a3b8" 
+                      strokeDasharray="4 4" 
+                      label={{ 
+                        value: "Preço atual", 
+                        position: "insideTopRight" as const, 
+                        fill: "#94a3b8", 
+                        fontSize: 10 
+                      }}
                     />
                   )}
-                  <ReferenceLine 
-                    y={minPrice} 
-                    stroke="#ef4444" 
-                    strokeWidth={2}
-                    label={{ value: "Mín", position: "top" as const, fill: "#ef4444" }}
-                  />
-                  <ReferenceLine 
-                    y={maxPrice} 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                    label={{ value: "Máx", position: "top" as const, fill: "#3b82f6" }}
-                  />
+                  {/* Linhas do intervalo de preço (min e max) */}
+                  {minPrice > 0 && (
+                    <ReferenceLine 
+                      y={minPrice} 
+                      stroke="#a855f7" 
+                      strokeWidth={2}
+                      label={{ 
+                        value: minPrice.toFixed(4), 
+                        position: "insideLeft" as const, 
+                        fill: "#a855f7", 
+                        fontSize: 10 
+                      }}
+                    />
+                  )}
+                  {maxPrice > 0 && (
+                    <ReferenceLine 
+                      y={maxPrice} 
+                      stroke="#a855f7" 
+                      strokeWidth={2}
+                      label={{ 
+                        value: maxPrice.toFixed(4), 
+                        position: "insideLeft" as const, 
+                        fill: "#a855f7", 
+                        fontSize: 10 
+                      }}
+                    />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             </div>
