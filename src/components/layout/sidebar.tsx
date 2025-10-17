@@ -82,7 +82,8 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   };
 
   const isParentActive = (item: any) => {
-    return pathname === item.href;
+    // Verifica se é a rota exata ou se é uma rota filha
+    return pathname === item.href || pathname.startsWith(item.href + '/');
   };
 
 
