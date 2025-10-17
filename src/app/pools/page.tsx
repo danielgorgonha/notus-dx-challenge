@@ -42,6 +42,10 @@ export default function PoolsPage() {
   
   // Estado para tooltip de APR
   const [showAprTooltip, setShowAprTooltip] = useState(false);
+  
+  // Estados para FAQs
+  const [showFaqModal, setShowFaqModal] = useState(false);
+  const [selectedFaq, setSelectedFaq] = useState<string | null>(null);
 
   const walletAddress = wallet?.accountAbstraction;
 
@@ -411,6 +415,288 @@ export default function PoolsPage() {
     </div>
   );
 
+  const faqData = [
+    {
+      id: 'o-que-sao-pools',
+      title: 'O que são pools de liquidez?',
+      icon: '💰',
+      content: {
+        title: 'O que são pools de liquidez?',
+        description: 'São como cofres coletivos com dois tipos de criptomoedas (par de ativos).',
+        subtitle: 'Os cofres fornecem liquidez para que trocas entre o par de ativos possam acontecer no mercado cripto.',
+        highlight: 'Ao colocar seu dinheiro nesse cofre, você se torna um provedor de liquidez, ganhando recompensas para cada troca realizada.'
+      }
+    },
+    {
+      id: 'como-funcionam-pools',
+      title: 'Como funcionam as pools de liquidez na Notus DX?',
+      icon: '💰',
+      content: {
+        title: 'Como funcionam as pools de liquidez na Notus DX?',
+        description: 'Nossa funcionalidade simplifica a Uniswap V3 para você. O processo é simples:',
+        steps: [
+          { label: 'Escolha', text: 'um par de moedas no catálogo.' },
+          { label: 'Defina', text: 'o intervalo de preço em que deseja atuar.' },
+          { label: 'Invista', text: 'com seu saldo em USDC ou BRZ.' }
+        ],
+        footer: 'Para facilitar, o app usa seu saldo para comprar e balancear os dois ativos da pool automaticamente.',
+        extra: 'Enquanto o preço de mercado para seu par de ativos estiver no intervalo definido, você ganha rendimentos.'
+      }
+    },
+    {
+      id: 'como-funcionam-rendimentos',
+      title: 'Como funcionam os rendimentos da pool?',
+      icon: '💰',
+      content: {
+        title: 'Como funcionam os rendimentos da pool?',
+        description: 'Você ganha uma parte das taxas de todas as trocas que usam a sua liquidez.',
+        subtitle: 'Seu ganho depende principalmente de 4 fatores:',
+        list: [
+          'Volume de negociações na pool;',
+          'O nível de tarifa da pool;',
+          'O intervalo de preço que você definiu;',
+          'A quantidade de liquidez que você proveu.'
+        ],
+        footer: 'Não há ganhos garantidos. O app exibe uma estimativa de rendimento anual (APR) para te ajudar a decidir.'
+      }
+    },
+    {
+      id: 'taxas-envolvidas',
+      title: 'Quais são as taxas envolvidas?',
+      icon: '💰',
+      content: {
+        title: 'Quais são as taxas envolvidas?',
+        sections: [
+          {
+            label: 'Taxa Notus DX:',
+            text: 'Não cobramos taxas para adicionar ou remover liquidez, nem para resgatar rendimentos.'
+          },
+          {
+            text: 'A única taxa é a de swap (0,5%), cobrada no momento em que o app converte seu saldo (USDC/BRZ) para os ativos do par.'
+          },
+          {
+            label: 'Taxa da Rede:',
+            text: 'É um custo externo e variável, pago à rede blockchain para processar suas operações.'
+          },
+          {
+            label: 'Transparência total:',
+            text: 'O valor exato de todos os custos sempre será exibido para você antes da confirmação.'
+          }
+        ]
+      }
+    },
+    {
+      id: 'pool-inativa',
+      title: 'O que acontece quando minha pool fica inativa?',
+      icon: '💰',
+      content: {
+        title: 'O que acontece quando minha pool fica inativa?',
+        description: 'Quando o preço do par sai do intervalo que você definiu, sua pool fica inativa.',
+        subtitle: 'O que significa:',
+        list: [
+          'Sua pool para de gerar rendimentos.',
+          'Sua posição pode ser convertida 100% para um dos ativos do par (o que causa a Perda Impermanente).'
+        ],
+        actionTitle: 'O que você pode fazer:',
+        actions: [
+          { label: 'Esperar', text: 'o preço voltar ao intervalo; ou' },
+          { label: 'Resgatar', text: 'a liquidez e criar uma nova pool com um novo intervalo.' }
+        ]
+      }
+    },
+    {
+      id: 'perda-impermanente',
+      title: 'O que é Perda Impermanente?',
+      icon: '💰',
+      content: {
+        title: 'O que é Perda Impermanente?',
+        description: 'É o risco de que o valor total que você retira da pool seja menor do que se você tivesse simplesmente guardado os dois ativos na carteira.',
+        paragraph1: 'Ao fornecer liquidez, você está permitindo que a Uniswap venda aos poucos o ativo que está subindo e compre o que está caindo.',
+        paragraph2: 'Essa "venda na subida" pode causar uma diferença de valor em relação a simplesmente segurar os ativos.',
+        warning: 'Se o preço sair completamente do seu intervalo, sua posição pode ser totalmente convertida para o ativo que menos valorizou.'
+      }
+    },
+    {
+      id: 'intervalo-pool',
+      title: 'O que é o intervalo de uma pool de liquidez?',
+      icon: '💰',
+      content: {
+        title: 'O que é o intervalo de uma pool de liquidez?',
+        description: 'É a faixa de preço (entre um mínimo e um máximo) no qual sua liquidez ficará disponível ao mercado.',
+        rules: [
+          { condition: 'dentro', text: 'Pool ativa', detail: 'gerando rendimentos.' },
+          { condition: 'fora', text: 'Pool inativa', detail: 'não gera rendimentos.' }
+        ],
+        summary: 'Em geral, intervalos mais amplos reduzem o risco de inatividade, mas têm rendimentos menores.',
+        extra: 'Intervalos mais estreitos, por outro lado, concentram liquidez e podem render mais, mas têm maiores riscos de inatividade e Perda Impermanente.'
+      }
+    }
+  ];
+
+  const renderFaqSection = () => (
+    <div className="mt-12">
+      <h2 className="text-white text-2xl font-bold mb-6">FAQ</h2>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {faqData.map((faq) => (
+          <Card
+            key={faq.id}
+            className="bg-slate-800/60 border border-slate-700/60 rounded-2xl cursor-pointer hover:bg-slate-700/60 hover:border-slate-600/60 transition-all duration-300 shadow-md hover:shadow-lg"
+            onClick={() => {
+              setSelectedFaq(faq.id);
+              setShowFaqModal(true);
+            }}
+          >
+            <CardContent className="p-6 flex flex-col items-center text-center">
+              <div className="w-24 h-24 bg-gradient-to-b from-slate-600 to-slate-700 rounded-full flex items-center justify-center mb-4 relative">
+                <div className="absolute -top-2 -right-2 w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
+                  <span className="text-2xl">💰</span>
+                </div>
+                <div className="w-full h-full bg-slate-600 rounded-full" />
+              </div>
+              <p className="text-white text-sm font-medium leading-snug">
+                {faq.title}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderFaqModal = () => {
+    if (!selectedFaq) return null;
+    
+    const faq = faqData.find(f => f.id === selectedFaq);
+    if (!faq) return null;
+
+    return (
+      <div 
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+        onClick={() => {
+          setShowFaqModal(false);
+          setSelectedFaq(null);
+        }}
+      >
+        <div 
+          className="bg-slate-800 rounded-2xl w-full max-w-2xl shadow-2xl max-h-[80vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-6 py-6">
+            <h3 className="text-white font-bold text-xl mb-4">{faq.content.title}</h3>
+            
+            {/* O que são pools de liquidez? */}
+            {faq.id === 'o-que-sao-pools' && (
+              <>
+                <p className="text-white text-sm mb-4">{faq.content.description}</p>
+                <p className="text-white text-sm mb-4">{faq.content.subtitle}</p>
+                <p className="text-white text-sm mb-6">{faq.content.highlight}</p>
+              </>
+            )}
+
+            {/* Como funcionam as pools na Notus DX? */}
+            {faq.id === 'como-funcionam-pools' && (
+              <>
+                <p className="text-white text-sm mb-4">{faq.content.description}</p>
+                <div className="mb-4 space-y-2">
+                  {faq.content.steps?.map((step, index) => (
+                    <p key={index} className="text-white text-sm">
+                      • <span className="font-bold">{step.label}</span> {step.text}
+                    </p>
+                  ))}
+                </div>
+                <p className="text-white text-sm mb-4">{faq.content.footer}</p>
+                <p className="text-white text-sm mb-6">{faq.content.extra}</p>
+              </>
+            )}
+
+            {/* Como funcionam os rendimentos? */}
+            {faq.id === 'como-funcionam-rendimentos' && (
+              <>
+                <p className="text-white text-sm mb-4">{faq.content.description}</p>
+                <p className="text-white text-sm font-bold mb-2">{faq.content.subtitle}</p>
+                <div className="mb-4 space-y-1">
+                  {faq.content.list?.map((item, index) => (
+                    <p key={index} className="text-white text-sm">• {item}</p>
+                  ))}
+                </div>
+                <p className="text-white text-sm mb-6">{faq.content.footer}</p>
+              </>
+            )}
+
+            {/* Quais são as taxas? */}
+            {faq.id === 'taxas-envolvidas' && (
+              <div className="space-y-4 mb-6">
+                {faq.content.sections?.map((section, index) => (
+                  <p key={index} className="text-white text-sm">
+                    {section.label && <span className="font-bold">{section.label}</span>} {section.text}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {/* Pool inativa */}
+            {faq.id === 'pool-inativa' && (
+              <>
+                <p className="text-white text-sm mb-4">{faq.content.description}</p>
+                <p className="text-white text-sm font-bold mb-2">{faq.content.subtitle}</p>
+                <div className="mb-4 space-y-1">
+                  {faq.content.list?.map((item, index) => (
+                    <p key={index} className="text-white text-sm">• {item}</p>
+                  ))}
+                </div>
+                <p className="text-white text-sm font-bold mb-2">{faq.content.actionTitle}</p>
+                <div className="mb-6 space-y-2">
+                  {faq.content.actions?.map((action, index) => (
+                    <p key={index} className="text-white text-sm">
+                      • <span className="font-bold">{action.label}</span> {action.text}
+                    </p>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Perda Impermanente */}
+            {faq.id === 'perda-impermanente' && (
+              <>
+                <p className="text-white text-sm mb-4">{faq.content.description}</p>
+                <p className="text-white text-sm mb-4">{faq.content.paragraph1}</p>
+                <p className="text-white text-sm mb-4">{faq.content.paragraph2}</p>
+                <p className="text-white text-sm mb-6">{faq.content.warning}</p>
+              </>
+            )}
+
+            {/* Intervalo da pool */}
+            {faq.id === 'intervalo-pool' && (
+              <>
+                <p className="text-white text-sm mb-4">{faq.content.description}</p>
+                <div className="mb-4 space-y-2">
+                  {faq.content.rules?.map((rule, index) => (
+                    <p key={index} className="text-white text-sm">
+                      • Preço <span className="font-bold">{rule.condition}</span> do intervalo = <span className="font-bold">{rule.text}</span>, {rule.detail}
+                    </p>
+                  ))}
+                </div>
+                <p className="text-white text-sm mb-4">{faq.content.summary}</p>
+                <p className="text-white text-sm mb-6">{faq.content.extra}</p>
+              </>
+            )}
+            
+            <Button
+              onClick={() => {
+                setShowFaqModal(false);
+                setSelectedFaq(null);
+              }}
+              className="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-3 rounded-xl"
+            >
+              Ok, entendi
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <ProtectedRoute>
       <AppLayout 
@@ -419,10 +705,12 @@ export default function PoolsPage() {
       >
         <div className="w-full max-w-4xl mx-auto px-6">
           {renderPoolsList()}
+          {renderFaqSection()}
         </div>
         
         {showSortModal && renderSortModal()}
         {showAprTooltip && renderAprTooltip()}
+        {showFaqModal && renderFaqModal()}
       </AppLayout>
     </ProtectedRoute>
   );
