@@ -985,6 +985,31 @@ export default function AddLiquidityPage() {
     }
   };
 
+  // Função para ajustar preço diretamente no gráfico via clique
+  const handleChartClick = (e: any) => {
+    if (!e || !e.activePayload) return;
+    
+    // Obter o valor Y (preço) do clique
+    const clickedPrice = e.chartY ? 
+      // Converter coordenada Y para valor de preço
+      ((e.chartY / e.height) * (maxPrice - minPrice)) + minPrice 
+      : null;
+    
+    if (!clickedPrice) return;
+    
+    // Determinar se está mais próximo de min ou max
+    const distToMin = Math.abs(clickedPrice - minPrice);
+    const distToMax = Math.abs(clickedPrice - maxPrice);
+    
+    if (distToMin < distToMax) {
+      // Ajustar minPrice
+      setMinPrice(Math.max(0.0001, Math.min(clickedPrice, maxPrice - 0.001)));
+    } else {
+      // Ajustar maxPrice
+      setMaxPrice(Math.max(minPrice + 0.001, clickedPrice));
+    }
+  };
+
   const handlePriceRangeSelect = (range: string) => {
     setPriceRange(range as any);
     
@@ -1139,17 +1164,18 @@ export default function AddLiquidityPage() {
               </div>
               <div className="text-center">
                 <p className="text-slate-500 text-xs">
-                  💡 Use os botões +/- abaixo do gráfico para ajustar o intervalo de preço
+                  💡 Clique no gráfico ou use os botões +/- abaixo para ajustar o intervalo de preço
                 </p>
               </div>
             </div>
             
             {/* Interactive Chart with draggable price range */}
-            <div className="h-64 bg-slate-900/60 border border-slate-800/80 rounded-lg p-4 relative">
+            <div className="h-64 bg-slate-900/60 border border-slate-800/80 rounded-lg p-4 relative cursor-pointer">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart 
                   data={chartData}
                   margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
+                  onClick={handleChartClick}
                 >
                   <defs>
                     {/* Gradiente para área de preço */}
