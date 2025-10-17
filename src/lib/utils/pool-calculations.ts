@@ -1,6 +1,6 @@
 /**
  * Pool Calculations Utilities
- * Baseado no script test-specific-pools.sh
+ * Baseado no script test-specific-pools.sh e test-get-pool-by-id.sh
  * Funções para cálculos de métricas de pools de liquidez
  */
 
@@ -47,7 +47,7 @@ export interface PoolData {
 
 /**
  * Calcula APR baseado nos dados da pool
- * Ajustado para corresponder aos valores das imagens
+ * APR = (Fees * 365) / (TVL * Days) * 100
  */
 export function calculateAPR(
   feesUSD: number | string,
@@ -64,48 +64,20 @@ export function calculateAPR(
   // APR = (Fees * 365) / (TVL * Days) * 100
   const apr = (fees * 365) / (tvl * days) * 100;
   
-  // Ajustar para valores específicos das imagens
-  if (tvl >= 450000 && tvl <= 500000) {
-    return 84.52; // USDC.E/LINK da imagem
-  }
-  if (tvl >= 3000000 && tvl <= 3500000) {
-    return 66.72; // WETH/USDT da imagem
-  }
-  if (tvl >= 400000 && tvl <= 500000) {
-    return 67.98; // ETH/USDT da imagem
-  }
-  if (tvl >= 900000 && tvl <= 1000000) {
-    return 57.27; // USDC/ETH da imagem
-  }
-  
   return Math.max(0, apr);
 }
 
 /**
  * Formata valores monetários
- * Ajustado para corresponder exatamente às imagens
  */
 export function formatCurrency(value: number | string): string {
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
   
-  // Valores específicos das imagens
-  if (numValue >= 3000000 && numValue <= 3500000) {
-    return '$3.5M'; // ETH/USDT da imagem
-  }
-  if (numValue >= 450000 && numValue <= 500000) {
-    return '$478.9K'; // USDC.E/LINK da imagem
-  }
-  if (numValue >= 400000 && numValue <= 500000) {
-    return '$453.7K'; // ETH/USDT da imagem
-  }
-  if (numValue >= 900000 && numValue <= 1000000) {
-    return '$952.4K'; // USDC/ETH da imagem
-  }
-  if (numValue >= 1000000 && numValue <= 1200000) {
-    return '$1.1M'; // WPOL/USDT da imagem
+  if (isNaN(numValue) || numValue < 0) {
+    return '$0.00';
   }
   
-  // Formatação padrão
+  // Formatação baseada no valor
   if (numValue >= 1000000) {
     return `$${(numValue / 1000000).toFixed(1)}M`;
   }
@@ -128,58 +100,69 @@ export function formatCurrency(value: number | string): string {
 }
 
 /**
- * Calcula composição da pool
- * Ajustado para corresponder exatamente às imagens
+ * Calcula composição da pool baseada nos dados reais da API
  */
 export function calculatePoolComposition(tokens: PoolData['tokens']): {
   token0: { symbol: string; percentage: number };
   token1: { symbol: string; percentage: number };
 } {
+  if (!tokens || tokens.length < 2) {
+    return {
+      token0: { symbol: 'TOKEN1', percentage: 50 },
+      token1: { symbol: 'TOKEN2', percentage: 50 }
+    };
+  }
+  
   const token0 = tokens[0];
   const token1 = tokens[1];
   
-  // Valores específicos das imagens
-  if (token0?.symbol?.toLowerCase() === 'usdc.e' && token1?.symbol?.toLowerCase() === 'link') {
-    return {
-      token0: { symbol: 'USDC.E', percentage: 17.37 },
-      token1: { symbol: 'LINK', percentage: 82.63 }
-    };
-  }
-  if (token0?.symbol?.toLowerCase() === 'weth' && token1?.symbol?.toLowerCase() === 'usdt') {
-    return {
-      token0: { symbol: 'WETH', percentage: 76.2 },
-      token1: { symbol: 'USDT', percentage: 23.8 }
-    };
-  }
-  if (token0?.symbol?.toLowerCase() === 'usdc' && token1?.symbol?.toLowerCase() === 'weth') {
-    return {
-      token0: { symbol: 'USDC', percentage: 31.48 },
-      token1: { symbol: 'WETH', percentage: 68.52 }
-    };
-  }
-  if (token0?.symbol?.toLowerCase() === 'wpol' && token1?.symbol?.toLowerCase() === 'usdt') {
-    return {
-      token0: { symbol: 'WPOL', percentage: 90.04 },
-      token1: { symbol: 'USDT', percentage: 9.96 }
-    };
-  }
-  
-  // Valores padrão
   return {
-    token0: {
-      symbol: token0?.symbol?.toUpperCase() || 'TOKEN1',
-      percentage: token0?.poolShareInPercentage || 0
+    token0: { 
+      symbol: token0.symbol?.toUpperCase() || 'TOKEN1', 
+      percentage: token0.poolShareInPercentage || 50 
     },
-    token1: {
-      symbol: token1?.symbol?.toUpperCase() || 'TOKEN2', 
-      percentage: token1?.poolShareInPercentage || 0
+    token1: { 
+      symbol: token1.symbol?.toUpperCase() || 'TOKEN2', 
+      percentage: token1.poolShareInPercentage || 50 
     }
   };
 }
 
 /**
- * Processa dados completos da pool
- * Combina todas as funções para gerar métricas completas
+ * Valida se a pool tem dados mínimos necessários
+ */
+export function isValidPool(pool: any): boolean {
+  return !!(
+    pool &&
+    pool.id &&
+    pool.address &&
+    pool.totalValueLockedUSD &&
+    pool.tokens &&
+    Array.isArray(pool.tokens) &&
+    pool.tokens.length >= 2
+  );
+}
+
+/**
+ * Retorna a configuração padrão da API
+ */
+export function getDefaultApiConfig() {
+  return {
+    take: 10,
+    offset: 0,
+    chainIds: 137, // Polygon
+    filterWhitelist: false,
+    rangeInDays: 30,
+    ids: (process.env.NOTUS_POOL_IDS || '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter((id) => id.length > 0)
+  };
+}
+
+/**
+ * Processa métricas da pool
+ * Calcula valores de 24h dividindo os valores do período pelo número de dias
  */
 export function processPoolMetrics(pool: PoolData): PoolMetrics {
   // Extrair valores numéricos
@@ -187,56 +170,42 @@ export function processPoolMetrics(pool: PoolData): PoolMetrics {
     ? parseFloat(pool.totalValueLockedUSD) 
     : pool.totalValueLockedUSD;
     
-  const fees24h = pool.stats?.feesInUSD 
+  const feesTotal = pool.stats?.feesInUSD 
     ? (typeof pool.stats.feesInUSD === 'string' 
         ? parseFloat(pool.stats.feesInUSD) 
         : pool.stats.feesInUSD)
     : 0;
     
-  const volume24h = pool.stats?.volumeInUSD 
+  const volumeTotal = pool.stats?.volumeInUSD 
     ? (typeof pool.stats.volumeInUSD === 'string' 
         ? parseFloat(pool.stats.volumeInUSD) 
         : pool.stats.volumeInUSD)
     : 0;
   
-  // Calcular APR
-  const apr = calculateAPR(fees24h, tvl, pool.stats?.rangeInDays || 30);
+  const rangeInDays = pool.stats?.rangeInDays || 30;
+  
+  // Calcular valores de 24h (média diária)
+  // Seguindo a lógica do script: fees_24h = fees_total / range_days
+  const fees24h = feesTotal / rangeInDays;
+  const volume24h = volumeTotal / rangeInDays;
+  
+  // Calcular APR usando os dados totais do período
+  const apr = calculateAPR(feesTotal, tvl, rangeInDays);
   
   // Calcular composição
   const composition = calculatePoolComposition(pool.tokens);
   
-  // Ajustar volumes para corresponder às imagens
-  let adjustedVolume24h = volume24h;
-  if (tvl >= 450000 && tvl <= 500000) {
-    adjustedVolume24h = 369700; // USDC.E/LINK da imagem
-  }
-  if (tvl >= 3000000 && tvl <= 3500000) {
-    adjustedVolume24h = 2000000; // ETH/USDT da imagem
-  }
-  if (tvl >= 400000 && tvl <= 500000) {
-    adjustedVolume24h = 1700000; // ETH/USDT da imagem
-  }
-  if (tvl >= 900000 && tvl <= 1000000) {
-    adjustedVolume24h = 3000000; // USDC/ETH da imagem
-  }
-  
-  // Ajustar fees para corresponder às imagens
-  let adjustedFees24h = fees24h;
-  if (tvl >= 450000 && tvl <= 500000) {
-    adjustedFees24h = 1108.55; // USDC.E/LINK da imagem
-  }
-  
   return {
     apr,
     tvl,
-    volume24h: adjustedVolume24h,
-    fees24h: adjustedFees24h,
+    volume24h,
+    fees24h,
     composition,
     formatted: {
       apr: `${apr.toFixed(2)}% a.a.`,
       tvl: formatCurrency(tvl),
-      volume24h: formatCurrency(adjustedVolume24h),
-      fees24h: formatCurrency(adjustedFees24h),
+      volume24h: formatCurrency(volume24h),
+      fees24h: formatCurrency(fees24h),
       composition: `${composition.token0.symbol.toLowerCase()} (${composition.token0.percentage.toFixed(2)}%) / ${composition.token1.symbol.toLowerCase()} (${composition.token1.percentage.toFixed(2)}%)`
     }
   };
@@ -281,42 +250,64 @@ export function sortPools(
 }
 
 /**
- * Valida se uma pool tem dados válidos
- * Baseado nas verificações do script
+ * Formata percentual
  */
-export function isValidPool(pool: PoolData): boolean {
-  return !!(
-    pool.id &&
-    pool.address &&
-    pool.tokens &&
-    pool.tokens.length >= 2 &&
-    pool.totalValueLockedUSD &&
-    pool.totalValueLockedUSD !== '0' &&
-    pool.totalValueLockedUSD !== 'null'
-  );
+export function formatPercentage(value: number): string {
+  return `${value.toFixed(2)}%`;
 }
 
 /**
- * Extrai IDs das pools das variáveis de ambiente
+ * Calcula valor em USD baseado no preço e quantidade
  */
-export function getPoolIdsFromEnv(): string[] {
-  const poolIds = process.env.NOTUS_POOL_IDS;
-  if (!poolIds) return [];
-  
-  return poolIds.split(',').map(id => id.trim()).filter(Boolean);
+export function calculateValueInUSD(amount: number, priceUSD: number): number {
+  return amount * priceUSD;
 }
 
 /**
- * Configuração padrão para chamadas da API
- * Baseado nos parâmetros do script
+ * Formata número grande para exibição
  */
-export function getDefaultApiConfig() {
-  return {
-    take: 10,
-    offset: 0,
-    chainIds: process.env.NOTUS_CHAIN_IDS ? parseInt(process.env.NOTUS_CHAIN_IDS) : 137,
-    filterWhitelist: process.env.NOTUS_FILTER_WHITELIST === 'true',
-    rangeInDays: process.env.NOTUS_RANGE_IN_DAYS ? parseInt(process.env.NOTUS_RANGE_IN_DAYS) : 30,
-    ids: getPoolIdsFromEnv()
-  };
+export function formatNumber(value: number): string {
+  if (value >= 1000000) {
+    return `${(value / 1000000).toFixed(2)}M`;
+  }
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(2)}K`;
+  }
+  return value.toFixed(2);
+}
+
+/**
+ * Extrai ID da chain de um pool ID
+ * Ex: "137-0x..." retorna 137
+ */
+export function extractChainId(poolId: string): number | null {
+  const match = poolId.match(/^(\d+)-/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+/**
+ * Extrai endereço do contrato de um pool ID
+ * Ex: "137-0xabc..." retorna "0xabc..."
+ */
+export function extractContractAddress(poolId: string): string | null {
+  const match = poolId.match(/^[\d]+-(.+)$/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Valida se um endereço Ethereum é válido
+ */
+export function isValidEthereumAddress(address: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
+}
+
+/**
+ * Trunca endereço para exibição
+ * Ex: "0x1234...5678"
+ */
+export function truncateAddress(address: string, startChars = 6, endChars = 4): string {
+  if (!address || address.length <= startChars + endChars) {
+    return address;
+  }
+  return `${address.substring(0, startChars)}...${address.substring(address.length - endChars)}`;
 }
