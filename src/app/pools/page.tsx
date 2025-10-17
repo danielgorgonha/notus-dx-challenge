@@ -44,7 +44,7 @@ export default function PoolsPage() {
       try {
         console.log('🚀 Buscando pools específicas da API interna...');
         
-        const response = await fetch('/api/pools');
+        const response = await fetch('/api/liquidity/pools');
         if (!response.ok) {
           throw new Error(`Erro na API: ${response.status}`);
         }
@@ -141,10 +141,7 @@ export default function PoolsPage() {
           className="border-slate-600 text-slate-300 hover:text-white hover:border-slate-500 text-sm font-semibold px-6 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl bg-slate-800/50 hover:bg-slate-700/80 backdrop-blur-sm"
         >
           <Filter className="h-4 w-4 mr-2" />
-          {sortBy === 'rentabilidade' && 'Rentabilidade estimada ↓'}
-          {sortBy === 'tvl' && 'TVL ↓'}
-          {sortBy === 'tarifa' && 'Tarifa ↓'}
-          {sortBy === 'volume' && 'Volume (24h) ↓'}
+          Rentabilidade estimada ↓
         </Button>
       </div>
 
@@ -157,53 +154,28 @@ export default function PoolsPage() {
                 <DollarSign className="h-6 w-6 text-blue-400" />
               </div>
               <p className="text-slate-400 text-sm font-medium mb-1">TVL Total</p>
-              <p className="text-white font-bold text-xl">
-                {poolsData && poolsData.length > 0 
-                  ? `$${(poolsData.reduce((sum, pool) => {
-                      if (!pool.tvl || typeof pool.tvl !== 'string') return sum;
-                      const tvl = parseFloat(pool.tvl.replace(/[$,MK]/g, '')) || 0;
-                      const multiplier = pool.tvl.includes('M') ? 1000000 : pool.tvl.includes('K') ? 1000 : 1;
-                      return sum + (tvl * multiplier);
-                    }, 0) / 1000000).toFixed(1)}M`
-                  : '$0.0M'
-                }
-              </p>
+              <p className="text-white font-bold text-xl">$6.4M</p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-yellow-500/20 flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-yellow-400" />
               </div>
               <p className="text-slate-400 text-sm font-medium mb-1">Tarifa Média</p>
-              <p className="text-white font-bold text-xl">
-                {poolsData && poolsData.length > 0 
-                  ? `${(poolsData.reduce((sum, pool) => sum + (parseFloat(pool.tarifa || pool.fee || '0') || 0), 0) / poolsData.length).toFixed(2)}%`
-                  : '0.00%'
-                }
-              </p>
+              <p className="text-white font-bold text-xl">0.15%</p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-green-500/20 flex items-center justify-center">
                 <LineChart className="h-6 w-6 text-green-400" />
               </div>
               <p className="text-slate-400 text-sm font-medium mb-1">Volume (24h)</p>
-              <p className="text-white font-bold text-xl">
-                {poolsData && poolsData.length > 0 
-                  ? `$${(poolsData.reduce((sum, pool) => {
-                      if (!pool.volume24h || typeof pool.volume24h !== 'string') return sum;
-                      const volume = parseFloat(pool.volume24h.replace(/[$,MK]/g, '')) || 0;
-                      const multiplier = pool.volume24h.includes('M') ? 1000000 : pool.volume24h.includes('K') ? 1000 : 1;
-                      return sum + (volume * multiplier);
-                    }, 0) / 1000).toFixed(1)}K`
-                  : '$0.0K'
-                }
-              </p>
+              <p className="text-white font-bold text-xl">$199700.0K</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Lista de Pools */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {(() => {
           if (poolsLoading) {
             return (
@@ -246,16 +218,16 @@ export default function PoolsPage() {
             >
               <CardContent className="p-6">
                 {/* Header Section */}
-                <div className="flex items-start justify-between mb-6">
+                <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-4">
                     {/* Token Icons */}
                     <div className="relative flex items-center">
-                      <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center border-2 border-slate-700 shadow-md">
+                      <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border-2 border-slate-700 shadow-md">
                         {pool.token1?.logo && typeof pool.token1.logo === 'string' && pool.token1.logo.startsWith('http') ? (
                           <img 
                             src={pool.token1.logo} 
                             alt={pool.token1?.symbol || 'Token1'} 
-                            className="w-8 h-8 rounded-full object-cover"
+                            className="w-6 h-6 rounded-full object-cover"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                               const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
@@ -265,16 +237,16 @@ export default function PoolsPage() {
                             }}
                           />
                         ) : null}
-                        <span className="text-xl" style={{ display: pool.token1?.logo && typeof pool.token1.logo === 'string' && pool.token1.logo.startsWith('http') ? 'none' : 'block' }}>
+                        <span className="text-lg" style={{ display: pool.token1?.logo && typeof pool.token1.logo === 'string' && pool.token1.logo.startsWith('http') ? 'none' : 'block' }}>
                           {String(pool.token1?.logo || '💙')}
                         </span>
                       </div>
-                      <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center border-2 border-slate-700 shadow-md -ml-3">
+                      <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center border-2 border-slate-700 shadow-md -ml-3">
                         {pool.token2?.logo && typeof pool.token2.logo === 'string' && pool.token2.logo.startsWith('http') ? (
                           <img 
                             src={pool.token2.logo} 
                             alt={pool.token2?.symbol || 'Token2'} 
-                            className="w-8 h-8 rounded-full object-cover"
+                            className="w-6 h-6 rounded-full object-cover"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                               const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
@@ -284,7 +256,7 @@ export default function PoolsPage() {
                             }}
                           />
                         ) : null}
-                        <span className="text-xl" style={{ display: pool.token2?.logo && typeof pool.token2.logo === 'string' && pool.token2.logo.startsWith('http') ? 'none' : 'block' }}>
+                        <span className="text-lg" style={{ display: pool.token2?.logo && typeof pool.token2.logo === 'string' && pool.token2.logo.startsWith('http') ? 'none' : 'block' }}>
                           {String(pool.token2?.logo || '💚')}
                         </span>
                       </div>
@@ -299,7 +271,7 @@ export default function PoolsPage() {
                   
                   {/* Rentability Section */}
                   <div className="text-right">
-                    <div className="flex items-center justify-end space-x-2 mb-2">
+                    <div className="flex items-center justify-end space-x-2 mb-1">
                       <span className="text-slate-400 text-sm font-medium">Rent. estimada</span>
                       <Info className="h-4 w-4 text-slate-400" />
                     </div>
@@ -326,7 +298,7 @@ export default function PoolsPage() {
                 {/* Composition Section */}
                 {pool.composition && (
                   <div className="pt-4 border-t border-slate-700/50">
-                    <p className="text-slate-400 text-sm font-medium mb-2">Composição</p>
+                    <p className="text-slate-400 text-sm font-medium mb-1">Composição</p>
                     <p className="text-white text-sm">{String(pool.composition || 'N/A')}</p>
                   </div>
                 )}
@@ -337,41 +309,6 @@ export default function PoolsPage() {
         })()}
       </div>
 
-      {/* FAQ Section */}
-      <div className="mt-8">
-        <h2 className="text-white text-2xl font-bold mb-6">FAQ</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl cursor-pointer hover:bg-slate-700/40 hover:border-slate-600/60 transition-all duration-300 shadow-lg hover:shadow-xl group">
-            <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/30 transition-colors duration-300">
-                <Coins className="h-8 w-8 text-blue-400" />
-              </div>
-              <h3 className="text-white font-semibold text-lg mb-2">O que são pools de liquidez?</h3>
-              <p className="text-slate-400 text-sm">Entenda como funcionam os pools de liquidez e seus benefícios</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl cursor-pointer hover:bg-slate-700/40 hover:border-slate-600/60 transition-all duration-300 shadow-lg hover:shadow-xl group">
-            <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center group-hover:bg-green-500/30 transition-colors duration-300">
-                <Wallet className="h-8 w-8 text-green-400" />
-              </div>
-              <h3 className="text-white font-semibold text-lg mb-2">Como funcionam as pools na Notus DX?</h3>
-              <p className="text-slate-400 text-sm">Descubra as funcionalidades exclusivas da nossa plataforma</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl cursor-pointer hover:bg-slate-700/40 hover:border-slate-600/60 transition-all duration-300 shadow-lg hover:shadow-xl group">
-            <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-500/20 flex items-center justify-center group-hover:bg-yellow-500/30 transition-colors duration-300">
-                <TrendingUp className="h-8 w-8 text-yellow-400" />
-              </div>
-              <h3 className="text-white font-semibold text-lg mb-2">Como funcionam os rendimentos?</h3>
-              <p className="text-slate-400 text-sm">Aprenda sobre os diferentes tipos de rendimento disponíveis</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
     </div>
   );
 

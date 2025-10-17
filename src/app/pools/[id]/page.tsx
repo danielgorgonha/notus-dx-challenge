@@ -67,7 +67,7 @@ export default function PoolDetailsPage() {
       console.log('🔍 Buscando detalhes do pool via API interna:', poolId);
       
       try {
-        const response = await fetch(`/api/pools/${poolId}`);
+        const response = await fetch(`/api/liquidity/pools/${poolId}`);
         if (!response.ok) {
           throw new Error(`Erro na API: ${response.status}`);
         }

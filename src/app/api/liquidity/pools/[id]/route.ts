@@ -3,7 +3,7 @@ import { notusAPI } from '@/lib/api/client';
 import { processPoolMetrics, isValidPool } from '@/lib/utils/pool-calculations';
 
 /**
- * API Route: GET /api/pools/[id]
+ * API Route: GET /api/liquidity/pools/[id]
  * Busca detalhes de uma pool específica
  * Baseado no script test-specific-pools.sh
  */
