@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { notusAPI } from '@/lib/api/client';
 import { liquidityActions } from '@/lib/actions/liquidity';
 import { listTokensByChain } from '@/lib/actions/blockchain';
+import { usePoolHistoricalData } from '@/hooks/use-pool-historical-data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight, RefreshCw, ZoomOut, ZoomIn, Plus, Info, TrendingUp } from 'lucide-react';
@@ -123,30 +124,38 @@ export default function AddLiquidityPage() {
   
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedTimeframe, setSelectedTimeframe] = useState('1M');
-  const [minPrice, setMinPrice] = useState(0.04999986);
-  const [maxPrice, setMaxPrice] = useState(0.06111094);
-  const [selectedToken, setSelectedToken] = useState<'USDC.E' | 'LINK'>('USDC.E');
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(0);
+  const [selectedToken, setSelectedToken] = useState<string>('');
   const [priceRange, setPriceRange] = useState<'± 10%' | '± 15%' | '± 20%' | 'Total' | null>(null);
   const [selectedInputToken, setSelectedInputToken] = useState<'USDC' | 'BRZ' | null>(null);
   const [inputAmount, setInputAmount] = useState<string>('');
   const [countdown, setCountdown] = useState(0); // Inicia zerado
   const [timerActive, setTimerActive] = useState(false); // Controla se o timer está ativo
-  // Removido: tokenBalances mock - usando dados reais da API
+  const [amountsData, setAmountsData] = useState<any>(null); // Dados de quantidades calculadas
+  const [expandedSections, setExpandedSections] = useState({
+    recebeLink: false,
+    adicionaPool: false,
+    recebeNft: false
+  });
 
-  // TODO: Implementar busca de dados históricos reais do pool
-  const chartData = [
-    { date: '26/09/2025', price: 0.049 },
-    { date: '27/09/2025', price: 0.051 },
-    { date: '28/09/2025', price: 0.053 },
-    { date: '29/09/2025', price: 0.055 },
-    { date: '30/09/2025', price: 0.057 },
-    { date: '01/10/2025', price: 0.059 },
-    { date: '02/10/2025', price: 0.061 },
-    { date: '03/10/2025', price: 0.059 },
-    { date: '04/10/2025', price: 0.057 },
-    { date: '05/10/2025', price: 0.055 },
-    { date: '06/10/2025', price: 0.055 }
-  ];
+  // Buscar dados históricos reais do pool para o gráfico
+  const { data: historicalData, isLoading: historicalLoading } = usePoolHistoricalData(poolId || '', 365);
+  
+  // Processar dados históricos para o gráfico
+  const chartData = React.useMemo(() => {
+    if (!historicalData?.dailyData || historicalData.dailyData.length === 0) {
+      // Retornar array vazio se não houver dados históricos
+      return [];
+    }
+    
+    // Converter dados históricos para formato do gráfico
+    return historicalData.dailyData.map((day, index) => ({
+      date: day.date,
+      price: day.tvl > 0 ? (day.tvl / 1000000) : 0 // Usar 0 em vez de valor hardcoded
+    }));
+  }, [historicalData]);
+
 
   // Usar o endereço real da wallet que tem saldo de BRZ
   const walletAddress = '0x29275940040857bf0ffe8d875622c85aaaec5c0a';
@@ -328,6 +337,40 @@ export default function AddLiquidityPage() {
     gcTime: 10 * 60 * 1000, // 10 minutos
   });
 
+  // Inicializar dados do pool (tokens e preços)
+  useEffect(() => {
+    if (poolData?.tokens && poolData.tokens.length >= 2) {
+      const token1 = poolData.tokens[0];
+      const token2 = poolData.tokens[1];
+      setSelectedToken(token1.symbol || '');
+      
+      // Inicializar preços baseados nos dados do pool
+      if (poolData.stats?.volumeInUSD && poolData.stats.volumeInUSD > 0) {
+        const basePrice = poolData.stats.volumeInUSD / 1000000; // Normalizar para preço
+        setMinPrice(basePrice * 0.9); // 10% abaixo
+        setMaxPrice(basePrice * 1.1); // 10% acima
+      } else {
+        // Fallback para preços padrão se não houver dados
+        setMinPrice(0.01);
+        setMaxPrice(0.1);
+      }
+      
+      console.log('🎯 [ADD-LIQUIDITY] Pool inicializado:', {
+        token1: token1.symbol,
+        token2: token2.symbol,
+        minPrice: minPrice,
+        maxPrice: maxPrice
+      });
+    }
+  }, [poolData]);
+
+  // Calcular quantidades quando inputAmount mudar
+  useEffect(() => {
+    if (inputAmount && parseFloat(inputAmount) > 0 && selectedInputToken && poolData?.tokens) {
+      calculateAmounts();
+    }
+  }, [inputAmount, selectedInputToken, poolData]);
+
   const timeframes = [
     { key: '1D', label: '1D' },
     { key: '7D', label: '7D' },
@@ -337,22 +380,149 @@ export default function AddLiquidityPage() {
 
   const priceRanges = ['± 10%', '± 15%', '± 20%', 'Total'];
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Finalizar processo
-      console.log('Processo de adição de liquidez finalizado');
+      // Finalizar processo - criar liquidez
+      await createLiquidity();
+    }
+  };
+
+  // Função para criar liquidez usando a API
+  const createLiquidity = async () => {
+    if (!poolData?.tokens || poolData.tokens.length < 2 || !amountsData || !selectedInputToken || !inputAmount) {
+      console.error('❌ [ADD-LIQUIDITY] Dados insuficientes para criar liquidez');
+      return;
+    }
+
+    try {
+      console.log('🚀 [ADD-LIQUIDITY] Criando liquidez:', {
+        selectedInputToken,
+        inputAmount,
+        amountsData
+      });
+
+      const token0 = poolData.tokens[0];
+      const token1 = poolData.tokens[1];
+      
+      // Determinar qual token é o input baseado na seleção
+      const isToken0Selected = selectedInputToken === 'USDC' && token0.symbol?.toUpperCase().includes('USDC');
+      const isToken1Selected = selectedInputToken === 'BRZ' && token1.symbol?.toUpperCase().includes('BRZ');
+      
+      if (!isToken0Selected && !isToken1Selected) {
+        console.log('⚠️ [ADD-LIQUIDITY] Token selecionado não corresponde aos tokens do pool');
+        return;
+      }
+
+      const params = {
+        walletAddress: walletAddress,
+        toAddress: walletAddress, // Mesmo endereço para simplicidade
+        chainId: 137, // Polygon
+        payGasFeeToken: token0.address,
+        gasFeePaymentMethod: 'ADD_TO_AMOUNT',
+        token0: token0.address,
+        token1: token1.address,
+        poolFeePercent: poolData.fee || 0.3,
+        minPrice: minPrice,
+        maxPrice: maxPrice,
+        slippage: 1.0, // 1% de slippage
+        liquidityProvider: 'UNISWAP_V3',
+        transactionFeePercent: 2.5
+      };
+
+      // Adicionar as quantidades baseadas no cálculo da API
+      if (amountsData.amounts?.token0MaxAmount) {
+        params.token0Amount = amountsData.amounts.token0MaxAmount.token0Amount;
+        params.token1Amount = amountsData.amounts.token0MaxAmount.token1Amount;
+      } else {
+        // Fallback para valores padrão
+        params.token0Amount = isToken0Selected ? inputAmount : '0';
+        params.token1Amount = isToken1Selected ? inputAmount : '0';
+      }
+
+      console.log('🚀 [ADD-LIQUIDITY] Chamando API createLiquidity:', params);
+
+      const response = await liquidityActions.createLiquidity(params);
+      console.log('✅ [ADD-LIQUIDITY] Resposta da API createLiquidity:', response);
+
+      // Redirecionar para a página do pool após sucesso
       router.push(`/pools/${poolId}`);
+      
+    } catch (error) {
+      console.error('❌ [ADD-LIQUIDITY] Erro ao criar liquidez:', error);
+      // Aqui você pode adicionar um toast de erro ou modal de erro
     }
   };
 
   const isStep1Valid = () => {
-    return minPrice > 0 && maxPrice > 0 && minPrice < maxPrice && selectedToken;
+    return minPrice > 0 && maxPrice > 0 && minPrice < maxPrice && selectedToken && poolData?.tokens && poolData.tokens.length >= 2;
   };
 
   const isStep2Valid = () => {
     return selectedInputToken && inputAmount && parseFloat(inputAmount) > 0;
+  };
+
+  const isStep3Valid = () => {
+    return amountsData && selectedInputToken && inputAmount && parseFloat(inputAmount) > 0;
+  };
+
+  // Função para calcular quantidades usando a API
+  const calculateAmounts = async () => {
+    if (!poolData?.tokens || poolData.tokens.length < 2 || !selectedInputToken || !inputAmount) {
+      return;
+    }
+
+    try {
+      console.log('🧮 [ADD-LIQUIDITY] Calculando quantidades:', {
+        selectedInputToken,
+        inputAmount,
+        poolTokens: poolData.tokens.map(t => t.symbol)
+      });
+
+      const token0 = poolData.tokens[0];
+      const token1 = poolData.tokens[1];
+      
+      // Determinar qual token é o input baseado na seleção
+      const isToken0Selected = selectedInputToken === 'USDC' && token0.symbol?.toUpperCase().includes('USDC');
+      const isToken1Selected = selectedInputToken === 'BRZ' && token1.symbol?.toUpperCase().includes('BRZ');
+      
+      if (!isToken0Selected && !isToken1Selected) {
+        console.log('⚠️ [ADD-LIQUIDITY] Token selecionado não corresponde aos tokens do pool');
+        return;
+      }
+
+      const params = {
+        liquidityProvider: 'UNISWAP_V3',
+        chainId: 137, // Polygon
+        token0: token0.address,
+        token1: token1.address,
+        poolFeePercent: poolData.fee || 0.3,
+        minPrice: minPrice,
+        maxPrice: maxPrice,
+        payGasFeeToken: token0.address, // Usar token0 como gas fee
+        gasFeePaymentMethod: 'ADD_TO_AMOUNT'
+      };
+
+      // Adicionar o valor máximo do token selecionado
+      if (isToken0Selected) {
+        params.token0MaxAmount = inputAmount;
+        params.token1MaxAmount = '0';
+      } else {
+        params.token0MaxAmount = '0';
+        params.token1MaxAmount = inputAmount;
+      }
+
+      console.log('🚀 [ADD-LIQUIDITY] Chamando API getAmounts:', params);
+
+      const response = await liquidityActions.getAmounts(params);
+      console.log('✅ [ADD-LIQUIDITY] Resposta da API getAmounts:', response);
+
+      setAmountsData(response);
+      
+    } catch (error) {
+      console.error('❌ [ADD-LIQUIDITY] Erro ao calcular quantidades:', error);
+    }
   };
 
   const startTimer = () => {
@@ -454,7 +624,11 @@ export default function AddLiquidityPage() {
 
   const handlePriceRangeSelect = (range: string) => {
     setPriceRange(range as any);
-    const currentPrice = 0.0555;
+    
+    // Usar preço atual baseado nos dados do pool
+    const currentPrice = poolData?.stats?.volumeInUSD ? 
+      (poolData.stats.volumeInUSD / 1000000) : 
+      ((minPrice + maxPrice) / 2) || 0.1;
     
     switch (range) {
       case '± 10%':
@@ -563,12 +737,14 @@ export default function AddLiquidityPage() {
                     dot={false}
                     activeDot={{ r: 4, fill: '#8b5cf6' }}
                   />
-                  <ReferenceLine 
-                    y={0.055} 
-                    stroke="#64748b" 
-                    strokeDasharray="5 5" 
-                    label={{ value: "Preço atual", position: "topRight", fill: "#64748b" }}
-                  />
+                  {chartData.length > 0 && (
+                    <ReferenceLine 
+                      y={chartData[chartData.length - 1]?.price || 0} 
+                      stroke="#64748b" 
+                      strokeDasharray="5 5" 
+                      label={{ value: "Preço atual", position: "topRight", fill: "#64748b" }}
+                    />
+                  )}
                   <ReferenceLine 
                     y={minPrice} 
                     stroke="#ef4444" 
@@ -639,32 +815,42 @@ export default function AddLiquidityPage() {
             </div>
             
             <div className="text-slate-400 text-sm">
-              Preço atual: 0.0555 LINK = 1 USDC.E
+              {poolData?.tokens && poolData.tokens.length >= 2 ? (
+                `Preço atual: ${poolData.tokens[1].symbol} = 1 ${poolData.tokens[0].symbol}`
+              ) : (
+                'Carregando preço atual...'
+              )}
             </div>
             
             <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setSelectedToken('USDC.E')}
-                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                  selectedToken === 'USDC.E' 
-                    ? "bg-yellow-500 text-black border-yellow-500 hover:bg-yellow-600 shadow-lg" 
-                    : "bg-slate-800 border-slate-600 text-white hover:bg-slate-700 hover:border-slate-500"
-                }`}
-              >
-                USDC.E
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setSelectedToken('LINK')}
-                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                  selectedToken === 'LINK' 
-                    ? "bg-yellow-500 text-black border-yellow-500 hover:bg-yellow-600 shadow-lg" 
-                    : "bg-slate-800 border-slate-600 text-white hover:bg-slate-700 hover:border-slate-500"
-                }`}
-              >
-                LINK
-              </Button>
+              {poolData?.tokens && poolData.tokens.length >= 2 ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedToken(poolData.tokens[0].symbol)}
+                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                      selectedToken === poolData.tokens[0].symbol
+                        ? "bg-yellow-500 text-black border-yellow-500 hover:bg-yellow-600 shadow-lg" 
+                        : "bg-slate-800 border-slate-600 text-white hover:bg-slate-700 hover:border-slate-500"
+                    }`}
+                  >
+                    {poolData.tokens[0].symbol}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedToken(poolData.tokens[1].symbol)}
+                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                      selectedToken === poolData.tokens[1].symbol
+                        ? "bg-yellow-500 text-black border-yellow-500 hover:bg-yellow-600 shadow-lg" 
+                        : "bg-slate-800 border-slate-600 text-white hover:bg-slate-700 hover:border-slate-500"
+                    }`}
+                  >
+                    {poolData.tokens[1].symbol}
+                  </Button>
+                </>
+              ) : (
+                <div className="text-slate-400 text-sm">Carregando tokens...</div>
+              )}
             </div>
           </div>
 
@@ -937,8 +1123,15 @@ export default function AddLiquidityPage() {
                         <span className="text-white font-medium">USDC.E</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-white font-mono">{(parseFloat(inputAmount) * 0.427).toFixed(3)}</div>
-                        <div className="text-slate-400 text-sm">R$11.64</div>
+                        <div className="text-white font-mono">
+                          {amountsData?.amounts?.token0MaxAmount?.token0Amount || 
+                           (parseFloat(inputAmount) * 0.5).toFixed(3)}
+                        </div>
+                        <div className="text-slate-400 text-sm">
+                          {amountsData?.amounts?.token0MaxAmount?.token0Amount ? 
+                            `~$${parseFloat(amountsData.amounts.token0MaxAmount.token0Amount).toFixed(2)}` : 
+                            'Calculando...'}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
@@ -949,8 +1142,15 @@ export default function AddLiquidityPage() {
                         <span className="text-white font-medium">LINK</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-white font-mono">{(parseFloat(inputAmount) * 0.0262).toFixed(3)}</div>
-                        <div className="text-slate-400 text-sm">R$12.89</div>
+                        <div className="text-white font-mono">
+                          {amountsData?.amounts?.token0MaxAmount?.token1Amount || 
+                           (parseFloat(inputAmount) * 0.5).toFixed(3)}
+                        </div>
+                        <div className="text-slate-400 text-sm">
+                          {amountsData?.amounts?.token0MaxAmount?.token1Amount ? 
+                            `~$${parseFloat(amountsData.amounts.token0MaxAmount.token1Amount).toFixed(2)}` : 
+                            'Calculando...'}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -967,6 +1167,43 @@ export default function AddLiquidityPage() {
                   <span className="text-yellow-400 font-mono text-lg">{formatCountdown(countdown)}</span>
                 </div>
               )}
+
+              {/* API Calculation Results */}
+              {amountsData && (
+                <div className="bg-slate-700/30 rounded-lg p-4 border border-slate-600/50">
+                  <h4 className="text-white font-medium mb-3">Quantidades calculadas pela API</h4>
+                  <div className="space-y-2">
+                    {amountsData.amounts?.token0MaxAmount && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400 text-sm">
+                          {poolData?.tokens?.[0]?.symbol || 'Token 0'}:
+                        </span>
+                        <span className="text-white font-medium">
+                          {amountsData.amounts.token0MaxAmount.token0Amount}
+                        </span>
+                      </div>
+                    )}
+                    {amountsData.amounts?.token0MaxAmount && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400 text-sm">
+                          {poolData?.tokens?.[1]?.symbol || 'Token 1'}:
+                        </span>
+                        <span className="text-white font-medium">
+                          {amountsData.amounts.token0MaxAmount.token1Amount}
+                        </span>
+                      </div>
+                    )}
+                    {amountsData.poolPrice && (
+                      <div className="flex justify-between items-center pt-2 border-t border-slate-600/50">
+                        <span className="text-slate-400 text-sm">Preço do pool:</span>
+                        <span className="text-yellow-400 font-medium">
+                          {amountsData.poolPrice}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -974,66 +1211,339 @@ export default function AddLiquidityPage() {
     </div>
   );
 
-  const renderStep3 = () => (
-    <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
-      <CardContent className="p-6">
-        <div className="space-y-6">
-          <div className="text-center">
-            <h2 className="text-white text-xl font-bold mb-2">Confirmação</h2>
-            <p className="text-slate-400">Revise os detalhes antes de confirmar</p>
-          </div>
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
-          {/* Transaction Details */}
-          <div className="space-y-4">
-            <div className="bg-slate-700/30 rounded-lg p-4">
-              <h3 className="text-white font-medium mb-3">Detalhes da Transação</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Par de tokens:</span>
-                  <span className="text-white">{String(poolData.tokens?.[0]?.symbol || 'TOKEN1')}/{String(poolData.tokens?.[1]?.symbol || 'TOKEN2')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Preço mínimo:</span>
-                  <span className="text-white">{minPrice.toFixed(8)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Preço máximo:</span>
-                  <span className="text-white">{maxPrice.toFixed(8)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Taxa:</span>
-                  <span className="text-white">{poolData.fee}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Rede:</span>
-                  <span className="text-white">{poolData.chain}</span>
-                </div>
-              </div>
-            </div>
+  const renderStep3 = () => {
 
-            {/* Gas Fee */}
-            <div className="bg-slate-700/30 rounded-lg p-4">
+    return (
+      <div className="space-y-4">
+        {/* Transaction Details Card */}
+        <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
+          <CardContent className="p-6">
+            <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-slate-400">Taxa de gás estimada:</span>
-                <span className="text-white">~$2.50</span>
+                <span className="text-slate-400">Transação</span>
+                <span className="text-white">Adição de liquidez</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Provedor</span>
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">🦄</span>
+                  </div>
+                  <span className="text-white">Uniswap V3</span>
+                  <span className="text-slate-400">↗</span>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Rede</span>
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">⬟</span>
+                  </div>
+                  <span className="text-white">Polygon</span>
+                  <span className="text-slate-400">↗</span>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Tolerância a Slippage</span>
+                <span className="text-white">0,5% Auto</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Tempo estimado</span>
+                <span className="text-white">~3m</span>
               </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Warning */}
-          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
-              <div className="text-yellow-400 text-sm">
-                <p className="font-medium mb-1">Atenção:</p>
-                <p>Certifique-se de que os preços estão corretos. Uma vez confirmada, a transação não pode ser desfeita.</p>
+        {/* Token Sections */}
+        <div className="space-y-3">
+          {/* Envia BRZ */}
+          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-purple-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">B</span>
+                  </div>
+                  <div>
+                    <div className="text-white font-medium">BRZ</div>
+                    <div className="text-slate-400 text-sm">Token</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-white font-medium">Rede</div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">⬟</span>
+                    </div>
+                    <span className="text-slate-400 text-sm">Polygon</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+
+          {/* Recebe USDC.E */}
+          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">$</span>
+                  </div>
+                  <div>
+                    <div className="text-white font-medium">USDC.E</div>
+                    <div className="text-slate-400 text-sm">Token</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-white font-medium">Rede</div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">⬟</span>
+                    </div>
+                    <span className="text-slate-400 text-sm">Polygon</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recebe LINK - Expansível */}
+          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
+            <CardContent className="p-4">
+              <div 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => toggleSection('recebeLink')}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">⬟</span>
+                  </div>
+                  <div>
+                    <div className="text-white font-medium">LINK</div>
+                    <div className="text-slate-400 text-sm">Token</div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="text-right">
+                    <div className="text-white font-medium">Rede</div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">⬟</span>
+                      </div>
+                      <span className="text-slate-400 text-sm">Polygon</span>
+                    </div>
+                  </div>
+                  <div className="ml-2">
+                    {expandedSections.recebeLink ? (
+                      <span className="text-slate-400">▲</span>
+                    ) : (
+                      <span className="text-slate-400">▼</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {expandedSections.recebeLink && (
+                <div className="mt-4 pt-4 border-t border-slate-700">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Token</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">⬟</span>
+                        </div>
+                        <span className="text-white">LINK</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Rede</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">⬟</span>
+                        </div>
+                        <span className="text-white">Polygon</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Contrato do token</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-white">0x53e...bad39</span>
+                        <span className="text-slate-400">□</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Adiciona à pool - Expansível */}
+          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
+            <CardContent className="p-4">
+              <div 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => toggleSection('adicionaPool')}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="flex -space-x-2">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center border-2 border-slate-800">
+                      <span className="text-white text-sm font-bold">$</span>
+                    </div>
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center border-2 border-slate-800">
+                      <span className="text-white text-sm font-bold">⬟</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-white font-medium">Adiciona à pool</div>
+                    <div className="text-slate-400 text-sm">
+                      {poolData?.tokens && poolData.tokens.length >= 2 ? (
+                        `${poolData.tokens[0].symbol}/${poolData.tokens[1].symbol}`
+                      ) : (
+                        'Carregando...'
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="text-right">
+                    <div className="text-white font-medium">Rede</div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">⬟</span>
+                      </div>
+                      <span className="text-slate-400 text-sm">Polygon</span>
+                    </div>
+                  </div>
+                  <div className="ml-2">
+                    {expandedSections.adicionaPool ? (
+                      <span className="text-slate-400">▲</span>
+                    ) : (
+                      <span className="text-slate-400">▼</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {expandedSections.adicionaPool && (
+                <div className="mt-4 pt-4 border-t border-slate-700">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Token 1</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">$</span>
+                        </div>
+                        <span className="text-white">USDC.E</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Token 2</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">⬟</span>
+                        </div>
+                        <span className="text-white">LINK</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Rede</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">⬟</span>
+                        </div>
+                        <span className="text-white">Polygon</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Contrato do token 1</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-white">0x279...84174</span>
+                        <span className="text-slate-400">□</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Contrato do token 2</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-white">0x53e...bad39</span>
+                        <span className="text-slate-400">□</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recebe NFT - Expansível */}
+          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
+            <CardContent className="p-4">
+              <div 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => toggleSection('recebeNft')}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">#</span>
+                  </div>
+                  <div>
+                    <div className="text-white font-medium">Recebe +Uniswap V3 Positions NFT #</div>
+                    <div className="text-slate-400 text-sm">Representação da posição</div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="text-right">
+                    <div className="text-white font-medium">Rede</div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">⬟</span>
+                      </div>
+                      <span className="text-slate-400 text-sm">Polygon</span>
+                    </div>
+                  </div>
+                  <div className="ml-2">
+                    {expandedSections.recebeNft ? (
+                      <span className="text-slate-400">▲</span>
+                    ) : (
+                      <span className="text-slate-400">▼</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {expandedSections.recebeNft && (
+                <div className="mt-4 pt-4 border-t border-slate-700">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Rede</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">⬟</span>
+                        </div>
+                        <span className="text-white">Polygon</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
-      </CardContent>
-    </Card>
-  );
+      </div>
+    );
+  };
 
   return (
     <ProtectedRoute>
@@ -1092,13 +1602,13 @@ export default function AddLiquidityPage() {
               <Button
                 onClick={handleNext}
                 className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                  (currentStep === 1 && !isStep1Valid()) || (currentStep === 2 && !isStep2Valid())
+                  (currentStep === 1 && !isStep1Valid()) || (currentStep === 2 && !isStep2Valid()) || (currentStep === 3 && !isStep3Valid())
                     ? "bg-slate-600 text-slate-400 cursor-not-allowed"
                     : "bg-yellow-500 text-black hover:bg-yellow-600 shadow-lg"
                 }`}
-                disabled={(currentStep === 1 && !isStep1Valid()) || (currentStep === 2 && !isStep2Valid())}
+                disabled={(currentStep === 1 && !isStep1Valid()) || (currentStep === 2 && !isStep2Valid()) || (currentStep === 3 && !isStep3Valid())}
               >
-                {currentStep === 3 ? 'Finalizar' : 'Próximo'}
+                {currentStep === 3 ? 'Aprovar a transação' : 'Próximo'}
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
