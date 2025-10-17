@@ -2053,7 +2053,7 @@ export default function AddLiquidityPage() {
               </div>
 
               {/* Progress Indicator */}
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-center space-x-2">
                 {[1, 2, 3].map((step) => (
                   <React.Fragment key={step}>
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-base font-bold transition-all ${
