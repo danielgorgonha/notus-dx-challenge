@@ -1307,7 +1307,7 @@ export default function AddLiquidityPage() {
             <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
               <CardContent className="p-4">
                 <div className="space-y-3">
-                  <h4 className="text-slate-400 text-sm">Preço mínimo</h4>
+                  <h4 className="text-slate-400 text-sm text-center">Preço mínimo</h4>
                   <div className="flex items-center justify-between">
                     <Button
                       variant="ghost"
@@ -1327,7 +1327,7 @@ export default function AddLiquidityPage() {
                       <span className="text-white font-bold">+</span>
                     </Button>
                   </div>
-                  <div className="text-slate-400 text-xs">
+                  <div className="text-slate-400 text-xs text-center">
                     {poolData?.tokens && poolData.tokens.length >= 2 ? (
                       `${poolData.tokens[1].symbol} por ${poolData.tokens[0].symbol}`
                     ) : (
@@ -1342,7 +1342,7 @@ export default function AddLiquidityPage() {
             <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
               <CardContent className="p-4">
                 <div className="space-y-3">
-                  <h4 className="text-slate-400 text-sm">Preço máximo</h4>
+                  <h4 className="text-slate-400 text-sm text-center">Preço máximo</h4>
                   <div className="flex items-center justify-between">
                     <Button
                       variant="ghost"
@@ -1362,7 +1362,7 @@ export default function AddLiquidityPage() {
                       <span className="text-white font-bold">+</span>
                     </Button>
                   </div>
-                  <div className="text-slate-400 text-xs">
+                  <div className="text-slate-400 text-xs text-center">
                     {poolData?.tokens && poolData.tokens.length >= 2 ? (
                       `${poolData.tokens[1].symbol} por ${poolData.tokens[0].symbol}`
                     ) : (
