@@ -16,8 +16,16 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 interface PoolDetails {
   id: string;
   address: string;
-  chain: string;
-  provider: string;
+  chain: {
+    id: number;
+    name: string;
+    logo: string;
+  };
+  provider: {
+    name: string;
+    logoUrl: string;
+    explorerURL: string;
+  };
   fee: number;
   totalValueLockedUSD: number;
   tokens: Array<{
@@ -83,17 +91,17 @@ export default function PoolDetailsPage() {
         const metrics = pool.metrics;
         
         console.log('📊 Métricas calculadas:', {
-          apr: metrics.formatted.apr,
-          tvl: metrics.formatted.tvl,
-          volume24h: metrics.formatted.volume24h,
-          composition: metrics.formatted.composition
+          apr: metrics?.formatted?.apr || 'N/A',
+          tvl: metrics?.formatted?.tvl || 'N/A',
+          volume24h: metrics?.formatted?.volume24h || 'N/A',
+          composition: metrics?.formatted?.composition || 'N/A'
         });
         
         const processedPool: PoolDetails = {
           id: pool.id,
           address: pool.address,
-          chain: pool.chain?.name || 'Polygon',
-          provider: pool.provider?.name || 'Uniswap V3',
+          chain: pool.chain || { id: 137, name: 'Polygon', logo: '' },
+          provider: pool.provider || { name: 'Uniswap V3', logoUrl: '', explorerURL: '' },
           fee: pool.fee,
           totalValueLockedUSD: typeof pool.totalValueLockedUSD === 'string' 
             ? parseFloat(pool.totalValueLockedUSD) 
@@ -251,7 +259,7 @@ export default function PoolDetailsPage() {
               <h1 className="text-white font-bold text-2xl">
                 {String(poolData.tokens?.[0]?.symbol || 'TOKEN1')}/{String(poolData.tokens?.[1]?.symbol || 'TOKEN2')}
               </h1>
-              <p className="text-slate-400 text-sm">{String(poolData.provider || 'Unknown')}</p>
+              <p className="text-slate-400 text-sm">{String(poolData.provider?.name || 'Unknown')}</p>
             </div>
           </div>
         </div>
@@ -265,11 +273,11 @@ export default function PoolDetailsPage() {
           </div>
           <div className="flex-1 bg-slate-800 rounded-xl p-3 text-center">
             <p className="text-slate-400 text-sm">TVL</p>
-            <p className="text-white font-bold">{formatValue(poolData.totalValueLockedUSD)}</p>
+            <p className="text-white font-bold">{poolData.metrics?.formatted?.tvl || formatValue(poolData.totalValueLockedUSD)}</p>
           </div>
           <div className="flex-1 bg-slate-800 rounded-xl p-3 text-center">
             <p className="text-slate-400 text-sm">Tarifas</p>
-            <p className="text-white font-bold">{formatCurrency(poolData.stats?.feesInUSD || 0)}</p>
+            <p className="text-white font-bold">{poolData.metrics?.formatted?.fees24h || formatCurrency(poolData.stats?.feesInUSD || 0)}</p>
           </div>
         </div>
 
@@ -287,7 +295,7 @@ export default function PoolDetailsPage() {
                 <TrendingUp className="h-6 w-6 text-green-400" />
               </div>
               <div>
-                <p className="text-green-400 font-bold text-2xl">{apr.toFixed(2)}% a.a</p>
+                <p className="text-green-400 font-bold text-2xl">{poolData.metrics?.formatted?.apr || `${apr.toFixed(2)}% a.a`}</p>
               </div>
             </div>
           </CardContent>
@@ -321,7 +329,7 @@ export default function PoolDetailsPage() {
                  </div>
                  <div className="text-center">
                    <div className="text-white font-medium text-sm">{String(poolData.tokens?.[0]?.symbol || 'TOKEN1')}</div>
-                   <div className="text-white font-bold text-sm">{token0Percentage.toFixed(2)}%</div>
+                   <div className="text-white font-bold text-sm">{poolData.metrics?.composition?.token0?.percentage?.toFixed(2) || token0Percentage.toFixed(2)}%</div>
                  </div>
                </div>
 
@@ -330,13 +338,13 @@ export default function PoolDetailsPage() {
                  <div className="w-full bg-slate-700 rounded-full h-4 relative">
                    <div 
                      className="bg-red-500 h-4 rounded-l-full" 
-                     style={{ width: `${token0Percentage}%` }}
+                     style={{ width: `${poolData.metrics?.composition?.token0?.percentage || token0Percentage}%` }}
                    ></div>
                    <div 
                      className="bg-blue-500 h-4 rounded-r-full absolute top-0" 
                      style={{ 
-                       left: `${token0Percentage}%`,
-                       width: `${token1Percentage}%`
+                       left: `${poolData.metrics?.composition?.token0?.percentage || token0Percentage}%`,
+                       width: `${poolData.metrics?.composition?.token1?.percentage || token1Percentage}%`
                      }}
                    ></div>
                  </div>
@@ -363,7 +371,7 @@ export default function PoolDetailsPage() {
                  </div>
                  <div className="text-center">
                    <div className="text-white font-medium text-sm">{String(poolData.tokens?.[1]?.symbol || 'TOKEN2')}</div>
-                   <div className="text-white font-bold text-sm">{token1Percentage.toFixed(2)}%</div>
+                   <div className="text-white font-bold text-sm">{poolData.metrics?.composition?.token1?.percentage?.toFixed(2) || token1Percentage.toFixed(2)}%</div>
                  </div>
                </div>
              </div>
@@ -379,17 +387,17 @@ export default function PoolDetailsPage() {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">TVL</span>
-                <span className="text-white">{formatValue(poolData.totalValueLockedUSD)}</span>
+                <span className="text-white">{poolData.metrics?.formatted?.tvl || formatValue(poolData.totalValueLockedUSD)}</span>
               </div>
               
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Volume (24h)</span>
-                <span className="text-white">{formatValue(poolData.stats?.volumeInUSD || 0)}</span>
+                <span className="text-white">{poolData.metrics?.formatted?.volume24h || formatValue(poolData.stats?.volumeInUSD || 0)}</span>
               </div>
               
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Tarifas (24h)</span>
-                <span className="text-white">{formatValue(poolData.stats?.feesInUSD || 0)}</span>
+                <span className="text-white">{poolData.metrics?.formatted?.fees24h || formatValue(poolData.stats?.feesInUSD || 0)}</span>
               </div>
               
               <div className="flex justify-between items-center">
@@ -419,12 +427,12 @@ export default function PoolDetailsPage() {
                 <span className="text-slate-400">Protocolo</span>
                 <div className="flex items-center space-x-2">
                   <a 
-                    href="https://app.uniswap.org/explore/pools/" 
+                    href={poolData.provider.explorerURL || "https://app.uniswap.org/explore/pools/"} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-white hover:text-blue-400 transition-colors flex items-center space-x-2"
                   >
-                    <span>{String(poolData.provider || 'Unknown')}</span>
+                    <span>{poolData.provider.name}</span>
                     <ExternalLink className="h-4 w-4 text-slate-400 hover:text-blue-400" />
                   </a>
                 </div>
@@ -442,7 +450,7 @@ export default function PoolDetailsPage() {
                     rel="noopener noreferrer"
                     className="text-white hover:text-blue-400 transition-colors flex items-center space-x-2"
                   >
-                    <span>{poolData.chain}</span>
+                    <span>{poolData.chain.name}</span>
                     <ExternalLink className="h-4 w-4 text-slate-400 hover:text-blue-400" />
                   </a>
                 </div>

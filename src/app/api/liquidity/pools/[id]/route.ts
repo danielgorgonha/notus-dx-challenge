@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { notusAPI } from '@/lib/api/client';
-import { processPoolMetrics, isValidPool } from '@/lib/utils/pool-calculations';
+import { processPoolMetrics, isValidPool, getDefaultApiConfig } from '@/lib/utils/pool-calculations';
 
 /**
  * API Route: GET /api/liquidity/pools/[id]
- * Busca detalhes de uma pool específica
- * Baseado no script test-specific-pools.sh
+ * Busca detalhes de uma pool específica por ID
+ * Baseado no script test-get-pool-by-id.sh
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const poolId = params.id;
+    const { id: poolId } = await params;
     console.log('🚀 [API] Buscando detalhes da pool:', poolId);
     
     if (!poolId) {
@@ -22,11 +22,18 @@ export async function GET(
       );
     }
     
+    // Obter rangeInDays da query (padrão: 30)
+    const { searchParams } = new URL(request.url);
+    const rangeInDays = searchParams.get('rangeInDays') || '30';
+    
     // Fazer requisição para a API da Notus
-    const response = await notusAPI.get(`liquidity/pools/${poolId}`);
+    const url = `liquidity/pools/${poolId}?rangeInDays=${rangeInDays}`;
+    console.log('🔗 [API] URL da requisição:', url);
+    
+    const response = await notusAPI.get(url);
     console.log('✅ [API] Resposta recebida:', response.status);
     
-    const responseData = await response.json();
+    const responseData = await response.json() as any;
     
     if (!responseData || !responseData.pool) {
       return NextResponse.json(
@@ -36,26 +43,18 @@ export async function GET(
     }
     
     const pool = responseData.pool;
-    console.log('📊 [API] Dados da pool:', pool.id);
     
     // Validar pool
     if (!isValidPool(pool)) {
+      console.error('❌ [API] Dados da pool inválidos');
       return NextResponse.json(
         { error: 'Dados da pool inválidos' },
         { status: 400 }
       );
     }
     
-    // Processar métricas da pool
+    // Processar pool (mesma lógica da API de lista)
     const metrics = processPoolMetrics(pool);
-    console.log('📊 [API] Métricas calculadas:', {
-      apr: metrics.formatted.apr,
-      tvl: metrics.formatted.tvl,
-      volume24h: metrics.formatted.volume24h,
-      composition: metrics.formatted.composition
-    });
-    
-    // Retornar dados processados
     const processedPool = {
       id: pool.id,
       address: pool.address,
@@ -69,6 +68,11 @@ export async function GET(
       totalValueLockedUSD: pool.totalValueLockedUSD,
       stats: pool.stats
     };
+    
+    console.log('✅ [API] Pool processada com sucesso:', {
+      id: processedPool.id,
+      hasMetrics: !!processedPool.metrics
+    });
     
     return NextResponse.json({
       pool: processedPool,
