@@ -1647,48 +1647,77 @@ export default function AddLiquidityPage() {
               {/* Token Breakdown */}
               {inputAmount && parseFloat(inputAmount) > 0 && (
                 <div className="bg-slate-700/30 rounded-lg p-4">
-                  <h4 className="text-white font-medium mb-3">Composição da liquidez</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
+                  <h4 className="text-white font-medium mb-4">Composição da liquidez</h4>
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* Token 0 */}
+                    <div className="space-y-2">
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                        {poolData?.tokens?.[0]?.logo ? (
+                          <img 
+                            src={poolData.tokens[0].logo} 
+                            alt={poolData.tokens[0].symbol}
+                            className="w-8 h-8 rounded-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) nextElement.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center"
+                          style={{ display: poolData?.tokens?.[0]?.logo ? 'none' : 'flex' }}
+                        >
                           <span className="text-blue-400 text-sm">$</span>
                         </div>
-                        <span className="text-white font-medium">USDC.E</span>
+                        <span className="text-white font-medium">{(poolData?.tokens?.[0]?.symbol || 'USDC.E').toUpperCase()}</span>
                       </div>
-                      <div className="text-right">
-                        <div className="text-white font-mono">
-                          {amountsData?.amounts?.token0MaxAmount?.token0Amount || 
-                           calculateTokenProportions(inputAmount, selectedInputToken).token0Amount}
-                        </div>
-                        <div className="text-slate-400 text-sm">
-                          {getAmountsData()?.amounts?.token0MaxAmount?.token0Amount ? 
-                            `~$${parseFloat(getAmountsData().amounts.token0MaxAmount.token0Amount).toFixed(2)}` : 
-                            parseFloat(calculateTokenProportions(inputAmount, selectedInputToken).token0Amount) > 0 ? 
-                              `~$${parseFloat(calculateTokenProportions(inputAmount, selectedInputToken).token0Amount).toFixed(2)}` : 
-                              'Calculando...'}
-                        </div>
+                      <div className="text-white text-2xl font-bold">
+                        {amountsData?.amounts?.token0MaxAmount?.token0Amount || 
+                         calculateTokenProportions(inputAmount, selectedInputToken).token0Amount}
+                      </div>
+                      <div className="text-slate-400 text-sm">
+                        {getAmountsData()?.amounts?.token0MaxAmount?.token0Amount ? 
+                          `~$${parseFloat(getAmountsData().amounts.token0MaxAmount.token0Amount).toFixed(2)}` : 
+                          parseFloat(calculateTokenProportions(inputAmount, selectedInputToken).token0Amount) > 0 ? 
+                            `~$${parseFloat(calculateTokenProportions(inputAmount, selectedInputToken).token0Amount).toFixed(2)}` : 
+                            'Calculando...'}
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
+
+                    {/* Token 1 */}
+                    <div className="space-y-2">
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                        {poolData?.tokens?.[1]?.logo ? (
+                          <img 
+                            src={poolData.tokens[1].logo} 
+                            alt={poolData.tokens[1].symbol}
+                            className="w-8 h-8 rounded-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) nextElement.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center"
+                          style={{ display: poolData?.tokens?.[1]?.logo ? 'none' : 'flex' }}
+                        >
                           <span className="text-purple-400 text-sm">L</span>
                         </div>
-                        <span className="text-white font-medium">LINK</span>
+                        <span className="text-white font-medium">{(poolData?.tokens?.[1]?.symbol || 'LINK').toUpperCase()}</span>
                       </div>
-                      <div className="text-right">
-                        <div className="text-white font-mono">
-                          {amountsData?.amounts?.token0MaxAmount?.token1Amount || 
-                           calculateTokenProportions(inputAmount, selectedInputToken).token1Amount}
-                        </div>
-                        <div className="text-slate-400 text-sm">
-                          {getAmountsData()?.amounts?.token0MaxAmount?.token1Amount ? 
-                            `~$${parseFloat(getAmountsData().amounts.token0MaxAmount.token1Amount).toFixed(2)}` : 
-                            parseFloat(calculateTokenProportions(inputAmount, selectedInputToken).token1Amount) > 0 ? 
-                              `~$${parseFloat(calculateTokenProportions(inputAmount, selectedInputToken).token1Amount).toFixed(2)}` : 
-                              'Calculando...'}
-                        </div>
+                      <div className="text-white text-2xl font-bold">
+                        {amountsData?.amounts?.token0MaxAmount?.token1Amount || 
+                         calculateTokenProportions(inputAmount, selectedInputToken).token1Amount}
+                      </div>
+                      <div className="text-slate-400 text-sm">
+                        {getAmountsData()?.amounts?.token0MaxAmount?.token1Amount ? 
+                          `~$${parseFloat(getAmountsData().amounts.token0MaxAmount.token1Amount).toFixed(2)}` : 
+                          parseFloat(calculateTokenProportions(inputAmount, selectedInputToken).token1Amount) > 0 ? 
+                            `~$${parseFloat(calculateTokenProportions(inputAmount, selectedInputToken).token1Amount).toFixed(2)}` : 
+                            'Calculando...'}
                       </div>
                     </div>
                   </div>
@@ -1706,42 +1735,6 @@ export default function AddLiquidityPage() {
                 </div>
               )}
 
-              {/* API Calculation Results */}
-              {amountsData && (
-                <div className="bg-slate-700/30 rounded-lg p-4 border border-slate-600/50">
-                  <h4 className="text-white font-medium mb-3">Quantidades calculadas pela API</h4>
-                  <div className="space-y-2">
-                    {getAmountsData()?.amounts?.token0MaxAmount && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400 text-sm">
-                          {poolData?.tokens?.[0]?.symbol || 'Token 0'}:
-                        </span>
-                        <span className="text-white font-medium">
-                          {getAmountsData().amounts.token0MaxAmount.token0Amount}
-                        </span>
-                      </div>
-                    )}
-                    {getAmountsData()?.amounts?.token0MaxAmount && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400 text-sm">
-                          {poolData?.tokens?.[1]?.symbol || 'Token 1'}:
-                        </span>
-                        <span className="text-white font-medium">
-                          {getAmountsData().amounts.token0MaxAmount.token1Amount}
-                        </span>
-                      </div>
-                    )}
-                    {amountsData.poolPrice && (
-                      <div className="flex justify-between items-center pt-2 border-t border-slate-600/50">
-                        <span className="text-slate-400 text-sm">Preço do pool:</span>
-                        <span className="text-yellow-400 font-medium">
-                          {amountsData.poolPrice}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
