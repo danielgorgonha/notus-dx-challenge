@@ -127,7 +127,7 @@ export default function AddLiquidityPage() {
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(0);
   const [selectedToken, setSelectedToken] = useState<string>('');
-  const [priceRange, setPriceRange] = useState<'± 10%' | '± 15%' | '± 20%' | 'Total' | null>(null);
+  const [priceRange, setPriceRange] = useState<'± 10%' | '± 15%' | '± 20%' | 'Total' | null>('± 10%');
   const [selectedInputToken, setSelectedInputToken] = useState<'USDC' | 'BRZ' | null>(null);
   const [inputAmount, setInputAmount] = useState<string>('');
   const [countdown, setCountdown] = useState(0); // Inicia zerado
@@ -406,6 +406,14 @@ export default function AddLiquidityPage() {
       });
     }
   }, [poolData]);
+
+  // Aplicar intervalo de 10% automaticamente quando o pool carregar
+  useEffect(() => {
+    if (poolData && priceRange === '± 10%' && minPrice === 0 && maxPrice === 0) {
+      console.log('🎯 [ADD-LIQUIDITY] Aplicando intervalo de 10% automaticamente');
+      handlePriceRangeSelect('± 10%');
+    }
+  }, [poolData, priceRange, minPrice, maxPrice]);
 
   // Calcular quantidades quando inputAmount mudar
   useEffect(() => {
