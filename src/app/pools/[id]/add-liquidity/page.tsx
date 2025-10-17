@@ -1078,7 +1078,7 @@ export default function AddLiquidityPage() {
             <div className="text-slate-300 text-base pt-2">
               {poolData?.tokens && poolData.tokens.length >= 2 ? (
                 <>
-                  <span className="text-slate-400">Preço atual:</span> 0,0613 <span className="font-semibold">{poolData.tokens[1].symbol}</span> = 1 <span className="font-semibold">{poolData.tokens[0].symbol}</span>
+                  <span className="text-slate-400">Preço atual:</span> 0,0613 <span className="font-semibold">{poolData.tokens[1].symbol.toUpperCase()}</span> = 1 <span className="font-semibold">{poolData.tokens[0].symbol.toUpperCase()}</span>
                 </>
               ) : (
                 'Carregando preço atual...'
@@ -1099,7 +1099,7 @@ export default function AddLiquidityPage() {
                           : "bg-slate-800/60 border-slate-700 text-slate-300 hover:bg-slate-700 hover:border-slate-600"
                       }`}
                     >
-                      {poolData.tokens[0].symbol}
+                      {poolData.tokens[0].symbol.toUpperCase()}
                     </Button>
                     <Button
                       variant="outline"
@@ -1110,7 +1110,7 @@ export default function AddLiquidityPage() {
                           : "bg-slate-800/60 border-slate-700 text-slate-300 hover:bg-slate-700 hover:border-slate-600"
                       }`}
                     >
-                      {poolData.tokens[1].symbol}
+                      {poolData.tokens[1].symbol.toUpperCase()}
                     </Button>
                   </>
                 ) : (
@@ -1329,7 +1329,7 @@ export default function AddLiquidityPage() {
                   </div>
                   <div className="text-slate-400 text-xs text-center">
                     {poolData?.tokens && poolData.tokens.length >= 2 ? (
-                      `${poolData.tokens[1].symbol} por ${poolData.tokens[0].symbol}`
+                      `${poolData.tokens[1].symbol.toUpperCase()} por ${poolData.tokens[0].symbol.toUpperCase()}`
                     ) : (
                       'Token por Token'
                     )}
@@ -1364,7 +1364,7 @@ export default function AddLiquidityPage() {
                   </div>
                   <div className="text-slate-400 text-xs text-center">
                     {poolData?.tokens && poolData.tokens.length >= 2 ? (
-                      `${poolData.tokens[1].symbol} por ${poolData.tokens[0].symbol}`
+                      `${poolData.tokens[1].symbol.toUpperCase()} por ${poolData.tokens[0].symbol.toUpperCase()}`
                     ) : (
                       'Token por Token'
                     )}
@@ -1993,7 +1993,7 @@ export default function AddLiquidityPage() {
                     <div className="text-white font-medium">Adiciona à pool</div>
                     <div className="text-slate-400 text-sm">
                       {poolData?.tokens && poolData.tokens.length >= 2 ? (
-                        `${poolData.tokens[0].symbol}/${poolData.tokens[1].symbol}`
+                        `${poolData.tokens[0].symbol.toUpperCase()}/${poolData.tokens[1].symbol.toUpperCase()}`
                       ) : (
                         'Carregando...'
                       )}
@@ -2191,7 +2191,7 @@ export default function AddLiquidityPage() {
                           />
                         </div>
                         <span className="text-white font-medium text-sm ml-1">
-                          {poolData.tokens[0].symbol}/{poolData.tokens[1].symbol}
+                          {poolData.tokens[0].symbol.toUpperCase()}/{poolData.tokens[1].symbol.toUpperCase()}
                         </span>
                       </div>
                     )}
