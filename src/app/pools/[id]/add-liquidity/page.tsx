@@ -149,11 +149,38 @@ export default function AddLiquidityPage() {
       return [];
     }
     
+    console.log('📊 [ADD-LIQUIDITY] Processando dados históricos para gráfico:', historicalData.dailyData);
+    
     // Converter dados históricos para formato do gráfico
-    return historicalData.dailyData.map((day, index) => ({
-      date: day.date,
-      price: day.tvl > 0 ? (day.tvl / 1000000) : 0 // Usar 0 em vez de valor hardcoded
-    }));
+    const processedData = historicalData.dailyData.map((day, index) => {
+      // Usar volume como preço, com normalização mais realista
+      const price = day.volume > 0 ? day.volume : (day.tvl > 0 ? day.tvl / 1000 : 0.05);
+      
+      // Converter timestamp para data legível
+      let formattedDate = day.date;
+      if (day.timestamp) {
+        // Se temos timestamp, converter para data
+        const date = new Date(parseInt(day.timestamp));
+        formattedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      } else if (day.date && day.date !== '1970-01-01') {
+        // Se a data já está correta, usar ela
+        formattedDate = day.date;
+      } else {
+        // Gerar datas recentes como fallback
+        const today = new Date();
+        const daysAgo = historicalData.dailyData.length - 1 - index;
+        const date = new Date(today.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
+        formattedDate = date.toISOString().split('T')[0];
+      }
+      
+      return {
+        date: formattedDate,
+        price: price
+      };
+    });
+    
+    console.log('📈 [ADD-LIQUIDITY] Dados do gráfico processados:', processedData);
+    return processedData;
   }, [historicalData]);
 
 
@@ -345,21 +372,31 @@ export default function AddLiquidityPage() {
       setSelectedToken(token1.symbol || '');
       
       // Inicializar preços baseados nos dados do pool
+      let newMinPrice = 0.05;
+      let newMaxPrice = 0.06;
+      
       if (poolData.stats?.volumeInUSD && poolData.stats.volumeInUSD > 0) {
-        const basePrice = poolData.stats.volumeInUSD / 1000000; // Normalizar para preço
-        setMinPrice(basePrice * 0.9); // 10% abaixo
-        setMaxPrice(basePrice * 1.1); // 10% acima
-      } else {
-        // Fallback para preços padrão se não houver dados
-        setMinPrice(0.01);
-        setMaxPrice(0.1);
+        // Usar volume como base para preço mais realista
+        const basePrice = Math.max(0.05, Math.min(0.1, poolData.stats.volumeInUSD / 100000));
+        newMinPrice = basePrice * 0.9; // 10% abaixo
+        newMaxPrice = basePrice * 1.1; // 10% acima
+      } else if (poolData.totalValueLockedUSD && poolData.totalValueLockedUSD > 0) {
+        // Usar TVL como base se volume não estiver disponível
+        const basePrice = Math.max(0.05, Math.min(0.1, parseFloat(poolData.totalValueLockedUSD) / 100000));
+        newMinPrice = basePrice * 0.9;
+        newMaxPrice = basePrice * 1.1;
       }
+      
+      setMinPrice(newMinPrice);
+      setMaxPrice(newMaxPrice);
       
       console.log('🎯 [ADD-LIQUIDITY] Pool inicializado:', {
         token1: token1.symbol,
         token2: token2.symbol,
-        minPrice: minPrice,
-        maxPrice: maxPrice
+        minPrice: newMinPrice,
+        maxPrice: newMaxPrice,
+        volumeInUSD: poolData.stats?.volumeInUSD,
+        tvl: poolData.totalValueLockedUSD
       });
     }
   }, [poolData]);
@@ -880,7 +917,13 @@ export default function AddLiquidityPage() {
                       <span className="text-white font-bold">+</span>
                     </Button>
                   </div>
-                  <div className="text-slate-400 text-xs">LINK por USDC.E</div>
+                  <div className="text-slate-400 text-xs">
+                    {poolData?.tokens && poolData.tokens.length >= 2 ? (
+                      `${poolData.tokens[1].symbol} por ${poolData.tokens[0].symbol}`
+                    ) : (
+                      'Token por Token'
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -909,7 +952,13 @@ export default function AddLiquidityPage() {
                       <span className="text-white font-bold">+</span>
                     </Button>
                   </div>
-                  <div className="text-slate-400 text-xs">LINK por USDC.E</div>
+                  <div className="text-slate-400 text-xs">
+                    {poolData?.tokens && poolData.tokens.length >= 2 ? (
+                      `${poolData.tokens[1].symbol} por ${poolData.tokens[0].symbol}`
+                    ) : (
+                      'Token por Token'
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
