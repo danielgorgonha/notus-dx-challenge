@@ -133,6 +133,9 @@ export default function AddLiquidityPage() {
   const [countdown, setCountdown] = useState(0); // Inicia zerado
   const [timerActive, setTimerActive] = useState(false); // Controla se o timer está ativo
   const [amountsData, setAmountsData] = useState<any>(null); // Dados de quantidades calculadas
+  const [isApproving, setIsApproving] = useState(false); // Estado de aprovação
+  const [isApproved, setIsApproved] = useState(false); // Estado de aprovado
+  const [approvalError, setApprovalError] = useState<string | null>(null); // Erro de aprovação
   const [expandedSections, setExpandedSections] = useState({
     recebeLink: false,
     adicionaPool: false,
@@ -405,6 +408,17 @@ export default function AddLiquidityPage() {
   useEffect(() => {
     if (inputAmount && parseFloat(inputAmount) > 0 && selectedInputToken && poolData?.tokens) {
       calculateAmounts();
+    } else if (inputAmount && parseFloat(inputAmount) > 0 && selectedInputToken && poolData?.tokens) {
+      // Se não conseguimos calcular via API, usar fallback
+      const fallbackAmounts = calculateTokenProportions(inputAmount, selectedInputToken);
+      setAmountsData({
+        amounts: {
+          token0MaxAmount: {
+            token0Amount: fallbackAmounts.token0Amount,
+            token1Amount: fallbackAmounts.token1Amount
+          }
+        }
+      });
     }
   }, [inputAmount, selectedInputToken, poolData]);
 
@@ -421,8 +435,84 @@ export default function AddLiquidityPage() {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Finalizar processo - criar liquidez
-      await createLiquidity();
+      // Finalizar processo - criar liquidez com aprovação automática via API Notus
+      await createLiquidityWithApproval();
+    }
+  };
+
+  // Função para criar liquidez usando a API real do Notus
+  const createLiquidityWithApproval = async () => {
+    if (!poolData?.tokens || poolData.tokens.length < 2 || !amountsData || !selectedInputToken || !inputAmount) {
+      console.error('❌ [ADD-LIQUIDITY] Dados insuficientes para criar liquidez');
+      return;
+    }
+
+    try {
+      setIsApproving(true);
+      setApprovalError(null);
+      
+      console.log('🔐 [ADD-LIQUIDITY] Iniciando criação de liquidez com aprovação automática:', {
+        selectedInputToken,
+        inputAmount,
+        poolTokens: poolData.tokens.map(t => t.symbol)
+      });
+
+      const token0 = poolData.tokens[0];
+      const token1 = poolData.tokens[1];
+      
+      // Determinar qual token é o input baseado na seleção
+      const isToken0Selected = selectedInputToken === 'USDC' && token0.symbol?.toUpperCase().includes('USDC');
+      const isToken1Selected = selectedInputToken === 'BRZ' && token1.symbol?.toUpperCase().includes('BRZ');
+      
+      if (!isToken0Selected && !isToken1Selected) {
+        console.log('⚠️ [ADD-LIQUIDITY] Token selecionado não corresponde aos tokens do pool');
+        setApprovalError('Token selecionado não corresponde aos tokens do pool');
+        return;
+      }
+
+      const params = {
+        walletAddress: walletAddress,
+        toAddress: walletAddress, // Mesmo endereço para simplicidade
+        chainId: 137, // Polygon
+        payGasFeeToken: token0.address,
+        gasFeePaymentMethod: 'ADD_TO_AMOUNT',
+        token0: token0.address,
+        token1: token1.address,
+        poolFeePercent: poolData.fee || 0.3,
+        minPrice: minPrice,
+        maxPrice: maxPrice,
+        slippage: 1.0, // 1% de slippage
+        liquidityProvider: 'UNISWAP_V3',
+        transactionFeePercent: 2.5
+      };
+
+      // Adicionar as quantidades baseadas no cálculo da API
+      if (amountsData.amounts?.token0MaxAmount) {
+        params.token0Amount = amountsData.amounts.token0MaxAmount.token0Amount;
+        params.token1Amount = amountsData.amounts.token0MaxAmount.token1Amount;
+      } else {
+        // Fallback para valores padrão
+        params.token0Amount = isToken0Selected ? inputAmount : '0';
+        params.token1Amount = isToken1Selected ? inputAmount : '0';
+      }
+
+      console.log('🚀 [ADD-LIQUIDITY] Chamando API createLiquidity (com aprovação automática):', params);
+
+      // A API do Notus gerencia a aprovação de tokens automaticamente
+      const response = await liquidityActions.createLiquidity(params);
+      console.log('✅ [ADD-LIQUIDITY] Resposta da API createLiquidity:', response);
+
+      // Marcar como aprovado e criado
+      setIsApproved(true);
+      
+      // Redirecionar para a página do pool após sucesso
+      router.push(`/pools/${poolId}`);
+      
+    } catch (error) {
+      console.error('❌ [ADD-LIQUIDITY] Erro ao criar liquidez:', error);
+      setApprovalError('Erro ao criar liquidez. Verifique seus saldos e tente novamente.');
+    } finally {
+      setIsApproving(false);
     }
   };
 
@@ -501,7 +591,25 @@ export default function AddLiquidityPage() {
   };
 
   const isStep3Valid = () => {
-    return amountsData && selectedInputToken && inputAmount && parseFloat(inputAmount) > 0;
+    // Validar se temos dados básicos necessários
+    const hasBasicData = selectedInputToken && inputAmount && parseFloat(inputAmount) > 0;
+    
+    console.log('🔍 [ADD-LIQUIDITY] Validando Step 3:', {
+      hasBasicData,
+      selectedInputToken,
+      inputAmount,
+      amountsData: !!amountsData,
+      poolData: !!poolData
+    });
+    
+    // Se não temos amountsData da API, usar cálculo de fallback
+    if (!amountsData && hasBasicData) {
+      const fallbackAmounts = calculateTokenProportions(inputAmount, selectedInputToken);
+      console.log('🔄 [ADD-LIQUIDITY] Usando fallback:', fallbackAmounts);
+      return fallbackAmounts.token0Amount !== '0' || fallbackAmounts.token1Amount !== '0';
+    }
+    
+    return hasBasicData && amountsData;
   };
 
   // Função para calcular proporção baseada no preço do pool
@@ -1313,6 +1421,48 @@ export default function AddLiquidityPage() {
         <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
           <CardContent className="p-6">
             <div className="space-y-4">
+              {/* Liquidity Creation Status */}
+              {isApproving && (
+                <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    <div>
+                      <div className="text-blue-400 font-medium">Criando liquidez...</div>
+                      <div className="text-slate-400 text-sm">Aprovando tokens e criando posição de liquidez</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {isApproved && (
+                <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm">✓</span>
+                    </div>
+                    <div>
+                      <div className="text-green-400 font-medium">Liquidez criada com sucesso!</div>
+                      <div className="text-slate-400 text-sm">Redirecionando para a página do pool...</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {approvalError && (
+                <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm">✗</span>
+                    </div>
+                    <div>
+                      <div className="text-red-400 font-medium">Erro ao criar liquidez</div>
+                      <div className="text-slate-400 text-sm">{approvalError}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Transação</span>
                 <span className="text-white">Adição de liquidez</span>
@@ -1322,9 +1472,16 @@ export default function AddLiquidityPage() {
                 <span className="text-slate-400">Provedor</span>
                 <div className="flex items-center space-x-2">
                   <div className="w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs">🦄</span>
+                    <span className="text-white text-xs font-bold">U</span>
                   </div>
-                  <span className="text-white">Uniswap V3</span>
+                  <a 
+                    href="https://app.uniswap.org/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-white hover:text-yellow-400 transition-colors"
+                  >
+                    Uniswap V3
+                  </a>
                   <span className="text-slate-400">↗</span>
                 </div>
               </div>
@@ -1333,9 +1490,16 @@ export default function AddLiquidityPage() {
                 <span className="text-slate-400">Rede</span>
                 <div className="flex items-center space-x-2">
                   <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs">⬟</span>
+                    <span className="text-white text-xs font-bold">P</span>
                   </div>
-                  <span className="text-white">Polygon</span>
+                  <a 
+                    href="https://polygon.technology/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-white hover:text-yellow-400 transition-colors"
+                  >
+                    Polygon
+                  </a>
                   <span className="text-slate-400">↗</span>
                 </div>
               </div>
@@ -1355,24 +1519,31 @@ export default function AddLiquidityPage() {
 
         {/* Token Sections */}
         <div className="space-y-3">
-          {/* Envia BRZ */}
+          {/* Token de Entrada */}
           <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">B</span>
+                    <span className="text-white text-sm font-bold">
+                      {selectedInputToken === 'USDC' ? '$' : 'B'}
+                    </span>
                   </div>
                   <div>
-                    <div className="text-white font-medium">BRZ</div>
-                    <div className="text-slate-400 text-sm">Token</div>
+                    <div className="text-white font-medium">
+                      {selectedInputToken === 'USDC' ? 'USDC' : 'BRZ'}
+                    </div>
+                    <div className="text-slate-400 text-sm">Token de entrada</div>
+                    <div className="text-yellow-400 text-sm font-mono">
+                      {inputAmount} {selectedInputToken}
+                    </div>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-white font-medium">Rede</div>
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs">⬟</span>
+                      <span className="text-white text-xs font-bold">P</span>
                     </div>
                     <span className="text-slate-400 text-sm">Polygon</span>
                   </div>
@@ -1381,24 +1552,43 @@ export default function AddLiquidityPage() {
             </CardContent>
           </Card>
 
-          {/* Recebe USDC.E */}
+          {/* Token 1 do Pool */}
           <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">$</span>
+                    {poolData?.tokens?.[0]?.logo ? (
+                      <img 
+                        src={poolData.tokens[0].logo} 
+                        alt={poolData.tokens[0].symbol}
+                        className="w-6 h-6 rounded-full"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling.style.display = 'block';
+                        }}
+                      />
+                    ) : null}
+                    <span className="text-white text-sm font-bold" style={{ display: poolData?.tokens?.[0]?.logo ? 'none' : 'block' }}>
+                      {poolData?.tokens?.[0]?.symbol?.charAt(0) || '$'}
+                    </span>
                   </div>
                   <div>
-                    <div className="text-white font-medium">USDC.E</div>
-                    <div className="text-slate-400 text-sm">Token</div>
+                    <div className="text-white font-medium">
+                      {poolData?.tokens?.[0]?.symbol || 'Token 1'}
+                    </div>
+                    <div className="text-slate-400 text-sm">Token do pool</div>
+                    <div className="text-yellow-400 text-sm font-mono">
+                      {amountsData?.amounts?.token0MaxAmount?.token0Amount || 
+                       calculateTokenProportions(inputAmount, selectedInputToken).token0Amount} {poolData?.tokens?.[0]?.symbol || ''}
+                    </div>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-white font-medium">Rede</div>
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs">⬟</span>
+                      <span className="text-white text-xs font-bold">P</span>
                     </div>
                     <span className="text-slate-400 text-sm">Polygon</span>
                   </div>
@@ -1407,7 +1597,7 @@ export default function AddLiquidityPage() {
             </CardContent>
           </Card>
 
-          {/* Recebe LINK - Expansível */}
+          {/* Token 2 do Pool - Expansível */}
           <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
             <CardContent className="p-4">
               <div 
@@ -1415,12 +1605,31 @@ export default function AddLiquidityPage() {
                 onClick={() => toggleSection('recebeLink')}
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">⬟</span>
+                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                    {poolData?.tokens?.[1]?.logo ? (
+                      <img 
+                        src={poolData.tokens[1].logo} 
+                        alt={poolData.tokens[1].symbol}
+                        className="w-6 h-6 rounded-full"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling.style.display = 'block';
+                        }}
+                      />
+                    ) : null}
+                    <span className="text-white text-sm font-bold" style={{ display: poolData?.tokens?.[1]?.logo ? 'none' : 'block' }}>
+                      {poolData?.tokens?.[1]?.symbol?.charAt(0) || 'L'}
+                    </span>
                   </div>
                   <div>
-                    <div className="text-white font-medium">LINK</div>
-                    <div className="text-slate-400 text-sm">Token</div>
+                    <div className="text-white font-medium">
+                      {poolData?.tokens?.[1]?.symbol || 'Token 2'}
+                    </div>
+                    <div className="text-slate-400 text-sm">Token do pool</div>
+                    <div className="text-yellow-400 text-sm font-mono">
+                      {amountsData?.amounts?.token0MaxAmount?.token1Amount || 
+                       calculateTokenProportions(inputAmount, selectedInputToken).token1Amount} {poolData?.tokens?.[1]?.symbol || ''}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -1449,10 +1658,12 @@ export default function AddLiquidityPage() {
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Token</span>
                       <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs">⬟</span>
+                        <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">
+                            {poolData?.tokens?.[1]?.symbol?.charAt(0) || 'L'}
+                          </span>
                         </div>
-                        <span className="text-white">LINK</span>
+                        <span className="text-white">{poolData?.tokens?.[1]?.symbol || 'Token 2'}</span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
@@ -1467,7 +1678,18 @@ export default function AddLiquidityPage() {
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Contrato do token</span>
                       <div className="flex items-center space-x-2">
-                        <span className="text-white">0x53e...bad39</span>
+                        {poolData?.tokens?.[1]?.address ? (
+                          <a 
+                            href={`https://polygonscan.com/token/${poolData.tokens[1].address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-white hover:text-yellow-400 transition-colors"
+                          >
+                            {`${poolData.tokens[1].address.slice(0, 6)}...${poolData.tokens[1].address.slice(-6)}`}
+                          </a>
+                        ) : (
+                          <span className="text-white">0x000...00000</span>
+                        )}
                         <span className="text-slate-400">□</span>
                       </div>
                     </div>
@@ -1487,10 +1709,14 @@ export default function AddLiquidityPage() {
                 <div className="flex items-center space-x-3">
                   <div className="flex -space-x-2">
                     <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center border-2 border-slate-800">
-                      <span className="text-white text-sm font-bold">$</span>
+                      <span className="text-white text-sm font-bold">
+                        {poolData?.tokens?.[0]?.symbol?.charAt(0) || '$'}
+                      </span>
                     </div>
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center border-2 border-slate-800">
-                      <span className="text-white text-sm font-bold">⬟</span>
+                    <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center border-2 border-slate-800">
+                      <span className="text-white text-sm font-bold">
+                        {poolData?.tokens?.[1]?.symbol?.charAt(0) || 'L'}
+                      </span>
                     </div>
                   </div>
                   <div>
@@ -1531,18 +1757,22 @@ export default function AddLiquidityPage() {
                       <span className="text-slate-400">Token 1</span>
                       <div className="flex items-center space-x-2">
                         <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs">$</span>
+                          <span className="text-white text-xs">
+                            {poolData?.tokens?.[0]?.symbol?.charAt(0) || '$'}
+                          </span>
                         </div>
-                        <span className="text-white">USDC.E</span>
+                        <span className="text-white">{poolData?.tokens?.[0]?.symbol || 'Token 1'}</span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Token 2</span>
                       <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs">⬟</span>
+                        <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">
+                            {poolData?.tokens?.[1]?.symbol?.charAt(0) || 'L'}
+                          </span>
                         </div>
-                        <span className="text-white">LINK</span>
+                        <span className="text-white">{poolData?.tokens?.[1]?.symbol || 'Token 2'}</span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
@@ -1557,14 +1787,36 @@ export default function AddLiquidityPage() {
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Contrato do token 1</span>
                       <div className="flex items-center space-x-2">
-                        <span className="text-white">0x279...84174</span>
+                        {poolData?.tokens?.[0]?.address ? (
+                          <a 
+                            href={`https://polygonscan.com/token/${poolData.tokens[0].address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-white hover:text-yellow-400 transition-colors"
+                          >
+                            {`${poolData.tokens[0].address.slice(0, 6)}...${poolData.tokens[0].address.slice(-6)}`}
+                          </a>
+                        ) : (
+                          <span className="text-white">0x000...00000</span>
+                        )}
                         <span className="text-slate-400">□</span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Contrato do token 2</span>
                       <div className="flex items-center space-x-2">
-                        <span className="text-white">0x53e...bad39</span>
+                        {poolData?.tokens?.[1]?.address ? (
+                          <a 
+                            href={`https://polygonscan.com/token/${poolData.tokens[1].address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-white hover:text-yellow-400 transition-colors"
+                          >
+                            {`${poolData.tokens[1].address.slice(0, 6)}...${poolData.tokens[1].address.slice(-6)}`}
+                          </a>
+                        ) : (
+                          <span className="text-white">0x000...00000</span>
+                        )}
                         <span className="text-slate-400">□</span>
                       </div>
                     </div>
@@ -1583,7 +1835,7 @@ export default function AddLiquidityPage() {
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">#</span>
+                    <span className="text-white text-sm font-bold">NFT</span>
                   </div>
                   <div>
                     <div className="text-white font-medium">Recebe +Uniswap V3 Positions NFT #</div>
@@ -1695,7 +1947,10 @@ export default function AddLiquidityPage() {
                 }`}
                 disabled={(currentStep === 1 && !isStep1Valid()) || (currentStep === 2 && !isStep2Valid()) || (currentStep === 3 && !isStep3Valid())}
               >
-                {currentStep === 3 ? 'Aprovar a transação' : 'Próximo'}
+                {currentStep === 3 ? (
+                  isApproving ? 'Criando liquidez...' : 
+                  'Criar liquidez'
+                ) : 'Próximo'}
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
