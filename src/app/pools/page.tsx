@@ -37,119 +37,57 @@ export default function PoolsPage() {
 
   const walletAddress = wallet?.accountAbstraction;
 
-  // Buscar pools de liquidez da API da Notus
+  // Buscar pools específicas da API interna
   const { data: poolsData, isLoading: poolsLoading, error: poolsError } = useQuery({
-    queryKey: ['liquidity-pools', sortBy],
+    queryKey: ['specific-pools', sortBy],
     queryFn: async () => {
       try {
-        console.log('🚀 Buscando pools da API da Notus');
-        const filterConfig = getFilterConfig('high_activity');
+        console.log('🚀 Buscando pools específicas da API interna...');
         
-        const response = await liquidityActions.listPools(filterConfig);
-        const apiResponse = response as { pools: any[] };
+        const response = await fetch('/api/pools');
+        if (!response.ok) {
+          throw new Error(`Erro na API: ${response.status}`);
+        }
         
-        if (!apiResponse.pools || apiResponse.pools.length === 0) {
-          console.log('⚠️ Nenhum pool encontrado');
+        const data = await response.json();
+        console.log('✅ Dados recebidos:', data);
+        
+        if (!data.pools || data.pools.length === 0) {
+          console.log('⚠️ Nenhuma pool encontrada');
           return [];
         }
         
-        // Filtrar pools com atividade
-        const activePools = filterActivePools(apiResponse.pools, {
-          minTvl: 0.01,
-          minFees: 0,
-          minVolume: 0,
-          popularTokens: true,
-          recentActivity: true
-        });
-        
-        console.log(`📊 Pools filtrados: ${activePools.length} de ${apiResponse.pools.length}`);
-        
-        // Fallback se não há pools ativos
-        if (activePools.length === 0) {
-          const fallbackPools = filterActivePools(apiResponse.pools, {
-            minTvl: 0,
-            minFees: 0,
-            minVolume: 0,
-            popularTokens: false,
-            recentActivity: false
-          });
-          activePools.push(...fallbackPools);
-        }
-        
-        // Ordenar por atividade
-        const activitySortedPools = sortPoolsByActivity(activePools, 'activity');
-        
-        // Processar pools
-        const processedPools = activitySortedPools.map((pool: any) => {
-          // Extrair dados com verificações de tipo
-          const tvl = typeof pool.totalValueLockedUSD === 'number' 
-            ? pool.totalValueLockedUSD 
-            : parseFloat(pool.totalValueLockedUSD) || 0;
-          const volume24h = typeof pool.stats?.volumeInUSD === 'number' 
-            ? pool.stats.volumeInUSD 
-            : parseFloat(pool.stats?.volumeInUSD) || 0;
-          const fee = typeof pool.fee === 'number' 
-            ? pool.fee 
-            : parseFloat(pool.fee) || 0;
-          
-          // Calcular rentabilidade
-          const rentability = calculatePoolRentability(pool);
-          const apr = rentability.apr.toFixed(2);
-          
-          // Formatar valores
-          const formatValue = (value: any) => {
-            const numValue = typeof value === 'number' ? value : parseFloat(value) || 0;
-            if (numValue >= 1000000) return `$${(numValue / 1000000).toFixed(1)}M`;
-            if (numValue >= 1000) return `$${(numValue / 1000).toFixed(1)}K`;
-            if (numValue >= 1) return `$${numValue.toFixed(2)}`;
-            if (numValue >= 0.01) return `$${numValue.toFixed(4)}`;
-            if (numValue >= 0.0001) return `$${numValue.toFixed(6)}`;
-            if (numValue > 0) return `$${numValue.toFixed(8)}`;
-            return `$0.00`;
-          };
-          
-          // Processar tokens com verificações de segurança
-          const token0 = pool.tokens?.[0];
-          const token1 = pool.tokens?.[1];
-          
-          const safeToken0Symbol = typeof token0?.symbol === 'string' 
-            ? token0.symbol.toUpperCase() 
-            : 'TOKEN1';
-          const safeToken1Symbol = typeof token1?.symbol === 'string' 
-            ? token1.symbol.toUpperCase() 
-            : 'TOKEN2';
-          const safeToken0Logo = typeof token0?.logo === 'string' 
-            ? token0.logo 
-            : "💙";
-          const safeToken1Logo = typeof token1?.logo === 'string' 
-            ? token1.logo 
-            : "💚";
+        // Processar pools com métricas calculadas
+        const processedPools = data.pools.map((pool: any) => {
+          const metrics = pool.metrics;
           
           return {
             id: pool.id,
-            protocol: typeof pool.provider === 'string' ? pool.provider : "Uniswap V3",
-            tokenPair: `${safeToken0Symbol}/${safeToken1Symbol}`,
+            protocol: pool.provider?.name || "Uniswap V3",
+            tokenPair: pool.tokenPair,
             token1: { 
-              symbol: safeToken0Symbol, 
-              logo: safeToken0Logo, 
+              symbol: pool.tokens[0]?.symbol?.toUpperCase() || 'TOKEN1', 
+              logo: pool.tokens[0]?.logo || "💙", 
               color: "blue" 
             },
             token2: { 
-              symbol: safeToken1Symbol, 
-              logo: safeToken1Logo, 
+              symbol: pool.tokens[1]?.symbol?.toUpperCase() || 'TOKEN2', 
+              logo: pool.tokens[1]?.logo || "💚", 
               color: "green" 
             },
-            rentabilidade: `${apr}% a.a.`,
-            tvl: formatValue(tvl),
-            tarifa: `${fee}%`,
-            volume24h: formatValue(volume24h),
-            // Dados adicionais da API
+            rentabilidade: metrics.formatted.apr,
+            tvl: metrics.formatted.tvl,
+            tarifa: `${pool.fee}%`,
+            volume24h: metrics.formatted.volume24h,
+            composition: metrics.formatted.composition,
+            // Dados adicionais
             address: pool.address,
             chain: pool.chain,
             provider: pool.provider,
             stats: pool.stats,
             tokens: pool.tokens,
-            fee: pool.fee
+            fee: pool.fee,
+            metrics: metrics
           };
         });
         
@@ -157,28 +95,16 @@ export default function PoolsPage() {
         const sortedPools = [...processedPools].sort((a, b) => {
           switch (sortBy) {
             case 'rentabilidade':
-              const aprA = parseFloat(a.rentabilidade.replace(/[% a.a]/g, '')) || 0;
-              const aprB = parseFloat(b.rentabilidade.replace(/[% a.a]/g, '')) || 0;
-              return aprB - aprA;
+              return b.metrics.apr - a.metrics.apr;
               
             case 'tvl':
-              const tvlA = parseFloat(a.tvl.replace(/[$,MK]/g, '')) || 0;
-              const tvlB = parseFloat(b.tvl.replace(/[$,MK]/g, '')) || 0;
-              const multiplierA = a.tvl.includes('M') ? 1000000 : a.tvl.includes('K') ? 1000 : 1;
-              const multiplierB = b.tvl.includes('M') ? 1000000 : b.tvl.includes('K') ? 1000 : 1;
-              return (tvlB * multiplierB) - (tvlA * multiplierA);
+              return b.metrics.tvl - a.metrics.tvl;
               
             case 'tarifa':
-              const feeA = parseFloat(a.tarifa.replace(/[%]/g, '')) || 0;
-              const feeB = parseFloat(b.tarifa.replace(/[%]/g, '')) || 0;
-              return feeB - feeA;
+              return b.fee - a.fee;
               
             case 'volume':
-              const volA = parseFloat(a.volume24h.replace(/[$,MK]/g, '')) || 0;
-              const volB = parseFloat(b.volume24h.replace(/[$,MK]/g, '')) || 0;
-              const volMultiplierA = a.volume24h.includes('M') ? 1000000 : a.volume24h.includes('K') ? 1000 : 1;
-              const volMultiplierB = b.volume24h.includes('M') ? 1000000 : b.volume24h.includes('K') ? 1000 : 1;
-              return (volB * volMultiplierB) - (volA * volMultiplierA);
+              return b.metrics.volume24h - a.metrics.volume24h;
               
             default:
               return 0;
@@ -396,6 +322,14 @@ export default function PoolsPage() {
                     <p className="text-white font-bold text-base">{String(pool.volume24h || 'N/A')}</p>
                   </div>
                 </div>
+                
+                {/* Composition Section */}
+                {pool.composition && (
+                  <div className="pt-4 border-t border-slate-700/50">
+                    <p className="text-slate-400 text-sm font-medium mb-2">Composição</p>
+                    <p className="text-white text-sm">{String(pool.composition || 'N/A')}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
             );

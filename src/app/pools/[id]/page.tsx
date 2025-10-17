@@ -32,6 +32,23 @@ interface PoolDetails {
     volumeInUSD?: number;
     feesInUSD?: number;
   };
+  metrics?: {
+    apr: number;
+    tvl: number;
+    volume24h: number;
+    fees24h: number;
+    composition: {
+      token0: { symbol: string; percentage: number };
+      token1: { symbol: string; percentage: number };
+    };
+    formatted: {
+      apr: string;
+      tvl: string;
+      volume24h: string;
+      fees24h: string;
+      composition: string;
+    };
+  };
 }
 
 export default function PoolDetailsPage() {
@@ -43,103 +60,61 @@ export default function PoolDetailsPage() {
   // Endpoint 3: GET /liquidity/pools/{id}/historical-data
   const { data: historicalData, isLoading: historicalLoading } = usePoolHistoricalData(poolId || '', 365);
 
-  // Query para buscar detalhes do pool
+  // Query para buscar detalhes do pool via API interna
   const { data: poolData, isLoading, error } = useQuery<PoolDetails>({
     queryKey: ['pool-details', poolId],
     queryFn: async () => {
-      console.log('🔍 Buscando detalhes do pool:', poolId);
+      console.log('🔍 Buscando detalhes do pool via API interna:', poolId);
       
       try {
-        // Endpoint 2: GET /liquidity/pools/{id} - Detalhes do pool
-        console.log('🚀 Chamando API da Notus - Endpoint: GET /liquidity/pools/{id}');
-        const response = await liquidityActions.getPool(poolId, 365);
-        console.log('✅ Resposta da API para detalhes do pool:', response);
-        console.log('📊 Tipo da resposta:', typeof response);
-        console.log('📊 Chaves da resposta:', Object.keys(response || {}));
-
-        if (!response) {
+        const response = await fetch(`/api/pools/${poolId}`);
+        if (!response.ok) {
+          throw new Error(`Erro na API: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('✅ Dados recebidos:', data);
+        
+        if (!data.pool) {
           throw new Error('Pool não encontrado');
         }
-
-        // Processar dados da API - a resposta vem em {pool: {...}}
-        const apiResponse = (response as any).pool;
-        console.log('📊 Dados do pool da API:', apiResponse);
         
-        if (!apiResponse) {
-          throw new Error('Dados do pool não encontrados na resposta');
-        }
+        const pool = data.pool;
+        const metrics = pool.metrics;
         
-        console.log('🔍 Provider (objeto):', apiResponse.provider);
-        console.log('🔍 Chain (objeto):', apiResponse.chain);
-        console.log('🔍 Estrutura dos tokens:', apiResponse.tokens);
-        console.log('🔍 Tipo dos tokens:', typeof apiResponse.tokens);
-        console.log('🔍 Array dos tokens:', Array.isArray(apiResponse.tokens));
-        
-        // Log detalhado de cada token
-        if (apiResponse.tokens && Array.isArray(apiResponse.tokens)) {
-          apiResponse.tokens.forEach((token: any, index: number) => {
-            console.log(`🔍 Token ${index}:`, {
-              symbol: token.symbol,
-              logo: token.logo,
-              name: token.name,
-              address: token.address,
-              decimals: token.decimals,
-              symbolType: typeof token.symbol,
-              logoType: typeof token.logo,
-              nameType: typeof token.name
-            });
-          });
-        }
+        console.log('📊 Métricas calculadas:', {
+          apr: metrics.formatted.apr,
+          tvl: metrics.formatted.tvl,
+          volume24h: metrics.formatted.volume24h,
+          composition: metrics.formatted.composition
+        });
         
         const processedPool: PoolDetails = {
-          id: apiResponse.id || poolId,
-          address: apiResponse.address || 'N/A',
-          chain: typeof apiResponse.chain === 'object' ? apiResponse.chain.name : (apiResponse.chain || 'Polygon'),
-          provider: typeof apiResponse.provider === 'object' ? apiResponse.provider.name : (apiResponse.provider || 'Uniswap V3'),
-          fee: typeof apiResponse.fee === 'number' ? apiResponse.fee : parseFloat(apiResponse.fee) || 0,
-          totalValueLockedUSD: typeof apiResponse.totalValueLockedUSD === 'number' 
-            ? apiResponse.totalValueLockedUSD 
-            : parseFloat(apiResponse.totalValueLockedUSD) || 0,
-          tokens: Array.isArray(apiResponse.tokens) ? apiResponse.tokens.map((token: any, index: number) => {
-            console.log(`🔧 Processando token ${index}:`, token);
-            
-            // Verificar se token é um objeto válido
-            if (!token || typeof token !== 'object') {
-              console.log(`⚠️ Token ${index} inválido:`, token);
-              return {
-                symbol: `TOKEN${index + 1}`,
-                logo: '',
-                name: `Token ${index + 1}`,
-                address: '',
-                decimals: 18,
-                poolShareInPercentage: 0
-              };
-            }
-            
-            return {
-              symbol: typeof token.symbol === 'string' ? token.symbol.toUpperCase() : `TOKEN${index + 1}`,
-              logo: typeof token.logo === 'string' ? token.logo : '',
-              name: typeof token.name === 'string' ? token.name : `Token ${index + 1}`,
-              address: typeof token.address === 'string' ? token.address : '',
-              decimals: typeof token.decimals === 'number' ? token.decimals : 18,
-              poolShareInPercentage: typeof token.poolShareInPercentage === 'number' ? token.poolShareInPercentage : 0
-            };
-          }) : [],
+          id: pool.id,
+          address: pool.address,
+          chain: pool.chain?.name || 'Polygon',
+          provider: pool.provider?.name || 'Uniswap V3',
+          fee: pool.fee,
+          totalValueLockedUSD: typeof pool.totalValueLockedUSD === 'string' 
+            ? parseFloat(pool.totalValueLockedUSD) 
+            : pool.totalValueLockedUSD,
+          tokens: pool.tokens.map((token: any) => ({
+            symbol: token.symbol?.toUpperCase() || 'TOKEN',
+            logo: token.logo || '',
+            name: token.name || 'Token',
+            address: token.address || '',
+            decimals: token.decimals || 18,
+            poolShareInPercentage: token.poolShareInPercentage || 0
+          })),
           stats: {
-            volumeInUSD: typeof apiResponse.stats?.volumeInUSD === 'number' 
-              ? apiResponse.stats.volumeInUSD 
-              : parseFloat(apiResponse.stats?.volumeInUSD) || 0,
-            feesInUSD: typeof apiResponse.stats?.feesInUSD === 'number' 
-              ? apiResponse.stats.feesInUSD 
-              : parseFloat(apiResponse.stats?.feesInUSD) || 0
-          }
+            volumeInUSD: metrics.volume24h,
+            feesInUSD: metrics.fees24h
+          },
+          // Adicionar métricas calculadas
+          metrics: metrics
         };
 
         console.log('🎯 Pool processado:', processedPool);
-        console.log('🎯 Pool processado - ID:', processedPool.id);
-        console.log('🎯 Pool processado - Tokens:', processedPool.tokens);
-        console.log('🎯 Pool processado - Provider:', processedPool.provider);
-        console.log('🎯 Pool processado - Chain:', processedPool.chain);
         return processedPool;
 
       } catch (error) {
@@ -211,40 +186,8 @@ export default function PoolDetailsPage() {
     return '$0.00';
   };
 
-  // Calcular APR usando dados históricos reais da API da Notus
-  const calculateAPR = () => {
-    if (!poolData) return 0;
-    
-    // Priorizar dados históricos se disponíveis
-    if (historicalData && typeof historicalData === 'object' && 'apr' in historicalData) {
-      const apr = (historicalData as any).apr;
-      if (apr > 0) {
-        console.log('💰 Usando dados históricos da API Notus para cálculo de APR:', {
-          apr: apr,
-          totalFees: (historicalData as any).totalFees,
-          totalVolume: (historicalData as any).totalVolume,
-          daysWithData: (historicalData as any).daysWithData,
-          source: 'Notus API - historical-data endpoint'
-        });
-        return apr;
-      }
-    }
-    
-    // Fallback para dados agregados
-    const rentability = calculatePoolRentability(poolData);
-    
-    console.log('💰 Rentabilidade calculada com fallback:', {
-      apr: rentability.apr,
-      method: rentability.calculationMethod,
-      totalFees: rentability.totalFees,
-      totalVolume: rentability.totalVolume,
-      daysWithData: rentability.daysWithData
-    });
-    
-    return rentability.apr;
-  };
-
-  const apr = calculateAPR();
+  // Usar APR calculado pelas métricas do servidor
+  const apr = poolData?.metrics?.apr || 0;
 
   // Calcular composição da pool baseada nos dados reais
   const token0Percentage = poolData?.tokens?.[0]?.poolShareInPercentage || 0;
