@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight, RefreshCw, ZoomOut, ZoomIn, Plus, Info, TrendingUp } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { ProtectedRoute } from '@/components/auth/protected-route';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
 
 // Função para processar dados dos tokens (mesma abordagem do TokenSelector)
 const processTokensData = (tokens: any[], portfolioTokens: any) => {
@@ -1111,7 +1111,7 @@ export default function AddLiquidityPage() {
 
           {/* Price Chart */}
           <div className="space-y-3">
-            {/* Chart Legend - MOVIDA PARA CIMA */}
+            {/* Chart Legend */}
             <div className="flex items-center justify-center space-x-6 text-xs">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-0.5 bg-slate-400" style={{ borderTop: '2px dotted #94a3b8' }}></div>
@@ -1123,90 +1123,110 @@ export default function AddLiquidityPage() {
               </div>
             </div>
             
-            {/* Chart with draggable price range */}
-            <div className="h-48 bg-slate-900/60 border border-slate-800/80 rounded-lg p-4 relative">
+            {/* Interactive Chart with draggable price range */}
+            <div className="h-64 bg-slate-900/60 border border-slate-800/80 rounded-lg p-4 relative">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
+                <LineChart 
+                  data={chartData}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
+                >
                   <defs>
+                    {/* Gradiente para área de preço */}
                     <linearGradient id="priceRangeGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#a855f7" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#a855f7" stopOpacity={0.1} />
+                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.1} />
                     </linearGradient>
                   </defs>
+                  
                   <XAxis 
                     dataKey="date" 
-                    axisLine={false}
+                    axisLine={{ stroke: '#334155', strokeWidth: 1 }}
                     tickLine={false}
-                    tick={{ fill: '#475569', fontSize: 10 }}
+                    tick={{ fill: '#64748b', fontSize: 10 }}
                     interval="preserveStartEnd"
                   />
+                  
                   <YAxis 
-                    domain={['auto', 'auto']}
-                    axisLine={false}
+                    domain={[(dataMin: number) => {
+                      const buffer = (maxPrice - minPrice) * 0.2;
+                      return Math.max(0, minPrice - buffer);
+                    }, (dataMax: number) => {
+                      const buffer = (maxPrice - minPrice) * 0.2;
+                      return maxPrice + buffer;
+                    }]}
+                    axisLine={{ stroke: '#334155', strokeWidth: 1 }}
                     tickLine={false}
-                    tick={{ fill: '#475569', fontSize: 10 }}
+                    tick={{ fill: '#64748b', fontSize: 10 }}
                     tickFormatter={(value) => value.toFixed(4)}
+                    width={60}
                   />
+                  
                   {/* Área roxa do intervalo de preço */}
-                  {minPrice > 0 && maxPrice > 0 && (
-                    <rect
-                      x="0"
-                      y="0"
-                      width="100%"
-                      height="100%"
+                  {minPrice > 0 && maxPrice > 0 && chartData.length > 0 && (
+                    <ReferenceArea
+                      y1={minPrice}
+                      y2={maxPrice}
                       fill="url(#priceRangeGradient)"
-                      opacity={0.5}
-                      style={{
-                        clipPath: `polygon(0 ${100 - ((maxPrice / (chartData[0]?.price || 1)) * 100)}%, 100% ${100 - ((maxPrice / (chartData[0]?.price || 1)) * 100)}%, 100% ${100 - ((minPrice / (chartData[0]?.price || 1)) * 100)}%, 0 ${100 - ((minPrice / (chartData[0]?.price || 1)) * 100)}%)`
-                      }}
+                      fillOpacity={0.6}
+                      stroke="none"
                     />
                   )}
+                  
+                  {/* Linha do gráfico de preço */}
                   <Line 
                     type="monotone" 
                     dataKey="price" 
                     stroke="#a855f7" 
                     strokeWidth={2}
                     dot={false}
-                    activeDot={{ r: 4, fill: '#a855f7' }}
+                    activeDot={{ r: 4, fill: '#a855f7', stroke: '#fff', strokeWidth: 2 }}
                   />
+                  
                   {/* Linha pontilhada do preço atual */}
                   {chartData.length > 0 && (
                     <ReferenceLine 
                       y={chartData[chartData.length - 1]?.price || 0} 
                       stroke="#94a3b8" 
-                      strokeDasharray="4 4" 
+                      strokeDasharray="4 4"
+                      strokeWidth={1}
                       label={{ 
-                        value: "Preço atual", 
-                        position: "insideTopRight" as const, 
+                        value: `${(chartData[chartData.length - 1]?.price || 0).toFixed(4)}`, 
+                        position: "right" as const, 
                         fill: "#94a3b8", 
-                        fontSize: 10 
+                        fontSize: 11,
+                        fontWeight: 600
                       }}
                     />
                   )}
-                  {/* Linhas do intervalo de preço (min e max) */}
-                  {minPrice > 0 && (
-                    <ReferenceLine 
-                      y={minPrice} 
-                      stroke="#a855f7" 
-                      strokeWidth={2}
-                      label={{ 
-                        value: minPrice.toFixed(4), 
-                        position: "insideLeft" as const, 
-                        fill: "#a855f7", 
-                        fontSize: 10 
-                      }}
-                    />
-                  )}
+                  
+                  {/* Linha superior do intervalo (maxPrice) */}
                   {maxPrice > 0 && (
                     <ReferenceLine 
                       y={maxPrice} 
-                      stroke="#a855f7" 
+                      stroke="#8b5cf6" 
                       strokeWidth={2}
                       label={{ 
                         value: maxPrice.toFixed(4), 
-                        position: "insideLeft" as const, 
-                        fill: "#a855f7", 
-                        fontSize: 10 
+                        position: "right" as const, 
+                        fill: "#8b5cf6", 
+                        fontSize: 11,
+                        fontWeight: 600
+                      }}
+                    />
+                  )}
+                  
+                  {/* Linha inferior do intervalo (minPrice) */}
+                  {minPrice > 0 && (
+                    <ReferenceLine 
+                      y={minPrice} 
+                      stroke="#8b5cf6" 
+                      strokeWidth={2}
+                      label={{ 
+                        value: minPrice.toFixed(4), 
+                        position: "right" as const, 
+                        fill: "#8b5cf6", 
+                        fontSize: 11,
+                        fontWeight: 600
                       }}
                     />
                   )}
