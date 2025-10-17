@@ -407,14 +407,6 @@ export default function AddLiquidityPage() {
     }
   }, [poolData]);
 
-  // Aplicar intervalo de 10% automaticamente quando o pool carregar
-  useEffect(() => {
-    if (poolData && priceRange === '± 10%' && minPrice === 0 && maxPrice === 0) {
-      console.log('🎯 [ADD-LIQUIDITY] Aplicando intervalo de 10% automaticamente');
-      handlePriceRangeSelect('± 10%');
-    }
-  }, [poolData, priceRange, minPrice, maxPrice]);
-
   // Calcular quantidades quando inputAmount mudar
   useEffect(() => {
     if (inputAmount && parseFloat(inputAmount) > 0 && selectedInputToken && poolData?.tokens) {
@@ -998,6 +990,14 @@ export default function AddLiquidityPage() {
         break;
     }
   };
+
+  // Aplicar intervalo de 10% automaticamente quando o pool carregar
+  useEffect(() => {
+    if (poolData && priceRange === '± 10%' && minPrice === 0 && maxPrice === 0) {
+      console.log('🎯 [ADD-LIQUIDITY] Aplicando intervalo de 10% automaticamente');
+      handlePriceRangeSelect('± 10%');
+    }
+  }, [poolData, priceRange, minPrice, maxPrice]);
 
   const formatValue = (value: any) => {
     const numValue = typeof value === 'number' ? value : parseFloat(value) || 0;
