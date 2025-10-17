@@ -33,13 +33,18 @@ export default function PoolsPage() {
   // Estados principais
   const [selectedPool, setSelectedPool] = useState<any>(null);
   const [sortBy, setSortBy] = useState<"rentabilidade" | "tvl" | "tarifa" | "volume">("rentabilidade");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [showSortModal, setShowSortModal] = useState(false);
+  
+  // Estados temporários para o modal
+  const [tempSortBy, setTempSortBy] = useState<"rentabilidade" | "tvl" | "tarifa" | "volume">("rentabilidade");
+  const [tempSortDirection, setTempSortDirection] = useState<"asc" | "desc">("desc");
 
   const walletAddress = wallet?.accountAbstraction;
 
   // Buscar pools específicas da API interna
   const { data: poolsData, isLoading: poolsLoading, error: poolsError } = useQuery({
-    queryKey: ['specific-pools', sortBy],
+    queryKey: ['specific-pools', sortBy, sortDirection],
     queryFn: async () => {
       try {
         console.log('🚀 Buscando pools específicas da API interna...');
@@ -91,24 +96,29 @@ export default function PoolsPage() {
           };
         });
         
-        // Aplicar ordenação baseada no sortBy
+        // Aplicar ordenação baseada no sortBy e sortDirection
         const sortedPools = [...processedPools].sort((a, b) => {
+          let comparison = 0;
+          
           switch (sortBy) {
             case 'rentabilidade':
-              return b.metrics.apr - a.metrics.apr;
-              
+              comparison = a.metrics.apr - b.metrics.apr;
+              break;
             case 'tvl':
-              return b.metrics.tvl - a.metrics.tvl;
-              
+              comparison = a.metrics.tvl - b.metrics.tvl;
+              break;
             case 'tarifa':
-              return b.fee - a.fee;
-              
+              comparison = a.fee - b.fee;
+              break;
             case 'volume':
-              return b.metrics.volume24h - a.metrics.volume24h;
-              
+              comparison = a.metrics.volume24h - b.metrics.volume24h;
+              break;
             default:
               return 0;
           }
+          
+          // Aplicar direção da ordenação
+          return sortDirection === 'desc' ? -comparison : comparison;
         });
         
         console.log('✅ Pools processados:', sortedPools.length);
@@ -127,20 +137,27 @@ export default function PoolsPage() {
     router.push(`/pools/${pool.id}`);
   };
 
+  const handleOpenModal = () => {
+    setTempSortBy(sortBy);
+    setTempSortDirection(sortDirection);
+    setShowSortModal(true);
+  };
+
   const renderPoolsList = () => (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Pools de Liquidez</h1>
           <p className="text-white text-sm">Disponíveis - {poolsData?.length || 0}</p>
         </div>
         <Button
-          onClick={() => setShowSortModal(true)}
+          onClick={handleOpenModal}
           variant="outline"
           className="border-yellow-500/30 text-yellow-400 hover:text-yellow-300 hover:border-yellow-400 text-sm font-semibold px-4 py-2 rounded-lg transition-all duration-300 bg-yellow-500/10 hover:bg-yellow-500/20"
         >
-          Rent. estimada ↓
+          {sortBy === 'rentabilidade' ? 'Rent. estimada' : 
+           sortBy === 'tvl' ? 'TVL' :
+           sortBy === 'tarifa' ? 'Tarifa' : 'Volume (24h)'} {sortDirection === 'desc' ? '↓' : '↑'}
         </Button>
       </div>
 
@@ -201,44 +218,40 @@ export default function PoolsPage() {
                   <div className="flex items-center space-x-3">
                     {/* Token Icons */}
                     <div className="relative flex items-center">
-                      <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center border border-slate-600">
-                        {pool.token1?.logo && typeof pool.token1.logo === 'string' && pool.token1.logo.startsWith('http') ? (
-                          <img 
-                            src={pool.token1.logo} 
-                            alt={pool.token1?.symbol || 'Token1'} 
-                            className="w-5 h-5 rounded-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
-                              if (nextElement) {
-                                nextElement.style.display = 'block';
-                              }
-                            }}
-                          />
-                        ) : null}
-                        <span className="text-sm" style={{ display: pool.token1?.logo && typeof pool.token1.logo === 'string' && pool.token1.logo.startsWith('http') ? 'none' : 'block' }}>
-                          {String(pool.token1?.logo || '💙')}
-                        </span>
-                      </div>
-                      <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center border border-slate-600 -ml-2">
-                        {pool.token2?.logo && typeof pool.token2.logo === 'string' && pool.token2.logo.startsWith('http') ? (
-                          <img 
-                            src={pool.token2.logo} 
-                            alt={pool.token2?.symbol || 'Token2'} 
-                            className="w-5 h-5 rounded-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
-                              if (nextElement) {
-                                nextElement.style.display = 'block';
-                              }
-                            }}
-                          />
-                        ) : null}
-                        <span className="text-sm" style={{ display: pool.token2?.logo && typeof pool.token2.logo === 'string' && pool.token2.logo.startsWith('http') ? 'none' : 'block' }}>
-                          {String(pool.token2?.logo || '💚')}
-                        </span>
-                      </div>
+                      {pool.token1?.logo && typeof pool.token1.logo === 'string' && pool.token1.logo.startsWith('http') ? (
+                        <img 
+                          src={pool.token1.logo} 
+                          alt={pool.token1?.symbol || 'Token1'} 
+                          className="w-8 h-8 rounded-full object-cover z-10"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (nextElement) {
+                              nextElement.style.display = 'block';
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <span className="text-lg z-10" style={{ display: pool.token1?.logo && typeof pool.token1.logo === 'string' && pool.token1.logo.startsWith('http') ? 'none' : 'block' }}>
+                        {String(pool.token1?.logo || '💙')}
+                      </span>
+                      {pool.token2?.logo && typeof pool.token2.logo === 'string' && pool.token2.logo.startsWith('http') ? (
+                        <img 
+                          src={pool.token2.logo} 
+                          alt={pool.token2?.symbol || 'Token2'} 
+                          className="w-8 h-8 rounded-full object-cover -ml-2 z-20"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (nextElement) {
+                              nextElement.style.display = 'block';
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <span className="text-lg -ml-2 z-20" style={{ display: pool.token2?.logo && typeof pool.token2.logo === 'string' && pool.token2.logo.startsWith('http') ? 'none' : 'block' }}>
+                        {String(pool.token2?.logo || '💚')}
+                      </span>
                     </div>
                     
                     {/* Token Pair Name */}
@@ -284,52 +297,82 @@ export default function PoolsPage() {
     </div>
   );
 
-  const renderSortModal = () => (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-white font-bold text-lg">Classificação</h2>
+  const renderSortModal = () => {
+    const sortOptions = [
+      { key: "rentabilidade", label: "Rentabilidade estimada" },
+      { key: "tvl", label: "TVL" },
+      { key: "tarifa", label: "Tarifa" },
+      { key: "volume", label: "Volume (24h)" }
+    ];
+
+    const handleSortOptionClick = (optionKey: string) => {
+      if (tempSortBy === optionKey) {
+        // Se já está selecionado, alternar direção
+        setTempSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+      } else {
+        // Se é nova opção, definir como descendente por padrão
+        setTempSortBy(optionKey as any);
+        setTempSortDirection('desc');
+      }
+    };
+
+    const handleApplySort = () => {
+      setSortBy(tempSortBy);
+      setSortDirection(tempSortDirection);
+      setShowSortModal(false);
+    };
+
+
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-white font-bold text-lg">Classificação</h2>
+            <Button
+              onClick={() => setShowSortModal(false)}
+              variant="ghost"
+              className="text-slate-400"
+            >
+              ✕
+            </Button>
+          </div>
+          
+          <div className="space-y-3">
+            {sortOptions.map((option) => {
+              const isSelected = tempSortBy === option.key;
+              const arrowIcon = isSelected ? (tempSortDirection === 'desc' ? '↓' : '↑') : null;
+              
+              return (
+                <div
+                  key={option.key}
+                  className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                    isSelected ? "bg-slate-700/50" : "hover:bg-slate-700/30"
+                  }`}
+                  onClick={() => handleSortOptionClick(option.key)}
+                >
+                  <span className="text-white">{option.label}</span>
+                  {arrowIcon && (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-bold text-red-400">
+                        {arrowIcon}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
           <Button
-            onClick={() => setShowSortModal(false)}
-            variant="ghost"
-            className="text-slate-400"
+            onClick={handleApplySort}
+            className="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-3 rounded-xl mt-6"
           >
-            ✕
+            Aplicar
           </Button>
         </div>
-        
-        <div className="space-y-3">
-          {[
-            { key: "rentabilidade", label: "Rentabilidade estimada", icon: "↓" },
-            { key: "tvl", label: "TVL" },
-            { key: "tarifa", label: "Tarifa" },
-            { key: "volume", label: "Volume (24h)" }
-          ].map((option) => (
-            <div
-              key={option.key}
-              className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-                sortBy === option.key ? "bg-slate-700/50" : "hover:bg-slate-700/30"
-              }`}
-              onClick={() => {
-                setSortBy(option.key as any);
-                setShowSortModal(false);
-              }}
-            >
-              <span className="text-white">{option.label}</span>
-              {option.icon && <span className="text-slate-400">{option.icon}</span>}
-            </div>
-          ))}
-        </div>
-
-        <Button
-          onClick={() => setShowSortModal(false)}
-          className="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-3 rounded-xl mt-6"
-        >
-          Aplicar
-        </Button>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <ProtectedRoute>
