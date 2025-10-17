@@ -145,6 +145,9 @@ export default function AddLiquidityPage() {
   // Estados para controlar drag do intervalo de preço no gráfico
   const [isDraggingMin, setIsDraggingMin] = useState(false);
   const [isDraggingMax, setIsDraggingMax] = useState(false);
+  
+  // Estado para controlar a ordem dos tokens (false = ordem original, true = invertido)
+  const [tokensInverted, setTokensInverted] = useState(false);
 
   // Buscar dados históricos reais do pool para o gráfico
   const { data: historicalData, isLoading: historicalLoading } = usePoolHistoricalData(poolId || '', 365);
@@ -985,6 +988,30 @@ export default function AddLiquidityPage() {
     }
   };
 
+  // Função para obter tokens na ordem correta (baseado na seleção)
+  const getOrderedTokens = () => {
+    if (!poolData?.tokens || poolData.tokens.length < 2) {
+      return { first: null, second: null };
+    }
+    
+    return tokensInverted 
+      ? { first: poolData.tokens[1], second: poolData.tokens[0] }
+      : { first: poolData.tokens[0], second: poolData.tokens[1] };
+  };
+
+  // Função para lidar com seleção de token e inverter ordem
+  const handleTokenSelection = (tokenSymbol: string) => {
+    if (!poolData?.tokens || poolData.tokens.length < 2) return;
+    
+    // Se clicar no token que não está em primeiro, inverte
+    const { first } = getOrderedTokens();
+    if (first && tokenSymbol !== first.symbol) {
+      setTokensInverted(!tokensInverted);
+    }
+    
+    setSelectedToken(tokenSymbol);
+  };
+
   // Função para ajustar preço diretamente no gráfico via clique
   const handleChartClick = (e: any) => {
     if (!e || !e.activePayload) return;
@@ -1077,9 +1104,14 @@ export default function AddLiquidityPage() {
             {/* Current Price */}
             <div className="text-slate-300 text-base pt-2">
               {poolData?.tokens && poolData.tokens.length >= 2 ? (
-                <>
-                  <span className="text-slate-400">Preço atual:</span> 0,0613 <span className="font-semibold">{poolData.tokens[1].symbol.toUpperCase()}</span> = 1 <span className="font-semibold">{poolData.tokens[0].symbol.toUpperCase()}</span>
-                </>
+                (() => {
+                  const { first, second } = getOrderedTokens();
+                  return first && second ? (
+                    <>
+                      <span className="text-slate-400">Preço atual:</span> 0,0613 <span className="font-semibold">{second.symbol.toUpperCase()}</span> = 1 <span className="font-semibold">{first.symbol.toUpperCase()}</span>
+                    </>
+                  ) : 'Carregando preço atual...';
+                })()
               ) : (
                 'Carregando preço atual...'
               )}
@@ -1089,30 +1121,27 @@ export default function AddLiquidityPage() {
             <div className="flex items-center justify-between">
               <div className="flex space-x-2">
                 {poolData?.tokens && poolData.tokens.length >= 2 ? (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={() => setSelectedToken(poolData.tokens[0].symbol)}
-                      className={`px-6 py-2.5 rounded-lg font-medium text-base transition-all duration-200 ${
-                        selectedToken === poolData.tokens[0].symbol
-                          ? "bg-yellow-500 text-black border-yellow-500 hover:bg-yellow-600 shadow-lg" 
-                          : "bg-slate-800/60 border-slate-700 text-slate-300 hover:bg-slate-700 hover:border-slate-600"
-                      }`}
-                    >
-                      {poolData.tokens[0].symbol.toUpperCase()}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setSelectedToken(poolData.tokens[1].symbol)}
-                      className={`px-6 py-2.5 rounded-lg font-medium text-base transition-all duration-200 ${
-                        selectedToken === poolData.tokens[1].symbol
-                          ? "bg-yellow-500 text-black border-yellow-500 hover:bg-yellow-600 shadow-lg" 
-                          : "bg-slate-800/60 border-slate-700 text-slate-300 hover:bg-slate-700 hover:border-slate-600"
-                      }`}
-                    >
-                      {poolData.tokens[1].symbol.toUpperCase()}
-                    </Button>
-                  </>
+                  (() => {
+                    const { first, second } = getOrderedTokens();
+                    return first && second ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleTokenSelection(first.symbol)}
+                          className="px-6 py-2.5 rounded-lg font-medium text-base transition-all duration-200 bg-yellow-500 text-black border-yellow-500 hover:bg-yellow-600 shadow-lg"
+                        >
+                          {first.symbol.toUpperCase()}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleTokenSelection(second.symbol)}
+                          className="px-6 py-2.5 rounded-lg font-medium text-base transition-all duration-200 bg-slate-800/60 border-slate-700 text-slate-300 hover:bg-slate-700 hover:border-slate-600"
+                        >
+                          {second.symbol.toUpperCase()}
+                        </Button>
+                      </>
+                    ) : null;
+                  })()
                 ) : (
                   <div className="text-slate-400 text-sm">Carregando tokens...</div>
                 )}
@@ -1329,7 +1358,10 @@ export default function AddLiquidityPage() {
                   </div>
                   <div className="text-slate-400 text-xs text-center">
                     {poolData?.tokens && poolData.tokens.length >= 2 ? (
-                      `${poolData.tokens[1].symbol.toUpperCase()} por ${poolData.tokens[0].symbol.toUpperCase()}`
+                      (() => {
+                        const { first, second } = getOrderedTokens();
+                        return first && second ? `${second.symbol.toUpperCase()} por ${first.symbol.toUpperCase()}` : 'Token por Token';
+                      })()
                     ) : (
                       'Token por Token'
                     )}
@@ -1364,7 +1396,10 @@ export default function AddLiquidityPage() {
                   </div>
                   <div className="text-slate-400 text-xs text-center">
                     {poolData?.tokens && poolData.tokens.length >= 2 ? (
-                      `${poolData.tokens[1].symbol.toUpperCase()} por ${poolData.tokens[0].symbol.toUpperCase()}`
+                      (() => {
+                        const { first, second } = getOrderedTokens();
+                        return first && second ? `${second.symbol.toUpperCase()} por ${first.symbol.toUpperCase()}` : 'Token por Token';
+                      })()
                     ) : (
                       'Token por Token'
                     )}
