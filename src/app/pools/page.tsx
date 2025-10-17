@@ -130,52 +130,22 @@ export default function PoolsPage() {
   const renderPoolsList = () => (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Pools de Liquidez</h1>
-          <p className="text-slate-300 text-sm">Disponíveis - {poolsData?.length || 0}</p>
+          <p className="text-white text-sm">Disponíveis - {poolsData?.length || 0}</p>
         </div>
         <Button
           onClick={() => setShowSortModal(true)}
           variant="outline"
-          className="border-slate-600 text-slate-300 hover:text-white hover:border-slate-500 text-sm font-semibold px-6 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl bg-slate-800/50 hover:bg-slate-700/80 backdrop-blur-sm"
+          className="border-yellow-500/30 text-yellow-400 hover:text-yellow-300 hover:border-yellow-400 text-sm font-semibold px-4 py-2 rounded-lg transition-all duration-300 bg-yellow-500/10 hover:bg-yellow-500/20"
         >
-          <Filter className="h-4 w-4 mr-2" />
-          Rentabilidade estimada ↓
+          Rent. estimada ↓
         </Button>
       </div>
 
-      {/* Resumo dos Pools */}
-      <Card className="bg-gradient-to-r from-slate-800/60 to-slate-700/60 border border-slate-600/60 rounded-2xl mb-6 shadow-xl">
-        <CardContent className="p-6">
-          <div className="grid grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-blue-500/20 flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-blue-400" />
-              </div>
-              <p className="text-slate-400 text-sm font-medium mb-1">TVL Total</p>
-              <p className="text-white font-bold text-xl">$6.4M</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-yellow-400" />
-              </div>
-              <p className="text-slate-400 text-sm font-medium mb-1">Tarifa Média</p>
-              <p className="text-white font-bold text-xl">0.15%</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-green-500/20 flex items-center justify-center">
-                <LineChart className="h-6 w-6 text-green-400" />
-              </div>
-              <p className="text-slate-400 text-sm font-medium mb-1">Volume (24h)</p>
-              <p className="text-white font-bold text-xl">$199700.0K</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Lista de Pools */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {(() => {
           if (poolsLoading) {
             return (
@@ -213,21 +183,30 @@ export default function PoolsPage() {
             return (
             <Card 
               key={pool.id}
-              className="bg-slate-800/60 border border-slate-700/60 rounded-2xl cursor-pointer hover:bg-slate-700/40 hover:border-slate-600/60 transition-all duration-300 shadow-lg hover:shadow-xl"
+              className="bg-slate-700/40 border border-slate-600/40 rounded-xl cursor-pointer hover:bg-slate-600/40 hover:border-slate-500/60 transition-all duration-300 shadow-md hover:shadow-lg"
               onClick={() => handlePoolClick(pool)}
             >
-              <CardContent className="p-6">
-                {/* Header Section */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-4">
+              <CardContent className="p-4">
+                {/* Top Row: Protocol and Rent. estimada */}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-white text-sm font-medium">{String(pool.protocol || 'Uniswap V3')}</span>
+                  <div className="flex items-center space-x-1">
+                    <span className="text-white text-sm font-medium">Rent. estimada</span>
+                    <Info className="h-3 w-3 text-slate-400" />
+                  </div>
+                </div>
+
+                {/* Second Row: Token Pair and APR */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
                     {/* Token Icons */}
                     <div className="relative flex items-center">
-                      <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border-2 border-slate-700 shadow-md">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center border border-slate-600">
                         {pool.token1?.logo && typeof pool.token1.logo === 'string' && pool.token1.logo.startsWith('http') ? (
                           <img 
                             src={pool.token1.logo} 
                             alt={pool.token1?.symbol || 'Token1'} 
-                            className="w-6 h-6 rounded-full object-cover"
+                            className="w-5 h-5 rounded-full object-cover"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                               const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
@@ -237,16 +216,16 @@ export default function PoolsPage() {
                             }}
                           />
                         ) : null}
-                        <span className="text-lg" style={{ display: pool.token1?.logo && typeof pool.token1.logo === 'string' && pool.token1.logo.startsWith('http') ? 'none' : 'block' }}>
+                        <span className="text-sm" style={{ display: pool.token1?.logo && typeof pool.token1.logo === 'string' && pool.token1.logo.startsWith('http') ? 'none' : 'block' }}>
                           {String(pool.token1?.logo || '💙')}
                         </span>
                       </div>
-                      <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center border-2 border-slate-700 shadow-md -ml-3">
+                      <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center border border-slate-600 -ml-2">
                         {pool.token2?.logo && typeof pool.token2.logo === 'string' && pool.token2.logo.startsWith('http') ? (
                           <img 
                             src={pool.token2.logo} 
                             alt={pool.token2?.symbol || 'Token2'} 
-                            className="w-6 h-6 rounded-full object-cover"
+                            className="w-5 h-5 rounded-full object-cover"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                               const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
@@ -256,52 +235,45 @@ export default function PoolsPage() {
                             }}
                           />
                         ) : null}
-                        <span className="text-lg" style={{ display: pool.token2?.logo && typeof pool.token2.logo === 'string' && pool.token2.logo.startsWith('http') ? 'none' : 'block' }}>
+                        <span className="text-sm" style={{ display: pool.token2?.logo && typeof pool.token2.logo === 'string' && pool.token2.logo.startsWith('http') ? 'none' : 'block' }}>
                           {String(pool.token2?.logo || '💚')}
                         </span>
                       </div>
                     </div>
                     
-                    {/* Token Pair Info */}
-                    <div className="flex flex-col">
-                      <h3 className="text-white font-bold text-lg leading-tight">{String(pool.tokenPair || 'N/A')}</h3>
-                      <p className="text-slate-400 text-sm font-medium">{String(pool.protocol || 'N/A')}</p>
-                    </div>
+                    {/* Token Pair Name */}
+                    <h3 className="text-white font-bold text-base">{String(pool.tokenPair || 'N/A')}</h3>
                   </div>
                   
-                  {/* Rentability Section */}
-                  <div className="text-right">
-                    <div className="flex items-center justify-end space-x-2 mb-1">
-                      <span className="text-slate-400 text-sm font-medium">Rent. estimada</span>
-                      <Info className="h-4 w-4 text-slate-400" />
-                    </div>
-                    <p className="text-green-400 font-bold text-lg">{String(pool.rentabilidade || 'N/A')}</p>
+                  {/* APR */}
+                  <p className="text-green-400 font-bold text-base">{String(pool.rentabilidade || 'N/A')}</p>
+                </div>
+
+                {/* Third Row: Labels */}
+                <div className="grid grid-cols-3 gap-4 mb-2">
+                  <div className="text-center">
+                    <p className="text-white text-sm font-medium">TVL</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-white text-sm font-medium">Tarifa</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-white text-sm font-medium">Volume (24h)</p>
                   </div>
                 </div>
 
-                {/* Metrics Section */}
-                <div className="grid grid-cols-3 gap-6 pt-4 border-t border-slate-700/50">
+                {/* Fourth Row: Values */}
+                <div className="grid grid-cols-3 gap-4">
                   <div className="text-center">
-                    <p className="text-slate-400 text-sm font-medium mb-1">TVL</p>
                     <p className="text-white font-bold text-base">{String(pool.tvl || 'N/A')}</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-slate-400 text-sm font-medium mb-1">Tarifa</p>
                     <p className="text-white font-bold text-base">{String(pool.tarifa || 'N/A')}</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-slate-400 text-sm font-medium mb-1">Volume (24h)</p>
                     <p className="text-white font-bold text-base">{String(pool.volume24h || 'N/A')}</p>
                   </div>
                 </div>
-                
-                {/* Composition Section */}
-                {pool.composition && (
-                  <div className="pt-4 border-t border-slate-700/50">
-                    <p className="text-slate-400 text-sm font-medium mb-1">Composição</p>
-                    <p className="text-white text-sm">{String(pool.composition || 'N/A')}</p>
-                  </div>
-                )}
               </CardContent>
             </Card>
             );
