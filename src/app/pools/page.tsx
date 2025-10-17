@@ -39,6 +39,9 @@ export default function PoolsPage() {
   // Estados temporários para o modal
   const [tempSortBy, setTempSortBy] = useState<"rentabilidade" | "tvl" | "tarifa" | "volume">("rentabilidade");
   const [tempSortDirection, setTempSortDirection] = useState<"asc" | "desc">("desc");
+  
+  // Estado para tooltip de APR
+  const [showAprTooltip, setShowAprTooltip] = useState(false);
 
   const walletAddress = wallet?.accountAbstraction;
 
@@ -209,7 +212,15 @@ export default function PoolsPage() {
                   <span className="text-white text-sm font-medium">{String(pool.protocol || 'Uniswap V3')}</span>
                   <div className="flex items-center space-x-1">
                     <span className="text-white text-sm font-medium">Rent. estimada</span>
-                    <Info className="h-3 w-3 text-slate-400" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowAprTooltip(true);
+                      }}
+                      className="hover:bg-slate-600 rounded-full p-1 transition-colors"
+                    >
+                      <Info className="h-3 w-3 text-slate-400 hover:text-white" />
+                    </button>
                   </div>
                 </div>
 
@@ -374,6 +385,32 @@ export default function PoolsPage() {
     );
   };
 
+  const renderAprTooltip = () => (
+    <div 
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={() => setShowAprTooltip(false)}
+    >
+      <div 
+        className="bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-6 py-6">
+          <h3 className="text-white font-bold text-lg mb-3">Rentabilidade estimada (APR)</h3>
+          <p className="text-white text-sm mb-6">
+            Calculada com base nas recompensas diárias e no TVL da pool.
+          </p>
+          
+          <Button
+            onClick={() => setShowAprTooltip(false)}
+            className="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-3 rounded-xl"
+          >
+            Ok, entendi
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <ProtectedRoute>
       <AppLayout 
@@ -385,6 +422,7 @@ export default function PoolsPage() {
         </div>
         
         {showSortModal && renderSortModal()}
+        {showAprTooltip && renderAprTooltip()}
       </AppLayout>
     </ProtectedRoute>
   );
