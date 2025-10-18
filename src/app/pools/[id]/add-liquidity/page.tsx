@@ -7,9 +7,10 @@ import { notusAPI } from '@/lib/api/client';
 import { liquidityActions } from '@/lib/actions/liquidity';
 import { listTokensByChain } from '@/lib/actions/blockchain';
 import { usePoolHistoricalData } from '@/hooks/use-pool-historical-data';
+import { PoolData } from '@/lib/utils/pool-calculations';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, RefreshCw, ZoomOut, ZoomIn, Plus, Info, TrendingUp } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RefreshCw, ZoomOut, ZoomIn, Plus, Info, TrendingUp, ExternalLink } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
@@ -103,19 +104,6 @@ interface Token {
   poolShareInPercentage: number;
 }
 
-interface PoolData {
-  id: string;
-  address: string;
-  chain: string;
-  provider: string;
-  fee: number;
-  totalValueLockedUSD: number;
-  tokens: Token[];
-  stats?: {
-    volumeInUSD?: number;
-    feesInUSD?: number;
-  };
-}
 
 export default function AddLiquidityPage() {
   const params = useParams();
@@ -137,6 +125,8 @@ export default function AddLiquidityPage() {
   const [isApproved, setIsApproved] = useState(false); // Estado de aprovado
   const [approvalError, setApprovalError] = useState<string | null>(null); // Erro de aprovação
   const [expandedSections, setExpandedSections] = useState({
+    envia: false,
+    recebeUsdc: false,
     recebeLink: false,
     adicionaPool: false,
     recebeNft: false
@@ -355,13 +345,15 @@ export default function AddLiquidityPage() {
               : parseFloat(token.poolShareInPercentage) || 0
           })) : [],
           stats: apiResponse.stats ? {
+            rangeInDays: apiResponse.stats.rangeInDays || 30,
             volumeInUSD: typeof apiResponse.stats.volumeInUSD === 'number' 
               ? apiResponse.stats.volumeInUSD 
               : parseFloat(apiResponse.stats.volumeInUSD) || 0,
             feesInUSD: typeof apiResponse.stats.feesInUSD === 'number' 
               ? apiResponse.stats.feesInUSD 
-              : parseFloat(apiResponse.stats.feesInUSD) || 0
-          } : undefined
+              : parseFloat(apiResponse.stats.feesInUSD) || 0,
+            transactionsCount: apiResponse.stats.transactionsCount || 0
+          } as any : undefined
         };
 
         console.log('✅ Pool processado com sucesso:', processedPool);
@@ -387,14 +379,14 @@ export default function AddLiquidityPage() {
       let newMinPrice = 0.05;
       let newMaxPrice = 0.06;
       
-      if (poolData.stats?.volumeInUSD && poolData.stats.volumeInUSD > 0) {
+      if (poolData.stats?.volumeInUSD && Number(poolData.stats.volumeInUSD) > 0) {
         // Usar volume como base para preço mais realista
-        const basePrice = Math.max(0.05, Math.min(0.1, poolData.stats.volumeInUSD / 100000));
+        const basePrice = Math.max(0.05, Math.min(0.1, Number(poolData.stats.volumeInUSD) / 100000));
         newMinPrice = basePrice * 0.9; // 10% abaixo
         newMaxPrice = basePrice * 1.1; // 10% acima
-      } else if (poolData.totalValueLockedUSD && poolData.totalValueLockedUSD > 0) {
+      } else if (poolData.totalValueLockedUSD && Number(poolData.totalValueLockedUSD) > 0) {
         // Usar TVL como base se volume não estiver disponível
-        const tvlValue = typeof poolData.totalValueLockedUSD === 'string' ? parseFloat(poolData.totalValueLockedUSD) : poolData.totalValueLockedUSD;
+        const tvlValue = typeof poolData.totalValueLockedUSD === 'string' ? parseFloat(poolData.totalValueLockedUSD) : Number(poolData.totalValueLockedUSD);
         const basePrice = Math.max(0.05, Math.min(0.1, tvlValue / 100000));
         newMinPrice = basePrice * 0.9;
         newMaxPrice = basePrice * 1.1;
@@ -508,7 +500,7 @@ export default function AddLiquidityPage() {
       console.log('🔐 [ADD-LIQUIDITY] Iniciando criação de liquidez com aprovação automática:', {
         selectedInputToken,
         inputAmount,
-        poolTokens: poolData.tokens.map(t => t.symbol)
+        poolTokens: poolData.tokens.map((t: any) => t.symbol)
       });
 
       const token0 = poolData.tokens[0];
@@ -813,7 +805,7 @@ export default function AddLiquidityPage() {
       console.log('🧮 [ADD-LIQUIDITY] Calculando quantidades:', {
         selectedInputToken,
         inputAmount,
-        poolTokens: poolData.tokens.map(t => t.symbol)
+        poolTokens: poolData.tokens.map((t: any) => t.symbol)
       });
 
       const token0 = poolData.tokens[0];
@@ -1082,8 +1074,8 @@ export default function AddLiquidityPage() {
     
     // Usar preço atual baseado nos dados do pool
     const currentPrice = poolData?.stats?.volumeInUSD ? 
-      (poolData.stats.volumeInUSD / 1000000) : 
-      ((minPrice + maxPrice) / 2) || 0.1;
+      (Number(poolData.stats.volumeInUSD) / 1000000) : 
+      (Number(minPrice) + Number(maxPrice)) / 2 || 0.1;
     
     switch (range) {
       case '± 10%':
@@ -1750,55 +1742,55 @@ export default function AddLiquidityPage() {
   };
 
   const renderStep3 = () => {
-
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {/* Status Messages */}
+        {isApproving && (
+          <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <div>
+                <div className="text-blue-400 font-medium">Criando liquidez...</div>
+                <div className="text-slate-400 text-sm">Aprovando tokens e criando posição de liquidez</div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {isApproved && (
+          <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm">✓</span>
+              </div>
+              <div>
+                <div className="text-green-400 font-medium">Liquidez criada com sucesso!</div>
+                <div className="text-slate-400 text-sm">Redirecionando para a página do pool...</div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {approvalError && (
+          <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm">✗</span>
+              </div>
+              <div>
+                <div className="text-red-400 font-medium">Erro ao criar liquidez</div>
+                <div className="text-slate-400 text-sm">{approvalError}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Transaction Details Card */}
         <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
           <CardContent className="p-6">
             <div className="space-y-4">
-              {/* Liquidity Creation Status */}
-              {isApproving && (
-                <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                    <div>
-                      <div className="text-blue-400 font-medium">Criando liquidez...</div>
-                      <div className="text-slate-400 text-sm">Aprovando tokens e criando posição de liquidez</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {isApproved && (
-                <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm">✓</span>
-                    </div>
-                    <div>
-                      <div className="text-green-400 font-medium">Liquidez criada com sucesso!</div>
-                      <div className="text-slate-400 text-sm">Redirecionando para a página do pool...</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {approvalError && (
-                <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm">✗</span>
-                    </div>
-                    <div>
-                      <div className="text-red-400 font-medium">Erro ao criar liquidez</div>
-                      <div className="text-slate-400 text-sm">{approvalError}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Transação</span>
                 <span className="text-white">Adição de liquidez</span>
@@ -1807,16 +1799,31 @@ export default function AddLiquidityPage() {
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Provedor</span>
                 <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center">
+                  {poolData?.provider?.logoUrl ? (
+                    <img 
+                      src={poolData.provider.logoUrl} 
+                      alt={poolData.provider.name}
+                      className="w-6 h-6 rounded-full"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (nextElement) nextElement.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center"
+                    style={{ display: poolData?.provider?.logoUrl ? 'none' : 'flex' }}
+                  >
                     <span className="text-white text-xs font-bold">U</span>
                   </div>
                   <a 
-                    href="https://app.uniswap.org/" 
+                    href={poolData?.provider?.explorerURL || "https://app.uniswap.org/"} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-white hover:text-yellow-400 transition-colors"
                   >
-                    Uniswap V3
+                    {poolData?.provider?.name || 'Uniswap V3'}
                   </a>
                   <span className="text-slate-400">↗</span>
                 </div>
@@ -1825,7 +1832,22 @@ export default function AddLiquidityPage() {
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Rede</span>
                 <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                  {poolData?.chain?.logo ? (
+                    <img 
+                      src={poolData.chain.logo} 
+                      alt={poolData.chain.name}
+                      className="w-6 h-6 rounded-full"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (nextElement) nextElement.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center"
+                    style={{ display: poolData?.chain?.logo ? 'none' : 'flex' }}
+                  >
                     <span className="text-white text-xs font-bold">P</span>
                   </div>
                   <a 
@@ -1834,7 +1856,7 @@ export default function AddLiquidityPage() {
                     rel="noopener noreferrer"
                     className="text-white hover:text-yellow-400 transition-colors"
                   >
-                    Polygon
+                    {poolData?.chain?.name || 'Polygon'}
                   </a>
                   <span className="text-slate-400">↗</span>
                 </div>
@@ -1853,140 +1875,293 @@ export default function AddLiquidityPage() {
           </CardContent>
         </Card>
 
-        {/* Token Sections */}
+        {/* Send/Receive Sections */}
         <div className="space-y-3">
-          {/* Token de Entrada */}
-          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">
-                      {selectedInputToken === 'USDC' ? '$' : 'B'}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="text-white font-medium">
-                      {selectedInputToken === 'USDC' ? 'USDC' : 'BRZ'}
-                    </div>
-                    <div className="text-slate-400 text-sm">Token de entrada</div>
-                    <div className="text-yellow-400 text-sm font-mono">
-                      {inputAmount} {selectedInputToken}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-white font-medium">Rede</div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">P</span>
-                    </div>
-                    <span className="text-slate-400 text-sm">Polygon</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Token 1 do Pool */}
-          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    {poolData?.tokens?.[0]?.logo ? (
-                      <img 
-                        src={poolData.tokens[0].logo} 
-                        alt={poolData.tokens[0].symbol}
-                        className="w-6 h-6 rounded-full"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          const nextEl = e.currentTarget.nextElementSibling as HTMLElement | null;
-                          if (nextEl) nextEl.style.display = 'block';
-                        }}
-                      />
-                    ) : null}
-                    <span className="text-white text-sm font-bold" style={{ display: poolData?.tokens?.[0]?.logo ? 'none' : 'block' }}>
-                      {poolData?.tokens?.[0]?.symbol?.charAt(0) || '$'}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="text-white font-medium">
-                      {poolData?.tokens?.[0]?.symbol || 'Token 1'}
-                    </div>
-                    <div className="text-slate-400 text-sm">Token do pool</div>
-                    <div className="text-yellow-400 text-sm font-mono">
-                      {amountsData?.amounts?.token0MaxAmount?.token0Amount || 
-                       calculateTokenProportions(inputAmount, selectedInputToken || 'USDC').token0Amount} {poolData?.tokens?.[0]?.symbol || ''}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-white font-medium">Rede</div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">P</span>
-                    </div>
-                    <span className="text-slate-400 text-sm">Polygon</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Token 2 do Pool - Expansível */}
+          {/* Envia Section - Expansível */}
           <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
             <CardContent className="p-4">
               <div 
-                className="flex items-center justify-between cursor-pointer"
-                onClick={() => toggleSection('recebeLink')}
+                className="flex justify-between items-center cursor-pointer"
+                onClick={() => toggleSection('envia')}
               >
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                    {poolData?.tokens?.[1]?.logo ? (
-                      <img 
-                        src={poolData.tokens[1].logo} 
-                        alt={poolData.tokens[1].symbol}
-                        className="w-6 h-6 rounded-full"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          const nextEl = e.currentTarget.nextElementSibling as HTMLElement | null;
-                          if (nextEl) nextEl.style.display = 'block';
-                        }}
-                      />
-                    ) : null}
-                    <span className="text-white text-sm font-bold" style={{ display: poolData?.tokens?.[1]?.logo ? 'none' : 'block' }}>
-                      {poolData?.tokens?.[1]?.symbol?.charAt(0) || 'L'}
-                    </span>
+                <span className="text-slate-400">Envia</span>
+                <div className="flex items-center space-x-2">
+                  {selectedInputToken === 'BRZ' && polygonTokens?.BRZ?.logo ? (
+                    <img 
+                      src={polygonTokens.BRZ.logo} 
+                      alt="BRZ"
+                      className="w-6 h-6 rounded-full"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (nextElement) nextElement.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="w-6 h-6 bg-gradient-to-br from-green-400 to-purple-500 rounded-full flex items-center justify-center"
+                    style={{ display: (selectedInputToken === 'BRZ' && polygonTokens?.BRZ?.logo) ? 'none' : 'flex' }}
+                  >
+                    <span className="text-white text-xs font-bold">B</span>
                   </div>
-                  <div>
-                    <div className="text-white font-medium">
-                      {poolData?.tokens?.[1]?.symbol || 'Token 2'}
+                  <span className="text-white">{selectedInputToken || 'BRZ'}</span>
+                  <span className="text-slate-400">
+                    {expandedSections.envia ? '▲' : '▼'}
+                  </span>
+                </div>
+              </div>
+              
+              {expandedSections.envia && (
+                <div className="mt-4 pt-4 border-t border-slate-700">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Token</span>
+                      <a
+                        href={`https://polygonscan.com/token/${polygonTokens?.[selectedInputToken || 'BRZ']?.address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:underline flex items-center space-x-2"
+                      >
+                        {selectedInputToken === 'BRZ' && polygonTokens?.BRZ?.logo ? (
+                          <img 
+                            src={polygonTokens.BRZ.logo} 
+                            alt="BRZ"
+                            className="w-4 h-4 rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) nextElement.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        {selectedInputToken === 'USDC' && polygonTokens?.USDC?.logo ? (
+                          <img 
+                            src={polygonTokens.USDC.logo} 
+                            alt="USDC"
+                            className="w-4 h-4 rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) nextElement.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-4 h-4 bg-gradient-to-br from-green-400 to-purple-500 rounded-full flex items-center justify-center"
+                          style={{ display: (selectedInputToken === 'BRZ' && polygonTokens?.BRZ?.logo) || (selectedInputToken === 'USDC' && polygonTokens?.USDC?.logo) ? 'none' : 'flex' }}
+                        >
+                          <span className="text-white text-xs font-bold">
+                            {selectedInputToken === 'USDC' ? '$' : 'B'}
+                          </span>
+                        </div>
+                        <span className="font-medium">{selectedInputToken || 'BRZ'}</span>
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
                     </div>
-                    <div className="text-slate-400 text-sm">Token do pool</div>
-                    <div className="text-yellow-400 text-sm font-mono">
-                      {amountsData?.amounts?.token0MaxAmount?.token1Amount || 
-                       calculateTokenProportions(inputAmount, selectedInputToken || 'USDC').token1Amount} {poolData?.tokens?.[1]?.symbol || ''}
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Rede</span>
+                      <div className="flex items-center space-x-2">
+                        {poolData?.chain?.logo ? (
+                          <img 
+                            src={poolData.chain.logo} 
+                            alt={poolData.chain.name}
+                            className="w-4 h-4 rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) nextElement.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center"
+                          style={{ display: poolData?.chain?.logo ? 'none' : 'flex' }}
+                        >
+                          <span className="text-white text-xs">⬟</span>
+                        </div>
+                        <span className="text-white">{poolData?.chain?.name || 'Polygon'}</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Contrato do token</span>
+                      <div className="flex items-center space-x-2">
+                        {polygonTokens?.[selectedInputToken || 'BRZ']?.address ? (
+                          <a 
+                            href={`https://polygonscan.com/token/${polygonTokens[selectedInputToken || 'BRZ'].address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:underline flex items-center space-x-1"
+                          >
+                            <span className="text-white">
+                              {polygonTokens[selectedInputToken || 'BRZ'].address.slice(0, 6)}...{polygonTokens[selectedInputToken || 'BRZ'].address.slice(-4)}
+                            </span>
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        ) : (
+                          <div className="flex items-center space-x-1">
+                            <span className="text-white">0x4ed1...475dc</span>
+                            <ExternalLink className="w-4 h-4" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recebe USDC.E Section - Expansível */}
+          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
+            <CardContent className="p-4">
+              <div 
+                className="flex justify-between items-center cursor-pointer"
+                onClick={() => toggleSection('recebeUsdc')}
+              >
+                <span className="text-slate-400">Recebe</span>
                 <div className="flex items-center space-x-2">
-                  <div className="text-right">
-                    <div className="text-white font-medium">Rede</div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs">⬟</span>
+                  {poolData?.tokens?.[0]?.logo ? (
+                    <img 
+                      src={poolData.tokens[0].logo} 
+                      alt={poolData.tokens[0].symbol}
+                      className="w-6 h-6 rounded-full"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (nextElement) nextElement.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
+                    style={{ display: poolData?.tokens?.[0]?.logo ? 'none' : 'flex' }}
+                  >
+                    <span className="text-white text-xs font-bold">$</span>
+                  </div>
+                  <span className="text-white">{(poolData?.tokens?.[0]?.symbol || 'USDC.E').toUpperCase()}</span>
+                  <span className="text-slate-400">
+                    {expandedSections.recebeUsdc ? '▲' : '▼'}
+                  </span>
+                </div>
+              </div>
+              
+              {expandedSections.recebeUsdc && (
+                <div className="mt-4 pt-4 border-t border-slate-700">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Token</span>
+                      <a
+                        href={`https://polygonscan.com/token/${poolData?.tokens?.[0]?.address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:underline flex items-center space-x-2"
+                      >
+                        {poolData?.tokens?.[0]?.logo ? (
+                          <img 
+                            src={poolData.tokens[0].logo} 
+                            alt={poolData.tokens[0].symbol}
+                            className="w-4 h-4 rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) nextElement.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center"
+                          style={{ display: poolData?.tokens?.[0]?.logo ? 'none' : 'flex' }}
+                        >
+                          <span className="text-white text-xs font-bold">$</span>
+                        </div>
+                        <span className="font-medium">{(poolData?.tokens?.[0]?.symbol || 'USDC.E').toUpperCase()}</span>
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Rede</span>
+                      <div className="flex items-center space-x-2">
+                        {poolData?.chain?.logo ? (
+                          <img 
+                            src={poolData.chain.logo} 
+                            alt={poolData.chain.name}
+                            className="w-4 h-4 rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) nextElement.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center"
+                          style={{ display: poolData?.chain?.logo ? 'none' : 'flex' }}
+                        >
+                          <span className="text-white text-xs">⬟</span>
+                        </div>
+                        <span className="text-white">{poolData?.chain?.name || 'Polygon'}</span>
                       </div>
-                      <span className="text-slate-400 text-sm">Polygon</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Contrato do token</span>
+                      <div className="flex items-center space-x-2">
+                        {poolData?.tokens?.[0]?.address ? (
+                          <a 
+                            href={`https://polygonscan.com/token/${poolData.tokens[0].address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:underline flex items-center space-x-1"
+                          >
+                            <span className="text-white">
+                              {`${poolData.tokens[0].address.slice(0, 6)}...${poolData.tokens[0].address.slice(-6)}`}
+                            </span>
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        ) : (
+                          <div className="flex items-center space-x-1">
+                            <span className="text-white">0x279...84174</span>
+                            <span className="text-slate-400">□</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="ml-2">
-                    {expandedSections.recebeLink ? (
-                      <span className="text-slate-400">▲</span>
-                    ) : (
-                      <span className="text-slate-400">▼</span>
-                    )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recebe LINK Section - Expansível */}
+          <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
+            <CardContent className="p-4">
+              <div 
+                className="flex justify-between items-center cursor-pointer"
+                onClick={() => toggleSection('recebeLink')}
+              >
+                <span className="text-slate-400">Recebe</span>
+                <div className="flex items-center space-x-2">
+                  {poolData?.tokens?.[1]?.logo ? (
+                    <img 
+                      src={poolData.tokens[1].logo} 
+                      alt={poolData.tokens[1].symbol}
+                      className="w-6 h-6 rounded-full"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (nextElement) nextElement.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center"
+                    style={{ display: poolData?.tokens?.[1]?.logo ? 'none' : 'flex' }}
+                  >
+                    <span className="text-white text-xs font-bold">L</span>
                   </div>
+                  <span className="text-white">{(poolData?.tokens?.[1]?.symbol || 'LINK').toUpperCase()}</span>
+                  <span className="text-slate-400">
+                    {expandedSections.recebeLink ? '▲' : '▼'}
+                  </span>
                 </div>
               </div>
               
@@ -1995,22 +2170,56 @@ export default function AddLiquidityPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Token</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs">
-                            {poolData?.tokens?.[1]?.symbol?.charAt(0) || 'L'}
-                          </span>
+                      <a
+                        href={`https://polygonscan.com/token/${poolData?.tokens?.[1]?.address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-purple-400 hover:underline flex items-center space-x-2"
+                      >
+                        {poolData?.tokens?.[1]?.logo ? (
+                          <img 
+                            src={poolData.tokens[1].logo} 
+                            alt={poolData.tokens[1].symbol}
+                            className="w-4 h-4 rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) nextElement.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center"
+                          style={{ display: poolData?.tokens?.[1]?.logo ? 'none' : 'flex' }}
+                        >
+                          <span className="text-white text-xs">⬟</span>
                         </div>
-                        <span className="text-white">{poolData?.tokens?.[1]?.symbol || 'Token 2'}</span>
-                      </div>
+                        <span className="font-medium">{(poolData?.tokens?.[1]?.symbol || 'LINK').toUpperCase()}</span>
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Rede</span>
                       <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                        {poolData?.chain?.logo ? (
+                          <img 
+                            src={poolData.chain.logo} 
+                            alt={poolData.chain.name}
+                            className="w-4 h-4 rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) nextElement.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center"
+                          style={{ display: poolData?.chain?.logo ? 'none' : 'flex' }}
+                        >
                           <span className="text-white text-xs">⬟</span>
                         </div>
-                        <span className="text-white">Polygon</span>
+                        <span className="text-white">{poolData?.chain?.name || 'Polygon'}</span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
@@ -2021,14 +2230,19 @@ export default function AddLiquidityPage() {
                             href={`https://polygonscan.com/token/${poolData.tokens[1].address}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-white hover:text-yellow-400 transition-colors"
+                            className="text-purple-400 hover:underline flex items-center space-x-1"
                           >
-                            {`${poolData.tokens[1].address.slice(0, 6)}...${poolData.tokens[1].address.slice(-6)}`}
+                            <span className="text-white">
+                              {`${poolData.tokens[1].address.slice(0, 6)}...${poolData.tokens[1].address.slice(-6)}`}
+                            </span>
+                            <ExternalLink className="w-4 h-4" />
                           </a>
                         ) : (
-                          <span className="text-white">0x000...00000</span>
+                          <div className="flex items-center space-x-1">
+                            <span className="text-white">0x53e...bad39</span>
+                            <span className="text-slate-400">□</span>
+                          </div>
                         )}
-                        <span className="text-slate-400">□</span>
                       </div>
                     </div>
                   </div>
@@ -2037,54 +2251,56 @@ export default function AddLiquidityPage() {
             </CardContent>
           </Card>
 
-          {/* Adiciona à pool - Expansível */}
+          {/* Adiciona à pool Section - Expansível */}
           <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
             <CardContent className="p-4">
               <div 
-                className="flex items-center justify-between cursor-pointer"
+                className="flex justify-between items-center cursor-pointer"
                 onClick={() => toggleSection('adicionaPool')}
               >
-                <div className="flex items-center space-x-3">
-                  <div className="flex -space-x-2">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center border-2 border-slate-800">
-                      <span className="text-white text-sm font-bold">
-                        {poolData?.tokens?.[0]?.symbol?.charAt(0) || '$'}
-                      </span>
-                    </div>
-                    <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center border-2 border-slate-800">
-                      <span className="text-white text-sm font-bold">
-                        {poolData?.tokens?.[1]?.symbol?.charAt(0) || 'L'}
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-white font-medium">Adiciona à pool</div>
-                    <div className="text-slate-400 text-sm">
-                      {poolData?.tokens && poolData.tokens.length >= 2 ? (
-                        `${poolData.tokens[0].symbol.toUpperCase()}/${poolData.tokens[1].symbol.toUpperCase()}`
-                      ) : (
-                        'Carregando...'
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <span className="text-slate-400">Adiciona à pool</span>
                 <div className="flex items-center space-x-2">
-                  <div className="text-right">
-                    <div className="text-white font-medium">Rede</div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs">⬟</span>
-                      </div>
-                      <span className="text-slate-400 text-sm">Polygon</span>
+                  <div className="flex -space-x-2">
+                    {poolData?.tokens?.[0]?.logo ? (
+                      <img 
+                        src={poolData.tokens[0].logo} 
+                        alt={poolData.tokens[0].symbol}
+                        className="w-6 h-6 rounded-full border-2 border-slate-800"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (nextElement) nextElement.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border-2 border-slate-800"
+                      style={{ display: poolData?.tokens?.[0]?.logo ? 'none' : 'flex' }}
+                    >
+                      <span className="text-white text-xs font-bold">$</span>
+                    </div>
+                    {poolData?.tokens?.[1]?.logo ? (
+                      <img 
+                        src={poolData.tokens[1].logo} 
+                        alt={poolData.tokens[1].symbol}
+                        className="w-6 h-6 rounded-full border-2 border-slate-800"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (nextElement) nextElement.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center border-2 border-slate-800"
+                      style={{ display: poolData?.tokens?.[1]?.logo ? 'none' : 'flex' }}
+                    >
+                      <span className="text-white text-xs font-bold">L</span>
                     </div>
                   </div>
-                  <div className="ml-2">
-                    {expandedSections.adicionaPool ? (
-                      <span className="text-slate-400">▲</span>
-                    ) : (
-                      <span className="text-slate-400">▼</span>
-                    )}
-                  </div>
+                  <span className="text-slate-400">
+                    {expandedSections.adicionaPool ? '▲' : '▼'}
+                  </span>
                 </div>
               </div>
               
@@ -2093,33 +2309,86 @@ export default function AddLiquidityPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Token 1</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs">
-                            {poolData?.tokens?.[0]?.symbol?.charAt(0) || '$'}
-                          </span>
+                      <a
+                        href={`https://polygonscan.com/token/${poolData?.tokens?.[0]?.address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:underline flex items-center space-x-2"
+                      >
+                        {poolData?.tokens?.[0]?.logo ? (
+                          <img 
+                            src={poolData.tokens[0].logo} 
+                            alt={poolData.tokens[0].symbol}
+                            className="w-4 h-4 rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) nextElement.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center"
+                          style={{ display: poolData?.tokens?.[0]?.logo ? 'none' : 'flex' }}
+                        >
+                          <span className="text-white text-xs font-bold">$</span>
                         </div>
-                        <span className="text-white">{poolData?.tokens?.[0]?.symbol || 'Token 1'}</span>
-                      </div>
+                        <span className="font-medium">{(poolData?.tokens?.[0]?.symbol || 'USDC.E').toUpperCase()}</span>
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Token 2</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs">
-                            {poolData?.tokens?.[1]?.symbol?.charAt(0) || 'L'}
-                          </span>
+                      <a
+                        href={`https://polygonscan.com/token/${poolData?.tokens?.[1]?.address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-purple-400 hover:underline flex items-center space-x-2"
+                      >
+                        {poolData?.tokens?.[1]?.logo ? (
+                          <img 
+                            src={poolData.tokens[1].logo} 
+                            alt={poolData.tokens[1].symbol}
+                            className="w-4 h-4 rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) nextElement.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center"
+                          style={{ display: poolData?.tokens?.[1]?.logo ? 'none' : 'flex' }}
+                        >
+                          <span className="text-white text-xs">⬟</span>
                         </div>
-                        <span className="text-white">{poolData?.tokens?.[1]?.symbol || 'Token 2'}</span>
-                      </div>
+                        <span className="font-medium">{(poolData?.tokens?.[1]?.symbol || 'LINK').toUpperCase()}</span>
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Rede</span>
                       <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                        {poolData?.chain?.logo ? (
+                          <img 
+                            src={poolData.chain.logo} 
+                            alt={poolData.chain.name}
+                            className="w-4 h-4 rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) nextElement.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center"
+                          style={{ display: poolData?.chain?.logo ? 'none' : 'flex' }}
+                        >
                           <span className="text-white text-xs">⬟</span>
                         </div>
-                        <span className="text-white">Polygon</span>
+                        <span className="text-white">{poolData?.chain?.name || 'Polygon'}</span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
@@ -2130,14 +2399,19 @@ export default function AddLiquidityPage() {
                             href={`https://polygonscan.com/token/${poolData.tokens[0].address}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-white hover:text-yellow-400 transition-colors"
+                            className="text-blue-400 hover:underline flex items-center space-x-1"
                           >
-                            {`${poolData.tokens[0].address.slice(0, 6)}...${poolData.tokens[0].address.slice(-6)}`}
+                            <span className="text-white">
+                              {`${poolData.tokens[0].address.slice(0, 6)}...${poolData.tokens[0].address.slice(-6)}`}
+                            </span>
+                            <ExternalLink className="w-4 h-4" />
                           </a>
                         ) : (
-                          <span className="text-white">0x000...00000</span>
+                          <div className="flex items-center space-x-1">
+                            <span className="text-white">0x279...84174</span>
+                            <span className="text-slate-400">□</span>
+                          </div>
                         )}
-                        <span className="text-slate-400">□</span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
@@ -2148,14 +2422,19 @@ export default function AddLiquidityPage() {
                             href={`https://polygonscan.com/token/${poolData.tokens[1].address}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-white hover:text-yellow-400 transition-colors"
+                            className="text-purple-400 hover:underline flex items-center space-x-1"
                           >
-                            {`${poolData.tokens[1].address.slice(0, 6)}...${poolData.tokens[1].address.slice(-6)}`}
+                            <span className="text-white">
+                              {`${poolData.tokens[1].address.slice(0, 6)}...${poolData.tokens[1].address.slice(-6)}`}
+                            </span>
+                            <ExternalLink className="w-4 h-4" />
                           </a>
                         ) : (
-                          <span className="text-white">0x000...00000</span>
+                          <div className="flex items-center space-x-1">
+                            <span className="text-white">0x53e...bad39</span>
+                            <span className="text-slate-400">□</span>
+                          </div>
                         )}
-                        <span className="text-slate-400">□</span>
                       </div>
                     </div>
                   </div>
@@ -2164,39 +2443,19 @@ export default function AddLiquidityPage() {
             </CardContent>
           </Card>
 
-          {/* Recebe NFT - Expansível */}
+          {/* Recebe NFT Section - Expansível */}
           <Card className="bg-slate-800/60 border border-slate-700/60 rounded-2xl">
             <CardContent className="p-4">
               <div 
-                className="flex items-center justify-between cursor-pointer"
+                className="flex justify-between items-center cursor-pointer"
                 onClick={() => toggleSection('recebeNft')}
               >
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">NFT</span>
-                  </div>
-                  <div>
-                    <div className="text-white font-medium">Recebe +Uniswap V3 Positions NFT #</div>
-                    <div className="text-slate-400 text-sm">Representação da posição</div>
-                  </div>
-                </div>
+                <span className="text-slate-400">Recebe</span>
                 <div className="flex items-center space-x-2">
-                  <div className="text-right">
-                    <div className="text-white font-medium">Rede</div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs">⬟</span>
-                      </div>
-                      <span className="text-slate-400 text-sm">Polygon</span>
-                    </div>
-                  </div>
-                  <div className="ml-2">
-                    {expandedSections.recebeNft ? (
-                      <span className="text-slate-400">▲</span>
-                    ) : (
-                      <span className="text-slate-400">▼</span>
-                    )}
-                  </div>
+                  <span className="text-white">+Uniswap V3 Positions NFT #</span>
+                  <span className="text-slate-400">
+                    {expandedSections.recebeNft ? '▲' : '▼'}
+                  </span>
                 </div>
               </div>
               
@@ -2206,10 +2465,25 @@ export default function AddLiquidityPage() {
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Rede</span>
                       <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                        {poolData?.chain?.logo ? (
+                          <img 
+                            src={poolData.chain.logo} 
+                            alt={poolData.chain.name}
+                            className="w-4 h-4 rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (nextElement) nextElement.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center"
+                          style={{ display: poolData?.chain?.logo ? 'none' : 'flex' }}
+                        >
                           <span className="text-white text-xs">⬟</span>
                         </div>
-                        <span className="text-white">Polygon</span>
+                        <span className="text-white">{poolData?.chain?.name || 'Polygon'}</span>
                       </div>
                     </div>
                   </div>

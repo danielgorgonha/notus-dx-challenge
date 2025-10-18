@@ -25,8 +25,16 @@ export interface PoolMetrics {
 export interface PoolData {
   id: string;
   address: string;
-  chain: { id: number; name: string };
-  provider: { name: string; logoUrl?: string };
+  chain: { 
+    id: number; 
+    name: string; 
+    logo?: string; 
+  };
+  provider: { 
+    name: string; 
+    logoUrl?: string; 
+    explorerURL?: string; 
+  };
   fee: number;
   totalValueLockedUSD: string | number;
   tokens: Array<{
