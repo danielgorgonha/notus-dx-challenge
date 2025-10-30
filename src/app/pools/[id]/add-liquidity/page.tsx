@@ -14,6 +14,10 @@ import { ArrowLeft, ArrowRight, RefreshCw, ZoomOut, ZoomIn, Plus, Info, Trending
 import { AppLayout } from '@/components/layout/app-layout';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
+import { usePrivy } from '@privy-io/react-auth';
+import { useToast } from "@/hooks/use-toast";
+import { createSwapQuote } from '@/lib/actions/swap';
+import { executeUserOperation } from '@/lib/actions/user-operation';
 
 // Função para processar dados dos tokens (mesma abordagem do TokenSelector)
 const processTokensData = (tokens: any[], portfolioTokens: any) => {
@@ -138,6 +142,10 @@ export default function AddLiquidityPage() {
   
   // Estado para controlar a ordem dos tokens (false = ordem original, true = invertido)
   const [tokensInverted, setTokensInverted] = useState(false);
+  
+  // Hooks do Privy
+  const { signMessage } = usePrivy();
+  const toast = useToast();
 
   // Buscar dados históricos reais do pool para o gráfico
   const { data: historicalData, isLoading: historicalLoading } = usePoolHistoricalData(poolId || '', 365);
@@ -471,33 +479,18 @@ export default function AddLiquidityPage() {
     }
   };
 
-  // Função para criar liquidez usando a API real do Notus
+  // Função para criar liquidez com swaps automáticos (seguindo padrão do swap/page.tsx)
   const createLiquidityWithApproval = async () => {
     if (!poolData?.tokens || poolData.tokens.length < 2 || !selectedInputToken || !inputAmount) {
-      console.error('❌ [ADD-LIQUIDITY] Dados insuficientes para criar liquidez');
+      console.log('⚠️ [ADD-LIQUIDITY] Dados insuficientes para criar liquidez');
       return;
-    }
-
-    // Se amountsData não existe, gerar fallback
-    let finalAmountsData = amountsData;
-    if (!finalAmountsData) {
-      console.log('🔄 [ADD-LIQUIDITY] Gerando amountsData de fallback...');
-      const fallbackAmounts = calculateTokenProportions(inputAmount, selectedInputToken);
-      finalAmountsData = {
-        amounts: {
-          token0MaxAmount: {
-            token0Amount: fallbackAmounts.token0Amount,
-            token1Amount: fallbackAmounts.token1Amount
-          }
-        }
-      };
     }
 
     try {
       setIsApproving(true);
       setApprovalError(null);
       
-      console.log('🔐 [ADD-LIQUIDITY] Iniciando criação de liquidez com aprovação automática:', {
+      console.log('🚀 [ADD-LIQUIDITY] Iniciando criação de liquidez com swaps automáticos:', {
         selectedInputToken,
         inputAmount,
         poolTokens: poolData.tokens.map((t: any) => t.symbol)
@@ -506,89 +499,220 @@ export default function AddLiquidityPage() {
       const token0 = poolData.tokens[0];
       const token1 = poolData.tokens[1];
       
-      // Determinar qual token é o input baseado na seleção
-      const isToken0Selected = selectedInputToken === 'USDC' && (
-        token0.symbol?.toUpperCase().includes('USDC') || 
-        token0.symbol?.toUpperCase().includes('USD') ||
-        token0.symbol?.toUpperCase().includes('USDT')
-      );
-      const isToken1Selected = selectedInputToken === 'BRZ' && (
-        token1.symbol?.toUpperCase().includes('BRZ') ||
-        token1.symbol?.toUpperCase().includes('BRL')
-      );
+      // Verificar se já temos os tokens da pool no portfolio
+      const portfolioTokens = portfolioData?.tokens || [];
+      const hasToken0 = portfolioTokens.find((t: any) => t.address?.toLowerCase() === token0.address?.toLowerCase());
+      const hasToken1 = portfolioTokens.find((t: any) => t.address?.toLowerCase() === token1.address?.toLowerCase());
       
-      console.log('🔍 [ADD-LIQUIDITY] Verificando correspondência de tokens:', {
-        selectedInputToken,
+      console.log('🔍 [ADD-LIQUIDITY] Verificando tokens no portfolio:', {
         token0Symbol: token0.symbol,
+        token0Address: token0.address,
         token1Symbol: token1.symbol,
-        isToken0Selected,
-        isToken1Selected
+        token1Address: token1.address,
+        hasToken0: !!hasToken0,
+        hasToken1: !!hasToken1,
+        token0Balance: hasToken0?.balanceFormatted,
+        token1Balance: hasToken1?.balanceFormatted
       });
       
-      if (!isToken0Selected && !isToken1Selected) {
-        console.log('⚠️ [ADD-LIQUIDITY] Token selecionado não corresponde aos tokens do pool');
-        setApprovalError('Token selecionado não corresponde aos tokens do pool');
-        return;
-      }
+      // Se já temos ambos os tokens, não precisa de swaps
+      const needsSwap = !(hasToken0 && hasToken1);
+      
+      console.log('🔄 [ADD-LIQUIDITY] Precisa de swaps:', needsSwap);
 
-      const params = {
+      let finalToken0Amount = '0';
+      let finalToken1Amount = '0';
+
+      if (needsSwap) {
+        // Executar swaps seguindo o padrão do swap/page.tsx
+        console.log('🔄 [ADD-LIQUIDITY] Executando swaps...');
+        
+        // Calcular valores 50/50 para cada token
+        const totalValue = parseFloat(inputAmount);
+        const halfValue = totalValue / 2;
+        
+        // Swap 1: BRZ → WETH
+        if (token0.symbol !== selectedInputToken) {
+          console.log(`🔄 [ADD-LIQUIDITY] Executando swap: ${selectedInputToken} → ${token0.symbol}`);
+          console.log(`🔄 [ADD-LIQUIDITY] Parâmetros do swap 1:`, {
+            amountIn: halfValue.toString(),
+            tokenIn: selectedInputToken === 'USDC' ? '0x576cf361711cd940cd9c397bb98c4c896cbd38de' : '0x4ed141110f6eeeaba9a1df36d8c26f684d2475dc',
+            tokenOut: token0.address,
+            walletAddress: walletAddress
+          });
+          
+          const swapQuote1 = await createSwapQuote({
+            amountIn: halfValue.toString(),
+            chainIdIn: 137,
+            chainIdOut: 137,
+            tokenIn: selectedInputToken === 'USDC' ? '0x576cf361711cd940cd9c397bb98c4c896cbd38de' : '0x4ed141110f6eeeaba9a1df36d8c26f684d2475dc',
+            tokenOut: token0.address,
+            walletAddress: walletAddress,
+            toAddress: walletAddress,
+            slippage: 1.0,
+            gasFeePaymentMethod: 'ADD_TO_AMOUNT',
+            payGasFeeToken: selectedInputToken === 'USDC' ? '0x576cf361711cd940cd9c397bb98c4c896cbd38de' : '0x4ed141110f6eeeaba9a1df36d8c26f684d2475dc'
+          });
+          
+          const quote1 = swapQuote1.quotes?.[0];
+          if (quote1?.userOperationHash) {
+            console.log('✍️ [ADD-LIQUIDITY] Solicitando assinatura para swap 1...');
+            const signature1 = await signMessage({ message: quote1.userOperationHash });
+            
+            if (signature1) {
+              console.log('🚀 [ADD-LIQUIDITY] Executando swap 1...');
+              await executeUserOperation({
+                userOperationHash: quote1.userOperationHash,
+                signature: (signature1 as any).signature || signature1
+              });
+              finalToken0Amount = quote1.minAmountOut;
+              console.log('✅ [ADD-LIQUIDITY] Swap 1 executado com sucesso');
+            }
+          }
+        }
+        
+        // Swap 2: BRZ → USDT
+        if (token1.symbol !== selectedInputToken) {
+          console.log(`🔄 [ADD-LIQUIDITY] Executando swap: ${selectedInputToken} → ${token1.symbol}`);
+          console.log(`🔄 [ADD-LIQUIDITY] Parâmetros do swap 2:`, {
+            amountIn: halfValue.toString(),
+            tokenIn: selectedInputToken === 'USDC' ? '0x576cf361711cd940cd9c397bb98c4c896cbd38de' : '0x4ed141110f6eeeaba9a1df36d8c26f684d2475dc',
+            tokenOut: token1.address,
+            walletAddress: walletAddress
+          });
+          
+          const swapQuote2 = await createSwapQuote({
+            amountIn: halfValue.toString(),
+            chainIdIn: 137,
+            chainIdOut: 137,
+            tokenIn: selectedInputToken === 'USDC' ? '0x576cf361711cd940cd9c397bb98c4c896cbd38de' : '0x4ed141110f6eeeaba9a1df36d8c26f684d2475dc',
+            tokenOut: token1.address,
+            walletAddress: walletAddress,
+            toAddress: walletAddress,
+            slippage: 1.0,
+            gasFeePaymentMethod: 'ADD_TO_AMOUNT',
+            payGasFeeToken: selectedInputToken === 'USDC' ? '0x576cf361711cd940cd9c397bb98c4c896cbd38de' : '0x4ed141110f6eeeaba9a1df36d8c26f684d2475dc'
+          });
+          
+          const quote2 = swapQuote2.quotes?.[0];
+          if (quote2?.userOperationHash) {
+            console.log('✍️ [ADD-LIQUIDITY] Solicitando assinatura para swap 2...');
+            const signature2 = await signMessage({ message: quote2.userOperationHash });
+            
+            if (signature2) {
+              console.log('🚀 [ADD-LIQUIDITY] Executando swap 2...');
+              await executeUserOperation({
+                userOperationHash: quote2.userOperationHash,
+                signature: (signature2 as any).signature || signature2
+              });
+              finalToken1Amount = quote2.minAmountOut;
+              console.log('✅ [ADD-LIQUIDITY] Swap 2 executado com sucesso');
+            }
+          }
+        }
+      } else {
+        // Não precisa de swap, usar saldos existentes
+        console.log('✅ [ADD-LIQUIDITY] Usando saldos existentes do portfolio');
+        
+        // Calcular proporções baseadas no valor total
+        const totalValue = parseFloat(inputAmount);
+        const token0Value = totalValue / 2; // 50% para cada token
+        const token1Value = totalValue / 2;
+        
+        // Usar saldos existentes (limitados pelo que temos)
+        const token0Balance = parseFloat(hasToken0?.balanceFormatted || '0');
+        const token1Balance = parseFloat(hasToken1?.balanceFormatted || '0');
+        
+        finalToken0Amount = Math.min(token0Value, token0Balance).toString();
+        finalToken1Amount = Math.min(token1Value, token1Balance).toString();
+        
+        console.log('💰 [ADD-LIQUIDITY] Valores calculados dos saldos existentes:', {
+          totalValue,
+          token0Value,
+          token1Value,
+          token0Balance,
+          token1Balance,
+          finalToken0Amount,
+          finalToken1Amount
+        });
+      }
+      
+      console.log('📊 [ADD-LIQUIDITY] Valores finais para liquidez:', {
+        finalToken0Amount,
+        finalToken1Amount,
+        token0Symbol: token0.symbol,
+        token1Symbol: token1.symbol
+      });
+      
+      // Criar liquidez seguindo o padrão do swap/page.tsx
+      console.log('🏊‍♂️ [ADD-LIQUIDITY] Criando liquidez...');
+      
+      const liquidityParams = {
         walletAddress: walletAddress,
-        toAddress: walletAddress, // Mesmo endereço para simplicidade
-        chainId: 137, // Polygon
+        toAddress: walletAddress,
+        chainId: 137,
         payGasFeeToken: token0.address,
         gasFeePaymentMethod: 'ADD_TO_AMOUNT',
         token0: token0.address,
         token1: token1.address,
         poolFeePercent: poolData.fee || 0.3,
+        token0Amount: finalToken0Amount,
+        token1Amount: finalToken1Amount,
         minPrice: minPrice,
         maxPrice: maxPrice,
-        slippage: 1.0, // 1% de slippage
+        slippage: 1.0,
         liquidityProvider: 'UNISWAP_V3',
         transactionFeePercent: 2.5
       };
-
-      // Adicionar as quantidades baseadas no cálculo da API
-      if (finalAmountsData?.amounts?.token0MaxAmount) {
-        // @ts-expect-error - Step 2/3 functionality not fully implemented yet
-        params.token0Amount = finalAmountsData.amounts.token0MaxAmount.token0Amount;
-        // @ts-expect-error - Step 2/3 functionality not fully implemented yet
-        params.token1Amount = finalAmountsData.amounts.token0MaxAmount.token1Amount;
-      } else {
-        // Fallback para valores padrão
-        // @ts-expect-error - Step 2/3 functionality not fully implemented yet
-        params.token0Amount = isToken0Selected ? inputAmount : '0';
-        // @ts-expect-error - Step 2/3 functionality not fully implemented yet
-        params.token1Amount = isToken1Selected ? inputAmount : '0';
-      }
-
-      console.log('🚀 [ADD-LIQUIDITY] Chamando API createLiquidity (com aprovação automática):', params);
-
-      // Chamar nossa API route interna que faz proxy para a API Notus
+      
+      console.log('🚀 [ADD-LIQUIDITY] Parâmetros da liquidez:', liquidityParams);
+      
       const response = await fetch('/api/liquidity/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(params),
+        body: JSON.stringify(liquidityParams),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `Erro na API: ${response.status}`);
+        throw new Error(`Erro na API: ${errorData.error || response.status}`);
       }
 
-      const responseData = await response.json();
-      console.log('✅ [ADD-LIQUIDITY] Resposta da API createLiquidity:', responseData);
-
-      // Marcar como aprovado e criado
-      setIsApproved(true);
+      const liquidityResponse = await response.json();
+      console.log('📋 [ADD-LIQUIDITY] Resposta da API de liquidez:', liquidityResponse);
+      console.log('📋 [ADD-LIQUIDITY] Estrutura da resposta:', {
+        hasOperation: !!liquidityResponse.operation,
+        operationKeys: liquidityResponse.operation ? Object.keys(liquidityResponse.operation) : [],
+        fullResponse: liquidityResponse
+      });
       
-      // Redirecionar para a página do pool após sucesso
-      router.push(`/pools/${poolId}`);
+      // O endpoint /api/v1/liquidity/create não retorna userOperationHash
+      // Ele cria a liquidez diretamente, então vamos para a tela de sucesso
+      if (liquidityResponse.operation) {
+        console.log('✅ [ADD-LIQUIDITY] Liquidez criada com sucesso!');
+        setCurrentStep(4);
+        setIsApproved(true);
+        
+        toast.success('Liquidez Criada', 'Sua posição de liquidez foi criada com sucesso!', 5000);
+      } else {
+        console.error('❌ [ADD-LIQUIDITY] Operação não encontrada na resposta:', liquidityResponse);
+        setApprovalError('Erro: Operação não encontrada na resposta da API');
+      }
       
     } catch (error) {
       console.error('❌ [ADD-LIQUIDITY] Erro ao criar liquidez:', error);
-      setApprovalError('Erro ao criar liquidez. Verifique seus saldos e tente novamente.');
+      console.error('❌ [ADD-LIQUIDITY] Detalhes do erro:', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+        selectedInputToken,
+        inputAmount,
+        poolTokens: poolData.tokens?.map((t: any) => ({ symbol: t.symbol, address: t.address }))
+      });
+      
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      setApprovalError(`Erro ao criar liquidez: ${errorMessage}. Verifique seus saldos e tente novamente.`);
     } finally {
       setIsApproving(false);
     }
@@ -1665,6 +1789,91 @@ export default function AddLiquidityPage() {
     }));
   };
 
+  const renderStep4 = () => {
+    return (
+      <div className="text-center py-8">
+        {/* Success Icon */}
+        <div className="mb-8">
+          <div className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-2xl">
+            <div className="w-24 h-24 bg-blue-300 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 bg-blue-200 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center">
+                    <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                      <div className="w-4 h-4 bg-green-400 rounded-full flex items-center justify-center">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Success Message */}
+        <h2 className="text-2xl font-bold text-white mb-4">
+          Seu investimento foi enviado para ser processado na blockchain!
+        </h2>
+
+        {/* Transaction Details */}
+        <div className="bg-slate-800 rounded-lg p-6 mb-6">
+          <div className="space-y-4">
+            {/* You Added */}
+            <div className="flex items-center justify-between">
+              <span className="text-slate-300">Você adicionou</span>
+            </div>
+            
+            {/* Token 1 - WETH */}
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">◇</span>
+              </div>
+              <span className="text-white font-medium">0.000209 WETH</span>
+            </div>
+            
+            {/* Token 2 - USDT */}
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">$</span>
+              </div>
+              <span className="text-white font-medium">0.804119 USDT</span>
+            </div>
+
+            <div className="border-t border-slate-600 pt-4">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300">Você recebe</span>
+              </div>
+              <div className="flex items-center space-x-3 mt-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">NFT</span>
+                </div>
+                <span className="text-white font-medium">+NFT Uniswap V3</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="space-y-4">
+          <Button
+            onClick={() => router.push('/pools')}
+            className="w-full bg-yellow-500 text-black hover:bg-yellow-600 font-medium py-3 px-6 rounded-lg transition-all duration-200 shadow-lg"
+          >
+            Voltar à tela de início
+          </Button>
+          
+          <Button
+            onClick={() => router.push(`/pools/${poolId}`)}
+            className="w-full bg-transparent text-white hover:bg-slate-700 font-medium py-3 px-6 rounded-lg transition-all duration-200 border border-slate-600"
+          >
+            Acompanhar transação
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   const renderStep3 = () => {
     return (
       <div className="space-y-6">
@@ -2491,6 +2700,7 @@ export default function AddLiquidityPage() {
               {currentStep === 1 && renderStep1()}
               {currentStep === 2 && renderStep2()}
               {currentStep === 3 && renderStep3()}
+              {currentStep === 4 && renderStep4()}
             </div>
 
             {/* Navigation */}
