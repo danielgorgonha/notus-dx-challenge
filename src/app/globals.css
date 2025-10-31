@@ -87,4 +87,14 @@
       height: max(0px, env(safe-area-inset-bottom));
     }
   }
+  
+  /* Prevent body scroll when sidebar is open on mobile */
+  body:has([data-sidebar-open="true"]) {
+    overflow: hidden;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
 }

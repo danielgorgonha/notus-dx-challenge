@@ -32,12 +32,15 @@ export function AppLayout({
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div 
+      className="flex min-h-screen h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden"
+      data-sidebar-open={sidebarOpen ? "true" : "false"}
+    >
       {/* Desktop Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
       
       {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:ml-72">
+      <div className="flex-1 flex flex-col lg:ml-72 min-h-0 h-full overflow-hidden">
         {showHeader && title && (
           <Header
             title={title}
@@ -47,7 +50,7 @@ export function AppLayout({
         )}
         
         {/* Main Content with bottom padding for mobile navigation */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
+        <main className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
           <Breadcrumbs />
           {children}
         </main>
