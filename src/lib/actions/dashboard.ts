@@ -11,7 +11,7 @@ import {
   GetPortfolioUseCase,
   GetHistoryUseCase,
 } from '@/server/use-cases/wallet';
-import type { GetWalletParams } from '@/shared/types/wallet.types';
+import { listTokens } from './blockchain';
 
 const walletService = createWalletService();
 
@@ -76,6 +76,24 @@ export async function registerWallet(params: {
     });
   } catch (error) {
     console.error('Error registering wallet:', error);
+    throw error;
+  }
+}
+
+/**
+ * Lista tokens suportados
+ */
+export async function listSupportedTokens({ 
+  page = 1, 
+  perPage = 50 
+}: { 
+  page?: number; 
+  perPage?: number 
+} = {}) {
+  try {
+    return await listTokens({ page, perPage });
+  } catch (error) {
+    console.error('Error listing tokens:', error);
     throw error;
   }
 }
