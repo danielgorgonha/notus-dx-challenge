@@ -80,4 +80,11 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Safe area support for mobile devices */
+  @supports (padding: max(0px)) {
+    .h-safe-area-inset-bottom {
+      height: max(0px, env(safe-area-inset-bottom));
+    }
+  }
 }

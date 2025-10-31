@@ -57,7 +57,7 @@ export function DashboardStats({
 
 
   return (
-    <div className="grid md:grid-cols-3 gap-6 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
       <div className="glass-card text-center">
         <div className="w-12 h-12 bg-gradient-to-r from-yellow-500/80 to-yellow-600/80 rounded-xl mx-auto mb-4 flex items-center justify-center">
           <TrendingUp className="h-6 w-6 text-slate-900" />

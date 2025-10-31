@@ -15,10 +15,10 @@ export function QuickActions() {
   return (
     <div className="glass-card">
       <h2 className="text-xl font-bold text-white mb-6">Ações Rápidas</h2>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <Button 
           onClick={() => router.push('/wallet/deposit')}
-          className="h-24 flex flex-col items-center justify-center bg-green-600/10 border border-green-500/20 hover:bg-green-600/20 group relative"
+          className="h-20 sm:h-24 flex flex-col items-center justify-center bg-green-600/10 border border-green-500/20 hover:bg-green-600/20 group relative"
           title="Adicionar saldo"
         >
           <Plus className="h-8 w-8 text-green-400 mb-2" />
