@@ -21,6 +21,7 @@ export function AppLayout({
   onDepositClick,
   showHeader = true
 }: AppLayoutProps) {
+  // Sidebar fechado por padrão no mobile, aberto no desktop
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
