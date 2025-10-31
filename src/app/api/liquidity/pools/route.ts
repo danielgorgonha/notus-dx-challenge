@@ -1,92 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { notusAPI } from '@/lib/api/client';
+import { createPoolService } from '@/server/services';
+import { ListPoolsUseCase } from '@/server/use-cases/pool';
 import { processPoolMetrics, isValidPool, getDefaultApiConfig } from '@/lib/utils/pool-calculations';
+import type { PoolListParams } from '@/shared/types/pool.types';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🚀 [API] Buscando pools específicas...');
+    const { searchParams } = new URL(request.url);
     
-    // Obter configuração padrão
-    const config = getDefaultApiConfig();
-    console.log('📊 [API] Configuração:', config);
+    // Se houver configuração padrão de pools (variáveis de ambiente)
+    const defaultConfig = getDefaultApiConfig();
     
-    if (!config.ids || config.ids.length === 0) {
-      return NextResponse.json(
-        { error: 'Nenhuma pool configurada nas variáveis de ambiente' },
-        { status: 400 }
-      );
-    }
+    // Se não houver parâmetros na query, usar configuração padrão
+    const useDefaultConfig = searchParams.toString() === '';
     
-    // Construir parâmetros da query
-    const params = new URLSearchParams();
-    params.append('take', config.take.toString());
-    params.append('offset', config.offset.toString());
-    params.append('chainIds', config.chainIds.toString());
-    params.append('filterWhitelist', config.filterWhitelist.toString());
-    params.append('rangeInDays', config.rangeInDays.toString());
-    
-    // Adicionar IDs das pools
-    config.ids.forEach(id => {
-      params.append('ids', id);
-    });
-    
-    const url = `liquidity/pools?${params.toString()}`;
-    console.log('🔗 [API] URL da requisição:', url);
-    
-    // Fazer requisição para a API da Notus
-    const response = await notusAPI.get(url);
-    console.log('✅ [API] Resposta recebida:', response.status);
-    
-    const responseData = await response.json() as any;
-    
-    if (!responseData || !responseData.pools) {
-      return NextResponse.json(
-        { error: 'Dados de pools não encontrados na resposta' },
-        { status: 404 }
-      );
-    }
-    
-    const pools = responseData.pools;
-    console.log(`📊 [API] ${pools.length} pools encontradas`);
-    
-    // Processar cada pool
-    const processedPools = pools
-      .filter(isValidPool)
-      .map((pool: any) => {
-        const metrics = processPoolMetrics(pool);
-        return {
-          id: pool.id,
-          address: pool.address,
-          chain: pool.chain,
-          provider: pool.provider,
-          fee: pool.fee,
-          tokenPair: `${pool.tokens[0]?.symbol || 'TOKEN1'}/${pool.tokens[1]?.symbol || 'TOKEN2'}`,
-          tokens: pool.tokens,
-          metrics,
-          // Dados originais para compatibilidade
-          totalValueLockedUSD: pool.totalValueLockedUSD,
-          stats: pool.stats
-        };
+    if (useDefaultConfig && defaultConfig.ids && defaultConfig.ids.length > 0) {
+      // Usar configuração padrão
+      const params: PoolListParams = {
+        take: defaultConfig.take,
+        offset: defaultConfig.offset,
+        chainIds: defaultConfig.chainIds.toString(),
+        filterWhitelist: defaultConfig.filterWhitelist,
+        rangeInDays: defaultConfig.rangeInDays,
+        ids: defaultConfig.ids.join(','),
+      };
+
+      const poolService = createPoolService();
+      const useCase = new ListPoolsUseCase(poolService);
+      const pools = await useCase.execute(params);
+      
+      // Processar pools
+      const processedPools = (pools as any[])
+        .filter(isValidPool)
+        .map((pool: any) => {
+          const metrics = processPoolMetrics(pool);
+          return {
+            id: pool.id,
+            address: pool.address,
+            chain: pool.chain,
+            provider: pool.provider,
+            fee: pool.fee,
+            tokenPair: `${pool.tokens[0]?.symbol || 'TOKEN1'}/${pool.tokens[1]?.symbol || 'TOKEN2'}`,
+            tokens: pool.tokens,
+            metrics,
+            totalValueLockedUSD: pool.totalValueLockedUSD,
+            stats: pool.stats
+          };
+        });
+
+      return NextResponse.json({
+        pools: processedPools,
+        total: processedPools.length,
+        config: {
+          requestedIds: defaultConfig.ids,
+          foundPools: processedPools.map((p: any) => p.id)
+        }
       });
+    }
     
-    console.log(`✅ [API] ${processedPools.length} pools processadas`);
+    // Caso contrário, usar parâmetros da query
+    const params: PoolListParams = {
+      take: searchParams.get('take') ? parseInt(searchParams.get('take')!) : undefined,
+      offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined,
+      chainIds: searchParams.get('chainIds') || undefined,
+      tokensAddresses: searchParams.get('tokensAddresses') || undefined,
+      filterWhitelist: searchParams.get('filterWhitelist') === 'true',
+      rangeInDays: searchParams.get('rangeInDays') ? parseInt(searchParams.get('rangeInDays')!) : undefined,
+      ids: searchParams.get('ids') || undefined,
+    };
+
+    const poolService = createPoolService();
+    const useCase = new ListPoolsUseCase(poolService);
+    const pools = await useCase.execute(params);
     
-    return NextResponse.json({
-      pools: processedPools,
-      total: processedPools.length,
-      config: {
-        requestedIds: config.ids,
-        foundPools: processedPools.map((p: any) => p.id)
-      }
-    });
+    return NextResponse.json({ pools });
     
   } catch (error) {
-    console.error('❌ [API] Erro ao buscar pools:', error);
-    
+    console.error('Error fetching pools:', error);
     return NextResponse.json(
       { 
-        error: 'Erro interno do servidor',
-        details: error instanceof Error ? error.message : 'Erro desconhecido'
+        error: error instanceof Error ? error.message : 'Failed to fetch pools' 
       },
       { status: 500 }
     );

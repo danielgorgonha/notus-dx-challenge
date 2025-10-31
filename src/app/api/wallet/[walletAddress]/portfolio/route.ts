@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { walletActions } from '@/lib/actions/wallet-compat';
+import { createWalletService } from '@/server/services';
+import { GetPortfolioUseCase } from '@/server/use-cases/wallet';
 
 export async function GET(
   request: NextRequest,
@@ -7,12 +8,18 @@ export async function GET(
 ) {
   try {
     const { walletAddress } = await params;
-    const response = await walletActions.getPortfolio(walletAddress);
+    
+    const walletService = createWalletService();
+    const useCase = new GetPortfolioUseCase(walletService);
+    const response = await useCase.execute({ walletAddress });
+    
     return NextResponse.json(response);
   } catch (error) {
     console.error('Error fetching wallet portfolio:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch wallet portfolio' },
+      { 
+        error: error instanceof Error ? error.message : 'Failed to fetch wallet portfolio' 
+      },
       { status: 500 }
     );
   }

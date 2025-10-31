@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { walletActions } from '@/lib/actions/wallet-compat';
+import { createWalletService } from '@/server/services';
+import { GetHistoryUseCase } from '@/server/use-cases/wallet';
 
 export async function GET(
   request: NextRequest,
@@ -18,12 +19,20 @@ export async function GET(
       createdAt: searchParams.get('createdAt') || undefined,
     };
 
-    const response = await walletActions.getHistory(walletAddress, queryParams);
+    const walletService = createWalletService();
+    const useCase = new GetHistoryUseCase(walletService);
+    const response = await useCase.execute({
+      walletAddress,
+      ...queryParams,
+    });
+    
     return NextResponse.json(response);
   } catch (error) {
     console.error('Error fetching wallet history:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch wallet history' },
+      { 
+        error: error instanceof Error ? error.message : 'Failed to fetch wallet history' 
+      },
       { status: 500 }
     );
   }
