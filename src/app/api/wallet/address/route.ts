@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { notusAPI } from '@/lib/api/client';
+import { createWalletService } from '@/server/services';
+import { GetWalletUseCase } from '@/server/use-cases/wallet';
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,21 +16,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fazer a chamada para a Notus API usando o cliente do servidor
-    const response = await notusAPI.get('wallets/address', {
-      searchParams: {
-        factory,
-        salt,
-        externallyOwnedAccount,
-      },
+    const walletService = createWalletService();
+    const useCase = new GetWalletUseCase(walletService);
+    const wallet = await useCase.execute({
+      externallyOwnedAccount,
+      factory,
+      salt,
     });
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json({ wallet });
   } catch (error) {
     console.error('Error fetching wallet address:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch wallet address' },
+      { 
+        error: error instanceof Error ? error.message : 'Failed to fetch wallet address' 
+      },
       { status: 500 }
     );
   }

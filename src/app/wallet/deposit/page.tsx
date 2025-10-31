@@ -175,7 +175,7 @@ export default function DepositPage() {
           'Individual ID não encontrado. Por favor, complete o KYC primeiro.',
           5000
         );
-        router.push('/wallet/kyc');
+        router.push('/profile/kyc');
         return;
       }
 
@@ -189,7 +189,7 @@ export default function DepositPage() {
           'Valor acima do limite do Nível 1. Complete o KYC Nível 2 para valores acima de R$ 2.000.',
           5000
         );
-        router.push('/wallet/kyc');
+        router.push('/profile/kyc');
         return;
       }
     }
@@ -288,7 +288,7 @@ export default function DepositPage() {
                     : 'Para valores acima de R$ 2.000, complete o KYC Nível 2 com documentos e liveness.'
                   }
                 </p>
-                <Link href="/wallet/kyc">
+                <Link href="/profile/kyc">
                   <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
                     <Shield className="mr-2 h-4 w-4" />
                     {level === '0' ? 'Iniciar KYC' : 'Upgrade para Nível 2'}

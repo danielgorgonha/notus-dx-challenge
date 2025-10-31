@@ -29,7 +29,7 @@ export function KYCStatusBanner() {
               </div>
             </div>
             <Button
-              onClick={() => router.push('/wallet/kyc')}
+              onClick={() => router.push('/profile/kyc')}
               className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700"
             >
               Iniciar KYC
@@ -86,7 +86,7 @@ export function KYCStatusBanner() {
             </div>
           </div>
           <Button
-            onClick={() => router.push('/wallet/kyc')}
+            onClick={() => router.push('/profile/kyc')}
             variant="outline"
             className="border-white/20 text-white hover:bg-white/10"
           >

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { walletActions } from '@/lib/actions/wallet-compat';
+import { createWalletService } from '@/server/services';
+import { GetPortfolioUseCase } from '@/server/use-cases/wallet';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const address = searchParams.get('address');
     const chainId = searchParams.get('chainId') || '137';
-
-    console.log('💰 Buscando saldos da smart wallet via API da Notus:', { address, chainId });
 
     if (!address) {
       return NextResponse.json(
@@ -16,44 +15,39 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Usar o endereço real da wallet que tem saldo de BRZ
+    // TODO: Remover hardcode quando implementarmos seleção de wallet
     const realWalletAddress = '0x29275940040857bf0ffe8d875622c85aaaec5c0a';
-    console.log('🔄 Usando endereço real da wallet:', realWalletAddress);
 
-    // Usar a mesma abordagem das outras telas (swap, transfer)
-    const portfolio = await walletActions.getPortfolio(realWalletAddress);
-    console.log('✅ Portfolio da API Notus:', portfolio);
+    const walletService = createWalletService();
+    const useCase = new GetPortfolioUseCase(walletService);
+    const portfolio = await useCase.execute({ walletAddress: realWalletAddress });
 
-    // Processar os dados do portfolio para extrair saldos dos tokens
-    const balances: {[key: string]: number} = {};
+    // Processar saldos dos tokens
+    const balances: Record<string, number> = {};
     
     if (portfolio.tokens && Array.isArray(portfolio.tokens)) {
       portfolio.tokens.forEach((token: any) => {
         const symbol = token.symbol?.toUpperCase();
         if (symbol === 'USDC' || symbol === 'USDC.E' || symbol === 'BRZ') {
-          const balance = parseFloat(token.balanceFormatted || '0'); // Usar balanceFormatted
+          const balance = parseFloat(token.balanceFormatted || '0');
           balances[symbol] = balance;
-          console.log(`💎 Token encontrado: ${symbol} = ${balance} (${token.balanceFormatted})`);
         }
       });
     }
-
-    console.log('🎯 Saldos extraídos:', balances);
 
     return NextResponse.json({
       balances,
       wallet: realWalletAddress,
       chainId: parseInt(chainId),
       timestamp: new Date().toISOString(),
-      portfolio: portfolio
+      portfolio
     });
 
   } catch (error) {
-    console.error('❌ Erro ao buscar saldos da API da Notus:', error);
+    console.error('Error fetching wallet balances:', error);
     return NextResponse.json(
       { 
-        error: 'Erro ao buscar saldos da API da Notus',
-        details: error instanceof Error ? error.message : 'Erro desconhecido'
+        error: error instanceof Error ? error.message : 'Failed to fetch wallet balances'
       },
       { status: 500 }
     );

@@ -164,10 +164,10 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                   {isExpanded && (
                     <div className="ml-6 mt-2 space-y-1">
                       {item.submenu.map((subItem) => {
-                        // Para KYC, verificar se está em qualquer rota que comece com /wallet/kyc
+                        // Para KYC, verificar se está em qualquer rota que comece com /profile/kyc
                         let isSubActive = false;
-                        if (subItem.href === '/wallet/kyc') {
-                          isSubActive = pathname.startsWith('/wallet/kyc');
+                        if (subItem.href === '/profile/kyc') {
+                          isSubActive = pathname.startsWith('/profile/kyc');
                         } else {
                           isSubActive = pathname === subItem.href;
                         }
