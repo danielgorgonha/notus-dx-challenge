@@ -1,81 +1,83 @@
 /**
- * 💰 Fiat Operations Actions
- * Endpoints para operações fiat (depósitos e saques)
+ * Fiat Server Actions (Refactored)
+ * Usa Use Cases da Clean Architecture
  */
 
-import { notusAPI } from '../api/client';
+'use server';
 
-export const fiatActions = {
-  /**
-   * Lista moedas disponíveis para depósito
-   * GET /fiat/deposit/currencies
-   */
-  getDepositCurrencies: () =>
-    notusAPI.get("fiat/deposit/currencies").json(),
+import { createFiatService } from '@/server/services';
+import {
+  CreateDepositQuoteUseCase,
+  CreateDepositOrderUseCase,
+} from '@/server/use-cases/fiat';
+import type {
+  CreateDepositQuoteParams,
+  DepositQuote,
+  CreateDepositOrderParams,
+  DepositOrder,
+} from '@/shared/types/fiat.types';
 
-  /**
-   * Cria quote para depósito fiat
-   * POST /fiat/deposit/quote
-   */
-  createDepositQuote: (params: {
-    paymentMethodToSend: string;
-    amountToSendInFiatCurrency: string;
-    sendFiatCurrency: string;
-    receiveCryptoCurrency: string;
-    individualId: string;
-    chainId: number;
-    walletAddress: string;
-  }) =>
-    notusAPI.post("fiat/deposit/quote", {
-      json: params,
-    }).json(),
+const fiatService = createFiatService();
 
-  /**
-   * Cria ordem de depósito fiat
-   * POST /fiat/deposit
-   */
-  createDepositOrder: (params: {
-    quoteId: string;
-  }) =>
-    notusAPI.post("fiat/deposit", {
-      json: params,
-    }).json(),
+/**
+ * Lista moedas disponíveis para depósito
+ */
+export async function getDepositCurrencies() {
+  try {
+    return await fiatService.getDepositCurrencies();
+  } catch (error) {
+    console.error('Error getting deposit currencies:', error);
+    throw error;
+  }
+}
 
-  /**
-   * Obtém detalhes PIX para depósito
-   * GET /fiat/deposit/{orderId}/pix-details
-   */
-  getDepositPixDetails: (orderId: string) =>
-    notusAPI.get(`fiat/deposit/${orderId}/pix-details`).json(),
+/**
+ * Cria quote para depósito fiat
+ */
+export async function createDepositQuote(params: CreateDepositQuoteParams): Promise<DepositQuote> {
+  try {
+    const useCase = new CreateDepositQuoteUseCase(fiatService);
+    return await useCase.execute(params);
+  } catch (error) {
+    console.error('Error creating deposit quote:', error);
+    throw error;
+  }
+}
 
-  /**
-   * Verifica status do depósito
-   * GET /fiat/deposit/{orderId}/status
-   */
-  getDepositStatus: (orderId: string) =>
-    notusAPI.get(`fiat/deposit/${orderId}/status`).json(),
+/**
+ * Cria ordem de depósito fiat
+ */
+export async function createDepositOrder(params: CreateDepositOrderParams): Promise<DepositOrder> {
+  try {
+    const useCase = new CreateDepositOrderUseCase(fiatService);
+    return await useCase.execute(params);
+  } catch (error) {
+    console.error('Error creating deposit order:', error);
+    throw error;
+  }
+}
 
-  /**
-   * Cria quote para saque fiat
-   */
-  createWithdrawalQuote: (params: {
-    amount: string;
-    currency: string;
-    paymentMethod: string;
-    country?: string;
-  }) =>
-    notusAPI.post("fiat/withdraw/quote", {
-      json: params,
-    }).json(),
+/**
+ * Obtém detalhes PIX para depósito
+ */
+export async function getDepositPixDetails(orderId: string) {
+  try {
+    return await fiatService.getDepositPixDetails(orderId);
+  } catch (error) {
+    console.error('Error getting PIX details:', error);
+    throw error;
+  }
+}
 
-  /**
-   * Cria ordem de saque fiat
-   */
-  createWithdrawalOrder: (params: {
-    quoteId: string;
-    paymentDetails: Record<string, unknown>;
-  }) =>
-    notusAPI.post("fiat/withdraw", {
-      json: params,
-    }).json(),
-};
+/**
+ * Verifica status do depósito
+ */
+export async function getDepositStatus(orderId: string) {
+  try {
+    return await fiatService.getDepositStatus(orderId);
+  } catch (error) {
+    console.error('Error getting deposit status:', error);
+    throw error;
+  }
+}
+

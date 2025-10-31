@@ -1,77 +1,26 @@
 /**
- * 💸 Transfer Actions
- * Endpoints para operações de transferência
+ * Transfer Server Actions (Refactored)
+ * Usa Use Cases da Clean Architecture
  */
 
 'use server';
 
-import { notusAPI } from '../api/client';
+import { createTransferService } from '@/server/services';
+import { CreateTransferQuoteUseCase } from '@/server/use-cases/transfer';
+import type { CreateTransferQuoteParams, TransferQuote } from '@/shared/types/transfer.types';
 
-interface TransferParams {
-  amount: string;
-  chainId: number;
-  gasFeePaymentMethod: 'ADD_TO_AMOUNT' | 'DEDUCT_FROM_AMOUNT';
-  payGasFeeToken: string;
-  token: string;
-  walletAddress: string;
-  toAddress: string;
-  transactionFeePercent?: number;
-  metadata?: Record<string, string>;
-}
-
-interface TransferQuote {
-  transfer: {
-    userOperationHash: string;
-    walletAddress: string;
-    token: string;
-    amountToSend: string;
-    amountToSendUSD: string;
-    amountToBeReceived: string;
-    amountToBeReceivedUSD: string;
-    chain: number;
-    estimatedExecutionTime: string;
-    estimatedGasFees: {
-      payGasFeeToken: string;
-      maxGasFeeToken: string;
-      gasFeeTokenAmount: string;
-      gasFeeTokenAmountUSD: string;
-      maxGasFeeNative: string;
-    };
-    estimatedCollectedFee: {
-      collectedFeeToken: string;
-      collectedFee: string;
-      collectedFeePercent: string;
-      notusCollectedFee: string;
-      notusCollectedFeePercent: string;
-    };
-    toAddress: string;
-    expiresAt: number;
-  };
-}
+const transferService = createTransferService();
 
 /**
  * Cria uma cotação de transferência de tokens
  */
-export async function createTransferQuote(params: TransferParams): Promise<TransferQuote> {
+export async function createTransferQuote(params: CreateTransferQuoteParams): Promise<TransferQuote> {
   try {
-    
-    const response = await notusAPI.post("crypto/transfer", {
-      json: {
-        amount: params.amount,
-        chainId: params.chainId,
-        gasFeePaymentMethod: params.gasFeePaymentMethod || 'ADD_TO_AMOUNT',
-        payGasFeeToken: params.payGasFeeToken,
-        token: params.token,
-        walletAddress: params.walletAddress,
-        toAddress: params.toAddress,
-        transactionFeePercent: params.transactionFeePercent || 0,
-        metadata: params.metadata || {}
-      },
-    }).json<TransferQuote>();
-
-    return response;
+    const useCase = new CreateTransferQuoteUseCase(transferService);
+    return await useCase.execute(params);
   } catch (error) {
-    console.error('❌ Erro ao criar cotação de transferência:', error);
+    console.error('Error creating transfer quote:', error);
     throw error;
   }
 }
+
