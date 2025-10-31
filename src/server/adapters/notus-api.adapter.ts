@@ -155,5 +155,143 @@ export class NotusAPIAdapter {
       );
     }
   }
+
+  /**
+   * Cria cotação de transferência
+   */
+  async createTransferQuote(params: {
+    amount: string;
+    chainId: number;
+    gasFeePaymentMethod: 'ADD_TO_AMOUNT' | 'DEDUCT_FROM_AMOUNT';
+    payGasFeeToken: string;
+    token: string;
+    walletAddress: string;
+    toAddress: string;
+    transactionFeePercent?: number;
+    metadata?: Record<string, string>;
+  }): Promise<unknown> {
+    try {
+      return await notusAPI.post('crypto/transfer', {
+        json: {
+          amount: params.amount,
+          chainId: params.chainId,
+          gasFeePaymentMethod: params.gasFeePaymentMethod || 'ADD_TO_AMOUNT',
+          payGasFeeToken: params.payGasFeeToken,
+          token: params.token,
+          walletAddress: params.walletAddress,
+          toAddress: params.toAddress,
+          transactionFeePercent: params.transactionFeePercent || 0,
+          metadata: params.metadata || {},
+        },
+      }).json();
+    } catch (error) {
+      if (error instanceof NotusAPIError) {
+        throw error;
+      }
+      throw new NotusAPIError(
+        'Failed to create transfer quote',
+        500,
+        undefined,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+  }
+
+  /**
+   * Cria cotação de swap
+   */
+  async createSwapQuote(params: {
+    amountIn: string;
+    chainIdIn: number;
+    chainIdOut: number;
+    tokenIn: string;
+    tokenOut: string;
+    walletAddress: string;
+    toAddress?: string;
+    routeProfile?: 'QUICKEST_QUOTE' | 'FASTEST_BRIDGE' | 'BEST_OUTPUT';
+    gasFeePaymentMethod?: 'ADD_TO_AMOUNT' | 'DEDUCT_FROM_AMOUNT';
+    payGasFeeToken?: string;
+    slippage?: number;
+    transactionFeePercent?: number;
+    metadata?: Record<string, string>;
+  }): Promise<unknown> {
+    try {
+      return await notusAPI.post('crypto/swap', {
+        json: {
+          amountIn: params.amountIn,
+          chainIdIn: params.chainIdIn,
+          chainIdOut: params.chainIdOut,
+          tokenIn: params.tokenIn,
+          tokenOut: params.tokenOut,
+          walletAddress: params.walletAddress,
+          toAddress: params.toAddress || params.walletAddress,
+          routeProfile: params.routeProfile || 'QUICKEST_QUOTE',
+          gasFeePaymentMethod: params.gasFeePaymentMethod || 'ADD_TO_AMOUNT',
+          payGasFeeToken: params.payGasFeeToken,
+          slippage: params.slippage || 0.5,
+          transactionFeePercent: params.transactionFeePercent || 0,
+          metadata: params.metadata || {},
+        },
+      }).json();
+    } catch (error) {
+      if (error instanceof NotusAPIError) {
+        throw error;
+      }
+      throw new NotusAPIError(
+        'Failed to create swap quote',
+        500,
+        undefined,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+  }
+
+  /**
+   * Executa User Operation
+   */
+  async executeUserOperation(params: {
+    userOperationHash: string;
+    signature: string;
+    authorization?: string;
+  }): Promise<unknown> {
+    try {
+      return await notusAPI.post('crypto/execute-user-op', {
+        json: {
+          userOperationHash: params.userOperationHash,
+          signature: params.signature,
+          authorization: params.authorization,
+        },
+      }).json();
+    } catch (error) {
+      if (error instanceof NotusAPIError) {
+        throw error;
+      }
+      throw new NotusAPIError(
+        'Failed to execute user operation',
+        500,
+        undefined,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+  }
+
+  /**
+   * Obtém status de User Operation
+   */
+  async getUserOperationStatus(userOperationHash: string): Promise<unknown> {
+    try {
+      return await notusAPI.get(`crypto/user-operation/${userOperationHash}`).json();
+    } catch (error) {
+      if (error instanceof NotusAPIError) {
+        throw error;
+      }
+      throw new NotusAPIError(
+        'Failed to get user operation status',
+        500,
+        undefined,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+  }
 }
 
