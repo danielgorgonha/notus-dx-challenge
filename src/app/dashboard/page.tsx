@@ -25,16 +25,17 @@ export default async function DashboardPage() {
 
   const externallyOwnedAccount = user.wallet.address;
   
-  // Buscar dados no servidor
-  const [walletData, portfolio, history, tokens] = await Promise.all([
-    getWalletAddress({ externallyOwnedAccount }),
-    getPortfolio(user.accountAbstractionAddress || ''),
-    getHistory(user.accountAbstractionAddress || '', { take: 10 }),
-    listSupportedTokens({ page: 1, perPage: 50 }),
-  ]);
-
+  // Buscar wallet address primeiro para obter accountAbstraction
+  const walletData = await getWalletAddress({ externallyOwnedAccount });
   const wallet = walletData.wallet;
   const accountAbstractionAddress = wallet?.accountAbstraction || user.accountAbstractionAddress;
+
+  // Buscar dados no servidor usando accountAbstractionAddress
+  const [portfolio, history, tokens] = await Promise.all([
+    getPortfolio(accountAbstractionAddress || ''),
+    getHistory(accountAbstractionAddress || '', { take: 10 }),
+    listSupportedTokens({ page: 1, perPage: 50 }),
+  ]);
 
   // Calcular estatísticas
   const totalBalance = portfolio?.tokens?.reduce((sum: number, token: any) => {
