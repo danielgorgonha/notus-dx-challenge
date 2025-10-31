@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { privy } from "./server";
 import { AuthUser } from "@/types";
-import { walletActions } from "../actions/wallet";
+import { getWalletAddress, registerWallet } from "../actions/wallet";
 
 
 // Server-side authentication function that handles Privy auth and smart wallet setup
@@ -35,14 +35,16 @@ export async function auth(): Promise<AuthUser | null> {
     }
 
     // Check if smart wallet exists
-    const { wallet } = await walletActions.getAddress({
+    const { wallet } = await getWalletAddress({
       externallyOwnedAccount: user.wallet?.address as string,
     });
 
     // Register smart wallet if it doesn't exist
     if (!wallet.registeredAt) {
-      await walletActions.register({
+      await registerWallet({
         externallyOwnedAccount: user.wallet?.address as string,
+        factory: '0x7a1dbab750f12a90eb1b60d2ae3ad17d4d81effe',
+        salt: '0',
       });
     }
 
