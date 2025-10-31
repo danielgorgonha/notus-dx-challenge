@@ -4,6 +4,7 @@
  * Contém lógica de negócio relacionada a wallets
  */
 
+import { NotusAPIAdapter } from '../adapters/notus-api.adapter';
 import { NotusRepository, type INotusRepository } from '../repositories/notus.repository';
 import type {
   Wallet,
