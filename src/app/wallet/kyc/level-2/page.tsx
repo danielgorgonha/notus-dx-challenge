@@ -179,13 +179,6 @@ export default function KYCLevel2Page() {
           externallyOwnedAccount: wallet.walletAddress 
         });
         
-          hasWallet: !!response?.wallet,
-          hasMetadata: !!response?.wallet?.metadata,
-          hasKycData: !!response?.wallet?.metadata?.kycData,
-          walletAddress: response?.wallet?.walletAddress,
-          accountAbstraction: response?.wallet?.accountAbstraction
-        });
-        
         if (response?.wallet?.metadata?.kycData) {
           const kycData = JSON.parse(response.wallet.metadata.kycData as string);
           setLevel1Data(kycData);
