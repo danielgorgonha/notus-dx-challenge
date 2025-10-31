@@ -27,7 +27,7 @@ export function HistoryFilters({
 }: HistoryFiltersProps) {
   return (
     <div className="glass-card">
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
         <div className="flex items-center gap-2">
           <Filter className="h-5 w-5 text-slate-400" />
           <span className="text-sm text-slate-300">Filtrar:</span>

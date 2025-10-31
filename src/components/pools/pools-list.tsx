@@ -74,7 +74,7 @@ export function PoolsList({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
         <div>
           <p className="text-white text-sm">Disponíveis - {pools.length}</p>
         </div>
