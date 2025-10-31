@@ -99,10 +99,13 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       )}
       
       {/* Sidebar - z-index mais alto que overlay */}
+      {/* Mobile: oculto por padrão (-translate-x-full), visível quando isOpen=true */}
+      {/* Desktop: sempre visível (lg:translate-x-0) */}
       <div className={`
         fixed left-0 top-0 w-72 h-screen bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-[50]
         transform transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        -translate-x-full
+        ${isOpen ? 'translate-x-0' : ''}
         lg:translate-x-0 lg:relative lg:h-full lg:z-auto
         overflow-y-auto
       `}>
