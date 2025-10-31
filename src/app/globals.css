@@ -77,6 +77,12 @@
   * {
     @apply border-border;
   }
+  
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+  
   body {
     @apply bg-background text-foreground;
   }
@@ -101,5 +107,49 @@
   /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
+  }
+  
+  /* Custom Scrollbar Styles - Global */
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: rgba(30, 41, 59, 0.3);
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(148, 163, 184, 0.6), rgba(100, 116, 139, 0.6));
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition: all 0.2s ease;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(203, 213, 225, 0.8), rgba(148, 163, 184, 0.8));
+    background-clip: padding-box;
+  }
+  
+  ::-webkit-scrollbar-thumb:active {
+    background: linear-gradient(180deg, rgba(226, 232, 240, 0.9), rgba(203, 213, 225, 0.9));
+    background-clip: padding-box;
+  }
+  
+  ::-webkit-scrollbar-corner {
+    background: rgba(30, 41, 59, 0.3);
+  }
+  
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100, 116, 139, 0.6) rgba(30, 41, 59, 0.3);
+  }
+  
+  *:hover {
+    scrollbar-color: rgba(148, 163, 184, 0.8) rgba(30, 41, 59, 0.3);
   }
 }

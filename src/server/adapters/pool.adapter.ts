@@ -17,13 +17,42 @@ export class PoolAdapter {
    */
   async listPools(params?: PoolListParams): Promise<Pool[]> {
     try {
+      console.log('🌐 PoolAdapter.listPools - Chamando API com params:', params);
+      
       const response = await notusAPI.get('liquidity/pools', {
         searchParams: params,
-      }).json<{ pools?: Pool[]; data?: Pool[] }>();
+      }).json<any>();
 
-      // A API pode retornar em diferentes formatos
-      return response.pools || response.data || [];
+      console.log('📦 PoolAdapter.listPools - Resposta recebida:', {
+        type: typeof response,
+        isArray: Array.isArray(response),
+        hasPools: !!response.pools,
+        hasData: !!response.data,
+        keys: Object.keys(response || {})
+      });
+
+      // A API pode retornar em diferentes formatos:
+      // 1. Array direto: [pool1, pool2, ...]
+      // 2. Objeto com propriedade pools: { pools: [...] }
+      // 3. Objeto com propriedade data: { data: [...] }
+      // 4. Objeto com ambos: { pools: [...], data: [...] }
+      
+      if (Array.isArray(response)) {
+        console.log(`✅ Retornando ${response.length} pools (array direto)`);
+        return response;
+      }
+      
+      const pools = response.pools || response.data || [];
+      
+      if (Array.isArray(pools)) {
+        console.log(`✅ Retornando ${pools.length} pools (de propriedade)`);
+        return pools;
+      }
+      
+      console.warn('⚠️ Formato de resposta inesperado, retornando array vazio');
+      return [];
     } catch (error) {
+      console.error('❌ PoolAdapter.listPools - Erro:', error);
       if (error instanceof NotusAPIError) {
         throw error;
       }

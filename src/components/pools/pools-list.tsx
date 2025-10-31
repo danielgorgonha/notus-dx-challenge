@@ -98,12 +98,18 @@ export function PoolsList({
 
           const token1Symbol = pool.tokens?.[0]?.symbol?.toUpperCase() || pool.token1?.symbol || 'TOKEN1';
           const token2Symbol = pool.tokens?.[1]?.symbol?.toUpperCase() || pool.token2?.symbol || 'TOKEN2';
+          const token1Logo = pool.tokens?.[0]?.logo || pool.token1?.logo || '';
+          const token2Logo = pool.tokens?.[1]?.logo || pool.token2?.logo || '';
           const protocol = pool.provider?.name || pool.protocol || 'Uniswap V3';
           const apr = pool.metrics?.formatted?.apr || pool.rentabilidade || '0%';
           const tvl = pool.metrics?.formatted?.tvl || pool.tvl || '$0';
           const fee = pool.tarifa || `${pool.fee}%` || '0%';
           const volume24h = pool.metrics?.formatted?.volume24h || pool.volume24h || '$0';
           const composition = pool.metrics?.formatted?.composition || pool.composition || '50/50';
+
+          // Verificar se os logos são URLs válidas
+          const hasToken1Logo = token1Logo && (token1Logo.startsWith('http') || token1Logo.startsWith('data:') || token1Logo.startsWith('/'));
+          const hasToken2Logo = token2Logo && (token2Logo.startsWith('http') || token2Logo.startsWith('data:') || token2Logo.startsWith('/'));
 
           return (
             <Card 
@@ -134,11 +140,48 @@ export function PoolsList({
                   <div className="flex items-center space-x-3">
                     {/* Token Icons */}
                     <div className="relative flex items-center">
-                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-semibold z-10 border-2 border-slate-800">
-                        {token1Symbol.slice(0, 2)}
+                      {/* Token 1 Icon */}
+                      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center z-10 border-2 border-slate-800 overflow-hidden">
+                        {hasToken1Logo ? (
+                          <img 
+                            src={token1Logo} 
+                            alt={token1Symbol}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <span 
+                          className="text-white text-xs font-semibold"
+                          style={{ display: hasToken1Logo ? 'none' : 'flex' }}
+                        >
+                          {token1Symbol.slice(0, 2)}
+                        </span>
                       </div>
-                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-semibold -ml-2 border-2 border-slate-800">
-                        {token2Symbol.slice(0, 2)}
+                      
+                      {/* Token 2 Icon */}
+                      <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center -ml-2 z-20 border-2 border-slate-800 overflow-hidden">
+                        {hasToken2Logo ? (
+                          <img 
+                            src={token2Logo} 
+                            alt={token2Symbol}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <span 
+                          className="text-white text-xs font-semibold"
+                          style={{ display: hasToken2Logo ? 'none' : 'flex' }}
+                        >
+                          {token2Symbol.slice(0, 2)}
+                        </span>
                       </div>
                     </div>
                     <div>

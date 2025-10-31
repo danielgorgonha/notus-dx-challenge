@@ -29,10 +29,21 @@ export default async function PoolsPage() {
   const accountAbstractionAddress = wallet?.accountAbstraction || user.accountAbstractionAddress;
 
   // Buscar pools no servidor
-  const poolsData = await listPools();
+  let poolsData;
+  try {
+    poolsData = await listPools();
+    console.log('📊 PoolsPage - Dados recebidos:', {
+      total: poolsData?.total,
+      poolsLength: poolsData?.pools?.length,
+      error: poolsData?.error
+    });
+  } catch (error) {
+    console.error('❌ Erro ao buscar pools:', error);
+    poolsData = { pools: [], total: 0, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
 
   // Processar pools para o formato esperado pelo componente client
-  const processedPools = (poolsData.pools || []).map((pool: any) => ({
+  const processedPools = (poolsData?.pools || []).map((pool: any) => ({
     id: pool.id,
     protocol: pool.provider?.name || 'Uniswap V3',
     tokenPair: pool.tokenPair,
@@ -75,9 +86,15 @@ export default async function PoolsPage() {
                 </div>
                 <div>
                   <CardTitle className="text-2xl text-white">Liquidity Pools</CardTitle>
-                  <p className="text-slate-400 text-sm mt-1">
-                    {processedPools.length} {processedPools.length === 1 ? 'pool disponível' : 'pools disponíveis'}
-                  </p>
+                  {poolsData?.error ? (
+                    <p className="text-red-400 text-sm mt-1">
+                      Erro ao carregar pools: {poolsData.error}
+                    </p>
+                  ) : (
+                    <p className="text-slate-400 text-sm mt-1">
+                      {processedPools.length} {processedPools.length === 1 ? 'pool disponível' : 'pools disponíveis'}
+                    </p>
+                  )}
                 </div>
               </div>
             </CardHeader>
