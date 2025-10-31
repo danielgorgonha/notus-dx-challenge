@@ -60,29 +60,10 @@ export async function updateWalletMetadata(params: UpdateMetadataParams): Promis
   }
 }
 
-// Manter compatibilidade com código antigo
-export const walletActions = {
-  register: registerWallet,
-  getAddress: getWalletAddress,
-  updateMetadata: (walletAddress: string, metadata: Record<string, unknown>) =>
-    updateWalletMetadata({ walletAddress, metadata }),
-  // Manter métodos antigos que ainda são usados
-  getPortfolio: (walletAddress: string) => {
-    // Redireciona para dashboard actions
-    return import('./dashboard').then(m => m.getPortfolio(walletAddress));
-  },
-  getHistory: (walletAddress: string, params?: { take?: number }) => {
-    // Redireciona para dashboard actions
-    return import('./dashboard').then(m => m.getHistory(walletAddress, params));
-  },
-  listWallets: () => {
-    throw new Error('listWallets not implemented in new architecture');
-  },
-  createDeposit: () => {
-    throw new Error('createDeposit not implemented in new architecture');
-  },
-  updateTransactionMetadata: () => {
-    throw new Error('updateTransactionMetadata not implemented in new architecture');
-  },
-};
+/**
+ * Atualiza metadados da wallet (wrapper para compatibilidade)
+ */
+export async function updateMetadata(walletAddress: string, metadata: Record<string, unknown>): Promise<void> {
+  return updateWalletMetadata({ walletAddress, metadata });
+}
 

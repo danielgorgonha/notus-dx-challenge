@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { walletActions } from '@/lib/actions/wallet';
+import { walletActions } from '@/lib/actions/wallet-compat';
 
 export async function GET(
   request: NextRequest,

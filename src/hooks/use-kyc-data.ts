@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSmartWallet } from './use-smart-wallet';
-import { walletActions } from '@/lib/actions/wallet';
+import { walletActions } from '@/lib/actions/wallet-compat';
 
 export interface KYCData {
   fullName: string;

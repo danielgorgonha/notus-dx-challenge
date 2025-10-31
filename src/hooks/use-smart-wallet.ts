@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { getWalletAddress, registerWallet, getPortfolio, getHistory } from '@/lib/actions/dashboard';
-import { walletActions } from '@/lib/actions/wallet';
+import { walletActions } from '@/lib/actions/wallet-compat';
 
 // Tipos simplificados
 export interface NotusWallet {
