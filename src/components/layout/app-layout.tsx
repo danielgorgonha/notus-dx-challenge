@@ -33,14 +33,14 @@ export function AppLayout({
 
   return (
     <div 
-      className="flex min-h-screen h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden"
+      className="flex min-h-screen h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden relative"
       data-sidebar-open={sidebarOpen ? "true" : "false"}
     >
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar - renderizado fora do fluxo normal no mobile */}
       <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
       
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:ml-72 min-h-0 h-full overflow-hidden">
+      {/* Main Content - z-index menor que sidebar/overlay */}
+      <div className="flex-1 flex flex-col lg:ml-72 min-h-0 h-full overflow-hidden relative z-0">
         {showHeader && title && (
           <Header
             title={title}

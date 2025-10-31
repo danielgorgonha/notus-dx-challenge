@@ -89,20 +89,21 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Overlay para mobile */}
+      {/* Overlay para mobile - deve estar acima do conteúdo mas abaixo do sidebar */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden"
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
       
-      {/* Sidebar */}
+      {/* Sidebar - z-index mais alto que overlay */}
       <div className={`
-        fixed left-0 top-0 w-72 h-screen bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-50
+        fixed left-0 top-0 w-72 h-screen bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-[50]
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:relative lg:h-full
+        lg:translate-x-0 lg:relative lg:h-full lg:z-auto
         overflow-y-auto
       `}>
         {/* Logo */}
