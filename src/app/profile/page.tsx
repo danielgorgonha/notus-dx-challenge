@@ -18,7 +18,7 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
 import { useState } from "react";
 import { toast } from "sonner";
-import { walletActions } from "@/lib/actions/wallet";
+import { walletActions } from "@/lib/actions/wallet-compat";
 import { useQuery } from "@tanstack/react-query";
 
 export default function ProfilePage() {
