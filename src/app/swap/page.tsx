@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +22,7 @@ import {
   Settings,
   ExternalLink
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
 import { useToast } from "@/hooks/use-toast";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -37,8 +37,9 @@ import { getPortfolio } from "@/lib/actions/dashboard";
 import { TokenSelector } from "@/components/ui/token-selector";
 
 
-export default function SwapPage() {
+function SwapPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { wallet } = useSmartWallet();
   const { signMessage } = usePrivy();
   const toast = useToast();
@@ -46,6 +47,10 @@ export default function SwapPage() {
   const [currentStep, setCurrentStep] = useState<"form" | "preview" | "executing" | "success">("form");
   const [fromToken, setFromToken] = useState<any>(null);
   const [toToken, setToToken] = useState<any>(null);
+  
+  // Token inicial de query params (para "Comprar" ou "Vender")
+  const initialFromTokenSymbol = searchParams.get('fromToken');
+  const initialToTokenSymbol = searchParams.get('toToken');
 
   // Funções para seleção de tokens com validação
   const handleFromTokenSelect = useCallback((token: any) => {
@@ -702,7 +707,7 @@ export default function SwapPage() {
               walletAddress={walletAddress}
               placeholder="Selecionar token"
               showBalance={false}
-              autoSelectSymbol="BRZ"
+              autoSelectSymbol={initialFromTokenSymbol || "BRZ"}
               compact={true}
             />
               </div>
@@ -800,7 +805,7 @@ export default function SwapPage() {
               walletAddress={walletAddress}
               placeholder="Selecionar token"
               showBalance={false}
-              autoSelectSymbol="USDC"
+              autoSelectSymbol={initialToTokenSymbol || "USDC"}
               compact={true}
             />
           </div>
@@ -1418,5 +1423,24 @@ export default function SwapPage() {
         {renderSlippageModal()}
     </AppLayout>
     </ProtectedRoute>
+  );
+}
+
+export default function SwapPage() {
+  return (
+    <Suspense fallback={
+      <ProtectedRoute>
+        <AppLayout 
+          title="Conversão de criptomoedas"
+          description="Troque tokens instantaneamente"
+        >
+          <div className="flex justify-center items-center min-h-[400px]">
+            <Loader2 className="h-8 w-8 animate-spin text-yellow-400" />
+          </div>
+        </AppLayout>
+      </ProtectedRoute>
+    }>
+      <SwapPageContent />
+    </Suspense>
   );
 }

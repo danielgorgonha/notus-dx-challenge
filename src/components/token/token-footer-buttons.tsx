@@ -31,8 +31,8 @@ export function TokenFooterButtons({ token, mode = 'portfolio' }: TokenFooterBut
       // Para stablecoins: navegar para withdraw (off-ramp)
       router.push('/wallet/withdraw');
     } else {
-      // Para outros tokens: navegar para swap
-      router.push('/swap');
+      // Para outros tokens: navegar para swap com token pré-selecionado como "De"
+      router.push(`/swap?fromToken=${encodeURIComponent(symbol)}`);
     }
   };
 
@@ -41,8 +41,8 @@ export function TokenFooterButtons({ token, mode = 'portfolio' }: TokenFooterBut
       // Para stablecoins: navegar para deposit (on-ramp)
       router.push('/wallet/deposit');
     } else {
-      // Para outros tokens: navegar para swap
-      router.push('/swap');
+      // Para outros tokens: navegar para swap com token pré-selecionado como "Para"
+      router.push(`/swap?toToken=${encodeURIComponent(symbol)}`);
     }
   };
 
