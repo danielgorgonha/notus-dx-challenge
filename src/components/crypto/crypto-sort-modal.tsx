@@ -58,7 +58,15 @@ export function CryptoSortModal({
             {sortOptions.map((option) => (
               <button
                 key={option.value}
-                onClick={() => onSortByChange(option.value)}
+                onClick={() => {
+                  if (sortBy === option.value) {
+                    // Se já está selecionado, troca a direção
+                    onSortDirectionChange(sortDirection === 'desc' ? 'asc' : 'desc');
+                  } else {
+                    // Se não está selecionado, seleciona e mantém direção atual
+                    onSortByChange(option.value);
+                  }
+                }}
                 className={`w-full text-left px-4 py-4 rounded-lg transition-colors ${
                   sortBy === option.value
                     ? 'bg-slate-700/80 border-2 border-slate-600 text-white'
@@ -68,9 +76,15 @@ export function CryptoSortModal({
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-base">{option.label}</span>
                   {sortBy === option.value && (
-                    <span className="text-yellow-400 text-lg">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSortDirectionChange(sortDirection === 'desc' ? 'asc' : 'desc');
+                      }}
+                      className="text-yellow-400 text-lg hover:text-yellow-300 transition-colors focus:outline-none"
+                    >
                       {sortDirection === 'desc' ? '↓' : '↑'}
-                    </span>
+                    </button>
                   )}
                 </div>
               </button>
