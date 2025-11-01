@@ -27,6 +27,10 @@ const config = {
     termsAndConditionsUrl: 'https://notus.team/terms',
     privacyPolicyUrl: 'https://notus.team/privacy',
   },
+  // Configurações de cookies para evitar problemas em produção
+  cookies: {
+    enabled: true,
+  },
 } as PrivyClientConfig;
 
 export function AppProviders({ children }: { children: React.ReactNode }) {

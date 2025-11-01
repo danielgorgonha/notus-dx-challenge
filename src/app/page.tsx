@@ -31,14 +31,22 @@ export default function LandingPage() {
   const { ready, authenticated, user, login } = usePrivy();
   const router = useRouter();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
 
   // Se o usuário já estiver autenticado, redirecionar para o dashboard
   useEffect(() => {
-    if (ready && authenticated && user) {
-      // Usar replace ao invés de push para evitar loops
-      router.replace("/dashboard");
+    if (ready && authenticated && user && !redirecting) {
+      // Adicionar delay maior para garantir que o cookie seja definido pelo Privy
+      // após login via Google
+      setRedirecting(true);
+      const timer = setTimeout(() => {
+        // Usar replace ao invés de push para evitar loops
+        router.replace("/dashboard");
+      }, 1500); // Aumentar delay para 1.5s
+      
+      return () => clearTimeout(timer);
     }
-  }, [ready, authenticated, user, router]);
+  }, [ready, authenticated, user, router, redirecting]);
 
   if (!ready) {
     return (

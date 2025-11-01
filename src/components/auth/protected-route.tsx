@@ -14,7 +14,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     if (ready && !authenticated) {
-      router.push("/");
+      // Usar replace para evitar loop de navegação
+      router.replace("/");
     }
   }, [ready, authenticated, router]);
 
