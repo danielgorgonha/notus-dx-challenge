@@ -13,6 +13,7 @@ import { RecentTransactions } from "./recent-transactions";
 import { DashboardMobileHeader } from "./dashboard-mobile-header";
 import { DashboardMobileBalances } from "./dashboard-mobile-balances";
 import { DashboardMobileActions } from "./dashboard-mobile-actions";
+import { formatTokenBalance as formatTokenBalanceUtil, formatCurrency as formatCurrencyUtil } from "@/lib/utils";
 
 import { DashboardYieldsSection } from "./dashboard-yields-section";
 import { DashboardPoolsSection } from "./dashboard-pools-section";
@@ -46,41 +47,22 @@ export function DashboardClientWrapper({
     setCurrency(newCurrency);
   };
 
-  // Funções de formatação
+  // Funções de formatação usando utilitários centralizados
   const formatTokenBalance = (balance: string | number, decimals: number = 18) => {
-    const num = parseFloat(balance.toString());
-    
-    if (num === 0) return '0';
-    
-    const realValue = num / Math.pow(10, decimals);
-    
-    if (realValue < 0.0001) {
-      return realValue.toFixed(8);
+    // Se já está formatado (número), converter para string em wei
+    if (typeof balance === 'number') {
+      const balanceInWei = (balance * Math.pow(10, decimals)).toString();
+      return formatTokenBalanceUtil(balanceInWei, decimals);
     }
-    
-    if (realValue >= 1e9) {
-      return realValue.toExponential(2);
-    }
-    
-    if (realValue >= 1) {
-      return realValue.toFixed(2);
-    } else {
-      return realValue.toFixed(4);
-    }
+    return formatTokenBalanceUtil(balance, decimals);
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
+    return formatCurrencyUtil(value, 'BRL', 'pt-BR');
   };
 
   const formatUSD = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(value);
+    return formatCurrencyUtil(value, 'USD', 'en-US');
   };
 
   const convertCurrency = (value: number) => {

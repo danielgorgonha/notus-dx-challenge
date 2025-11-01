@@ -76,9 +76,10 @@ export function calculateAPR(
 }
 
 /**
- * Formata valores monetários
+ * Formata valores monetários em USD com formato compacto (K, M)
+ * Usado especificamente para métricas de pools
  */
-export function formatCurrency(value: number | string): string {
+export function formatPoolCurrency(value: number | string): string {
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
   
   if (isNaN(numValue) || numValue < 0) {
@@ -211,9 +212,9 @@ export function processPoolMetrics(pool: PoolData): PoolMetrics {
     composition,
     formatted: {
       apr: `${apr.toFixed(2)}% a.a.`,
-      tvl: formatCurrency(tvl),
-      volume24h: formatCurrency(volume24h),
-      fees24h: formatCurrency(fees24h),
+      tvl: formatPoolCurrency(tvl),
+      volume24h: formatPoolCurrency(volume24h),
+      fees24h: formatPoolCurrency(fees24h),
       composition: `${composition.token0.symbol.toLowerCase()} (${composition.token0.percentage.toFixed(2)}%) / ${composition.token1.symbol.toLowerCase()} (${composition.token1.percentage.toFixed(2)}%)`
     }
   };

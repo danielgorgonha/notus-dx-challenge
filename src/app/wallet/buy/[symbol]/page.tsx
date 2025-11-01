@@ -24,6 +24,8 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useQuery } from "@tanstack/react-query";
 import { getPortfolio } from "@/lib/actions/dashboard";
 import { getTokenBySymbol } from "@/lib/actions/token";
+import { formatTokenBalance as formatTokenBalanceUtil, formatCurrency as formatCurrencyUtil } from "@/lib/utils";
+import { SlippageModal } from "@/components/ui/slippage-modal";
 
 type Step = "currency" | "amount" | "preview" | "executing" | "success";
 
@@ -48,9 +50,6 @@ export default function BuyTokenPage() {
   const [isCalculatingQuote, setIsCalculatingQuote] = useState(false);
   const [minRequiredAmount, setMinRequiredAmount] = useState<string | null>(null);
   const [showSlippageModal, setShowSlippageModal] = useState(false);
-  const [tempSlippage, setTempSlippage] = useState(0.5);
-  const [customSlippage, setCustomSlippage] = useState("");
-  const [showCustomInput, setShowCustomInput] = useState(false);
 
   const walletAddress = wallet?.accountAbstraction;
 
@@ -81,14 +80,9 @@ export default function BuyTokenPage() {
     );
   }, [portfolioData]);
 
-  // Função para formatar balance (converter de wei para unidades legíveis)
+  // Usar função utilitária centralizada
   const formatTokenBalance = useCallback((balance: string, decimals: number = 18): string => {
-    if (!balance || balance === '0') return '0';
-    const num = parseFloat(balance) / Math.pow(10, decimals);
-    if (num === 0) return '0';
-    if (num < 0.0001) return num.toFixed(8).replace(/\.?0+$/, '');
-    if (num < 1) return num.toFixed(6).replace(/\.?0+$/, '');
-    return num.toFixed(2).replace(/\.?0+$/, '');
+    return formatTokenBalanceUtil(balance, decimals);
   }, []);
 
   // Obter saldo formatado da moeda selecionada
@@ -118,23 +112,10 @@ export default function BuyTokenPage() {
     return numAmount > 0 && numAmount <= balance;
   }, [amount, selectedToken, selectedBalance]);
 
-  // Formatar valor em BRL ou USD
+  // Formatar valor em BRL ou USD usando utilitário centralizado
   const formatFiatAmount = (value: string) => {
     const num = parseFloat(value || '0');
-    if (selectedCurrency === 'BRZ') {
-      return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(num);
-    }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
+    return formatCurrencyUtil(num, selectedCurrency === 'BRZ' ? 'BRL' : 'USD', selectedCurrency === 'BRZ' ? 'pt-BR' : 'en-US');
   };
 
   // Step 1: Seleção de moeda
@@ -219,12 +200,6 @@ export default function BuyTokenPage() {
     );
   };
 
-  // Atualizar tempSlippage quando o modal abrir
-  useEffect(() => {
-    if (showSlippageModal) {
-      setTempSlippage(slippage);
-    }
-  }, [showSlippageModal, slippage]);
 
   // Calcular valor em USD do estimado (no nível do componente)
   const estimatedUSD = useMemo(() => {
@@ -695,99 +670,10 @@ export default function BuyTokenPage() {
     );
   };
 
-  // Modal de Slippage
-  const renderSlippageModal = () => {
-    const handleAccept = () => {
-      if (showCustomInput && customSlippage) {
-        const customValue = parseFloat(customSlippage);
-        if (customValue >= 0.1 && customValue <= 50) {
-          setSlippage(customValue);
-        } else {
-          toast.error('Erro', 'Valor deve estar entre 0.1% e 50%', 3000);
-          return;
-        }
-      } else {
-        setSlippage(tempSlippage);
-      }
-      setShowSlippageModal(false);
-      setShowCustomInput(false);
-      setCustomSlippage("");
-    };
-
-    if (!showSlippageModal) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end lg:items-center lg:justify-center">
-        <div className="fixed bottom-0 left-0 right-0 z-[101] bg-slate-800 rounded-t-2xl border-t border-slate-700 max-h-[80vh] overflow-y-auto pb-safe-area-inset-bottom lg:relative lg:bottom-auto lg:rounded-xl lg:w-full lg:max-w-md lg:mx-4">
-          <div className="p-6 space-y-6">
-            {/* Handle para drag no mobile */}
-            <div className="w-12 h-1 bg-slate-600 rounded-full mx-auto lg:hidden" />
-            
-            <div className="text-center">
-              <h3 className="text-xl font-bold text-white mb-2">Tolerância a Slippage</h3>
-              <p className="text-slate-400 text-sm">
-                Sua transação será revertida se o preço mudar mais do que a porcentagem (%) de slippage selecionada.
-              </p>
-            </div>
-            
-            <div className="space-y-3">
-              <Button
-                onClick={() => {
-                  setTempSlippage(0.1);
-                  setShowCustomInput(false);
-                }}
-                className={`w-full ${tempSlippage === 0.1 ? 'bg-slate-700 text-white' : 'bg-slate-800/50 border border-slate-700 text-slate-300'}`}
-              >
-                0.1%
-              </Button>
-              <Button
-                onClick={() => {
-                  setTempSlippage(0.5);
-                  setShowCustomInput(false);
-                }}
-                className={`w-full ${tempSlippage === 0.5 ? 'bg-slate-700 text-white' : 'bg-slate-800/50 border border-slate-700 text-slate-300'}`}
-              >
-                0.5%
-              </Button>
-              {!showCustomInput ? (
-                <Button
-                  onClick={() => setShowCustomInput(true)}
-                  className="w-full bg-slate-800/50 border border-slate-700 text-slate-300"
-                >
-                  Definir %
-                </Button>
-              ) : (
-                <div className="space-y-2">
-                  <Input
-                    type="number"
-                    value={customSlippage}
-                    onChange={(e) => setCustomSlippage(e.target.value)}
-                    placeholder="Ex: 2.5"
-                    className="bg-slate-700 border-slate-600 text-white"
-                    min="0.1"
-                    max="50"
-                    step="0.1"
-                    autoFocus
-                  />
-                  <p className="text-slate-400 text-xs">
-                    Valor entre 0.1% e 50%
-                  </p>
-                </div>
-              )}
-            </div>
-            
-            <div className="pb-20 lg:pb-6">
-              <Button
-                onClick={handleAccept}
-                className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-3 rounded-lg"
-              >
-                Aceitar
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  // Handler para aceitar slippage
+  const handleSlippageAccept = (newSlippage: number) => {
+    setSlippage(newSlippage);
+    setShowSlippageModal(false);
   };
 
   return (
@@ -806,7 +692,12 @@ export default function BuyTokenPage() {
             {currentStep === "success" && renderSuccess()}
           </div>
         </div>
-        {renderSlippageModal()}
+        <SlippageModal
+          isOpen={showSlippageModal}
+          onClose={() => setShowSlippageModal(false)}
+          currentSlippage={slippage}
+          onAccept={handleSlippageAccept}
+        />
       </AppLayout>
     </ProtectedRoute>
   );

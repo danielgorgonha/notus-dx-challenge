@@ -7,7 +7,7 @@
 
 import { Clock, Coins } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn, formatTokenBalance, formatCurrency as formatCurrencyUtil } from "@/lib/utils";
 
 interface WalletTabProps {
   portfolio: any;
@@ -53,23 +53,17 @@ export function WalletTab({
 
   const formatCurrency = (value: number) => {
     if (!showBalance) return '••••';
-    
     // Sempre mostrar em USD conforme design da Notus
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
+    return formatCurrencyUtil(value, 'USD', 'en-US');
   };
 
-  const formatTokenBalance = (balance: string, decimals: number = 18) => {
-    if (!showBalance) return '••••';
-    const num = parseFloat(balance || '0') / Math.pow(10, decimals);
-    return new Intl.NumberFormat('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6,
-    }).format(num);
+  const formatTokenBalanceLocal = (balance: string, decimals: number = 18) => {
+    return formatTokenBalance(balance, decimals, {
+      showHidden: !showBalance,
+      formatLocale: 'pt-BR',
+      minDecimals: 2,
+      maxDecimals: 6,
+    });
   };
 
   return (
@@ -121,7 +115,7 @@ export function WalletTab({
                   {formatCurrency(parseFloat(brzToken.balanceUSD || brzToken.balanceUsd || '0'))}
                 </div>
                 <div className="text-slate-400 text-sm">
-                  {formatTokenBalance(brzToken.balance || '0', brzToken.decimals)} BRZ
+                  {formatTokenBalanceLocal(brzToken.balance || '0', brzToken.decimals)} BRZ
                 </div>
               </div>
             </button>
@@ -147,7 +141,7 @@ export function WalletTab({
                   {formatCurrency(parseFloat(usdcToken.balanceUSD || usdcToken.balanceUsd || '0'))}
                 </div>
                 <div className="text-slate-400 text-sm">
-                  {formatTokenBalance(usdcToken.balance || '0', usdcToken.decimals)} USDC
+                  {formatTokenBalanceLocal(usdcToken.balance || '0', usdcToken.decimals)} USDC
                 </div>
               </div>
             </button>

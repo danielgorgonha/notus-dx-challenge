@@ -35,6 +35,7 @@ import { Copy, ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getPortfolio } from "@/lib/actions/dashboard";
 import { TokenSelector } from "@/components/ui/token-selector";
+import { SlippageModal } from "@/components/ui/slippage-modal";
 
 
 function SwapPageContent() {
@@ -80,9 +81,6 @@ function SwapPageContent() {
   const [transactionHash, setTransactionHash] = useState("");
   const [userOperationHash, setUserOperationHash] = useState("");
   const [showSlippageModal, setShowSlippageModal] = useState(false);
-  const [customSlippage, setCustomSlippage] = useState("");
-  const [showCustomInput, setShowCustomInput] = useState(false);
-  const [tempSlippage, setTempSlippage] = useState(0.5);
   const [isQuoteDetailsOpen, setIsQuoteDetailsOpen] = useState(false);
   const [isFromTokenDetailsOpen, setIsFromTokenDetailsOpen] = useState(false);
   const [isToTokenDetailsOpen, setIsToTokenDetailsOpen] = useState(false);
@@ -470,31 +468,9 @@ function SwapPageContent() {
     }
   };
 
-  const handleSlippageModalOpen = () => {
-    setTempSlippage(slippage);
-    setShowSlippageModal(true);
-    setShowCustomInput(false);
-    setCustomSlippage("");
-  };
-
-  const handleSlippageAccept = () => {
-    if (showCustomInput && customSlippage) {
-      const value = parseFloat(customSlippage);
-      if (!isNaN(value) && value >= 0.1 && value <= 50) {
-        setSlippage(value);
-      }
-    } else {
-      setSlippage(tempSlippage);
-    }
+  const handleSlippageAccept = (newSlippage: number) => {
+    setSlippage(newSlippage);
     setShowSlippageModal(false);
-    setShowCustomInput(false);
-    setCustomSlippage("");
-  };
-
-  const handleSlippageModalClose = () => {
-    setShowSlippageModal(false);
-    setShowCustomInput(false);
-    setCustomSlippage("");
   };
 
   // Funções de formatação
@@ -662,7 +638,7 @@ function SwapPageContent() {
           </p>
         </div>
         <Button
-          onClick={handleSlippageModalOpen}
+          onClick={() => setShowSlippageModal(true)}
           variant="outline"
           size="sm"
           className="border-slate-600/50 text-slate-300 hover:border-blue-500/70 hover:text-blue-400 hover:bg-blue-500/10 transition-all duration-200 backdrop-blur-sm bg-slate-800/30"
@@ -1332,79 +1308,6 @@ function SwapPageContent() {
     </div>
   );
 
-  const renderSlippageModal = () => (
-    showSlippageModal && (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-slate-800 rounded-xl w-full max-w-md p-6 space-y-6 mx-4 relative">
-          <button
-            onClick={handleSlippageModalClose}
-            className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          
-          <div className="text-center">
-            <h3 className="text-xl font-bold text-white mb-2">Tolerância a Slippage</h3>
-            <p className="text-slate-400 text-sm">
-              Sua transação será revertida se o preço mudar mais do que a porcentagem (%) de slippage selecionada.
-            </p>
-          </div>
-          
-          <div className="space-y-3">
-            <Button
-              onClick={() => setTempSlippage(0.1)}
-              variant={tempSlippage === 0.1 ? "default" : "outline"}
-              className={`w-full ${tempSlippage === 0.1 ? 'bg-blue-600 text-white' : 'bg-slate-700 border-slate-600 text-slate-300'}`}
-            >
-              0.1%
-            </Button>
-            <Button
-              onClick={() => setTempSlippage(0.5)}
-              variant={tempSlippage === 0.5 ? "default" : "outline"}
-              className={`w-full ${tempSlippage === 0.5 ? 'bg-blue-600 text-white' : 'bg-slate-700 border-slate-600 text-slate-300'}`}
-            >
-              0.5%
-            </Button>
-            {!showCustomInput ? (
-              <Button
-                onClick={() => setShowCustomInput(true)}
-                variant="outline"
-                className="w-full bg-slate-700 border-slate-600 text-slate-300"
-              >
-                Definir %
-              </Button>
-            ) : (
-              <div className="space-y-2">
-                <Input
-                  type="number"
-                  value={customSlippage}
-                  onChange={(e) => setCustomSlippage(e.target.value)}
-                  placeholder="Ex: 2.5"
-                  className="bg-slate-700 border-slate-600 text-white"
-                  min="0.1"
-                  max="50"
-                  step="0.1"
-                  autoFocus
-                />
-                <p className="text-slate-400 text-xs">
-                  Valor entre 0.1% e 50%
-                </p>
-              </div>
-            )}
-          </div>
-          
-          <Button
-            onClick={handleSlippageAccept}
-            className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-3 rounded-lg"
-          >
-            Aceitar
-          </Button>
-      </div>
-      </div>
-    )
-  );
 
   return (
     <ProtectedRoute>
@@ -1420,7 +1323,12 @@ function SwapPageContent() {
             {currentStep === "success" && renderSuccessStep()}
           </div>
         </div>
-        {renderSlippageModal()}
+        <SlippageModal
+          isOpen={showSlippageModal}
+          onClose={() => setShowSlippageModal(false)}
+          currentSlippage={slippage}
+          onAccept={handleSlippageAccept}
+        />
     </AppLayout>
     </ProtectedRoute>
   );
