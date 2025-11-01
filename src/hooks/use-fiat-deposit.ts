@@ -10,7 +10,13 @@ import {
 } from '@/types/fiat';
 import { useKYCManager } from './use-kyc-manager';
 import { useSmartWallet } from './use-smart-wallet';
-import { fiatActions } from '@/lib/actions/fiat';
+import {
+  getDepositCurrencies,
+  createDepositQuote,
+  createDepositOrder,
+  getDepositPixDetails,
+  getDepositStatus,
+} from '@/lib/actions/fiat';
 
 export interface DepositParams {
   amount: string;
@@ -73,7 +79,7 @@ export function useFiatDeposit() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const currencies = await fiatActions.getDepositCurrencies() as DepositCurrency[];
+      const currencies = await getDepositCurrencies() as DepositCurrency[];
       setState(prev => ({ ...prev, currencies, step: 'currencies', isLoading: false }));
       return currencies;
     } catch (error) {
@@ -97,7 +103,7 @@ export function useFiatDeposit() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const quote = await fiatActions.createDepositQuote({
+      const quote = await createDepositQuote({
         paymentMethodToSend: 'PIX',
         amountToSendInFiatCurrency: params.amount,
         sendFiatCurrency: params.sendFiatCurrency,
@@ -126,7 +132,7 @@ export function useFiatDeposit() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const order = await fiatActions.createDepositOrder({
+      const order = await createDepositOrder({
         quoteId,
       }) as FiatDepositOrder;
       
@@ -149,7 +155,7 @@ export function useFiatDeposit() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const pixDetails = await fiatActions.getDepositPixDetails(orderId) as PixDepositDetails;
+      const pixDetails = await getDepositPixDetails(orderId) as PixDepositDetails;
       setState(prev => ({ ...prev, pixDetails, step: 'pix', isLoading: false }));
       return pixDetails;
     } catch (error) {
@@ -167,7 +173,7 @@ export function useFiatDeposit() {
   // Verificar status do depósito
   const checkDepositStatus = useCallback(async (orderId: string): Promise<DepositStatus | null> => {
     try {
-      const status = await fiatActions.getDepositStatus(orderId) as DepositStatus;
+      const status = await getDepositStatus(orderId) as DepositStatus;
       setState(prev => ({ ...prev, status }));
       return status;
     } catch (error) {

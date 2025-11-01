@@ -16,6 +16,7 @@ interface MarketCapItemProps {
     price: number;
     change24h: number;
     color: string;
+    uniqueKey?: string;
   };
 }
 
@@ -125,7 +126,16 @@ export function DashboardMarketCapSection({ tokens = [] }: DashboardMarketCapSec
   };
 
   // Processar tokens para exibir
-  const processedTokens = tokens.slice(0, 5).map((token) => {
+  // Filtrar tokens duplicados por símbolo (manter apenas o primeiro)
+  const uniqueTokens = tokens.reduce((acc, token) => {
+    const symbol = token.symbol?.toUpperCase();
+    if (symbol && !acc.find(t => t.symbol?.toUpperCase() === symbol)) {
+      acc.push(token);
+    }
+    return acc;
+  }, [] as typeof tokens);
+
+  const processedTokens = uniqueTokens.slice(0, 5).map((token, index) => {
     const price = typeof token.priceUsd === 'string' 
       ? parseFloat(token.priceUsd) 
       : (token.priceUsd || token.price || 0);
@@ -136,7 +146,8 @@ export function DashboardMarketCapSection({ tokens = [] }: DashboardMarketCapSec
       logo: token.logo,
       price,
       change24h: token.change24h || 0,
-      color: token.color || defaultColors[token.symbol?.toUpperCase() || ''] || '#64748b'
+      color: token.color || defaultColors[token.symbol?.toUpperCase() || ''] || '#64748b',
+      uniqueKey: token.symbol ? `${token.symbol}-${index}` : `token-${index}` // Key única para React
     };
   });
 
@@ -147,35 +158,40 @@ export function DashboardMarketCapSection({ tokens = [] }: DashboardMarketCapSec
       name: 'Bitcoin',
       color: '#F7931A',
       price: 109570.00,
-      change24h: 1.63
+      change24h: 1.63,
+      uniqueKey: 'BTC-default-0'
     },
     {
       symbol: 'ETH',
       name: 'Ethereum',
       color: '#627EEA',
       price: 3855.15,
-      change24h: 2.05
+      change24h: 2.05,
+      uniqueKey: 'ETH-default-1'
     },
     {
       symbol: 'USDT',
       name: 'Tether',
       color: '#26A17B',
       price: 0.99,
-      change24h: -0.05
+      change24h: -0.05,
+      uniqueKey: 'USDT-default-2'
     },
     {
       symbol: 'XRP',
       name: 'XRP',
       color: '#000000',
       price: 2.51,
-      change24h: 2.93
+      change24h: 2.93,
+      uniqueKey: 'XRP-default-3'
     },
     {
       symbol: 'BNB',
       name: 'BNB',
       color: '#F3BA2F',
       price: 1088.25,
-      change24h: 1.86
+      change24h: 1.86,
+      uniqueKey: 'BNB-default-4'
     }
   ];
 
@@ -195,8 +211,11 @@ export function DashboardMarketCapSection({ tokens = [] }: DashboardMarketCapSec
       </div>
 
       <div className="space-y-3">
-        {displayTokens.map((token) => (
-          <MarketCapItem key={token.symbol} token={token} />
+        {displayTokens.map((token, index) => (
+          <MarketCapItem 
+            key={token.uniqueKey || `${token.symbol}-${index}`} 
+            token={token} 
+          />
         ))}
       </div>
     </div>
