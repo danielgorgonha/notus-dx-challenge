@@ -21,16 +21,40 @@ export function CryptoListItem({ token, currency }: CryptoListItemProps) {
   const logo = token.logo || token.logoURL || token.logoUrl;
   
   // Preço formatado
-  const price = token.displayPrice || token.priceUsd || token.price || 0;
-  const formattedPrice = new Intl.NumberFormat(currency === 'BRL' ? 'pt-BR' : 'en-US', {
-    style: 'currency',
-    currency: currency === 'BRL' ? 'BRL' : 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(price);
+  const price = token.displayPrice || token.priceUsd || token.priceUSD || token.price || 0;
+  
+  // Formatação de preço mais flexível (valores muito altos ou baixos)
+  const formatPrice = (value: number, curr: 'BRL' | 'USD') => {
+    if (value === 0) return curr === 'BRL' ? 'R$ 0,00' : '$0.00';
+    if (value < 0.01) {
+      // Para valores muito pequenos, mostrar mais decimais
+      return new Intl.NumberFormat(curr === 'BRL' ? 'pt-BR' : 'en-US', {
+        style: 'currency',
+        currency: curr === 'BRL' ? 'BRL' : 'USD',
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 6,
+      }).format(value);
+    }
+    return new Intl.NumberFormat(curr === 'BRL' ? 'pt-BR' : 'en-US', {
+      style: 'currency',
+      currency: curr === 'BRL' ? 'BRL' : 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  };
+  
+  const formattedPrice = formatPrice(price, currency);
 
-  // Variação 24h
-  const change24h = parseFloat(token.change24h || token.change24hPercent || '0');
+  // Variação 24h - tentar vários campos possíveis
+  const change24h = parseFloat(
+    token.change24h || 
+    token.change24hPercent || 
+    token.change24H || 
+    token.change24HPercent ||
+    token.priceChange24h ||
+    token.priceChange24hPercent ||
+    '0'
+  );
   const isPositive = change24h >= 0;
   const formattedChange = `${isPositive ? '+' : ''}${change24h.toFixed(2)}%`;
 
@@ -58,7 +82,7 @@ export function CryptoListItem({ token, currency }: CryptoListItemProps) {
       onClick={handleClick}
       className="w-full bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 hover:bg-slate-700/50 transition-colors text-left"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         {/* Lado Esquerdo: Logo, Nome e Símbolo */}
         <div className="flex items-center gap-3 flex-1 min-w-0">
           {/* Logo */}
@@ -101,12 +125,12 @@ export function CryptoListItem({ token, currency }: CryptoListItemProps) {
         </div>
 
         {/* Lado Direito: Preço e Variação */}
-        <div className="text-right flex-shrink-0 ml-4">
-          <div className="text-white font-semibold text-base mb-1">
+        <div className="text-right flex-shrink-0">
+          <div className="text-white font-semibold text-base mb-1 whitespace-nowrap">
             {formattedPrice}
           </div>
           <div className={cn(
-            "text-sm font-medium",
+            "text-sm font-medium whitespace-nowrap",
             isPositive ? "text-green-400" : "text-red-400"
           )}>
             {formattedChange} 24h
