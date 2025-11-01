@@ -35,7 +35,8 @@ export default function LandingPage() {
   // Se o usuário já estiver autenticado, redirecionar para o dashboard
   useEffect(() => {
     if (ready && authenticated && user) {
-      router.push("/dashboard");
+      // Usar replace ao invés de push para evitar loops
+      router.replace("/dashboard");
     }
   }, [ready, authenticated, user, router]);
 
