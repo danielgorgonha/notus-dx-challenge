@@ -104,7 +104,12 @@ export function TokenDetailClient({
       </div>
 
       {/* Botões de Rodapé (apenas para portfolio) */}
-      {mode === 'portfolio' && <TokenFooterButtons token={tokenData} />}
+      {mode === 'portfolio' && (
+        <>
+          {console.log('🔍 TokenDetailClient - Renderizando TokenFooterButtons', { mode, symbol: tokenData.symbol })}
+          <TokenFooterButtons token={tokenData} />
+        </>
+      )}
 
       {/* Modal Informativo */}
       {isStablecoin && (
