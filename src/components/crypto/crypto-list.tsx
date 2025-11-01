@@ -12,15 +12,28 @@ interface CryptoListProps {
   tokens: any[];
   total: number;
   currency: 'BRL' | 'USD';
+  sortBy: "price" | "marketCap" | "priceChange24h" | "volume24h";
+  sortDirection: "asc" | "desc";
+  onSortClick: () => void;
 }
 
-export function CryptoList({ tokens, total, currency }: CryptoListProps) {
+export function CryptoList({ 
+  tokens, 
+  total, 
+  currency,
+  sortBy,
+  sortDirection,
+  onSortClick
+}: CryptoListProps) {
   return (
     <div className="space-y-4">
       {/* Cabeçalho da Lista */}
       <CryptoListHeader 
         total={tokens.length}
         originalTotal={total}
+        sortBy={sortBy}
+        sortDirection={sortDirection}
+        onSortClick={onSortClick}
       />
 
       {/* Lista de Tokens */}

@@ -70,11 +70,25 @@ export function CryptoClient({ initialTokens, total }: CryptoClientProps) {
       {/* List */}
       <div className="px-4 lg:px-6 mt-4">
         <CryptoList 
-          tokens={tokensWithCurrency}
+          tokens={sortedTokens}
           total={total}
           currency={currency}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onSortClick={handleOpenModal}
         />
       </div>
+
+      {/* Sort Modal */}
+      <CryptoSortModal
+        isOpen={showSortModal}
+        onClose={() => setShowSortModal(false)}
+        sortBy={tempSortBy}
+        sortDirection={tempSortDirection}
+        onSortByChange={setTempSortBy}
+        onSortDirectionChange={setTempSortDirection}
+        onApply={handleApplySort}
+      />
     </div>
   );
 }

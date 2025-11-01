@@ -8,18 +8,37 @@
 interface CryptoListHeaderProps {
   total: number;
   originalTotal: number;
+  sortBy: "price" | "marketCap" | "priceChange24h" | "volume24h";
+  sortDirection: "asc" | "desc";
+  onSortClick: () => void;
 }
 
-export function CryptoListHeader({ total, originalTotal }: CryptoListHeaderProps) {
+const sortLabels: Record<"price" | "marketCap" | "priceChange24h" | "volume24h", string> = {
+  price: "Preço atual",
+  marketCap: "Capitalização de mercado",
+  priceChange24h: "Maior alteração de preço (24h)",
+  volume24h: "Volume negociado (24h)",
+};
+
+export function CryptoListHeader({ 
+  total, 
+  originalTotal,
+  sortBy,
+  sortDirection,
+  onSortClick 
+}: CryptoListHeaderProps) {
   return (
     <div className="flex items-center justify-between py-3">
       <div className="text-white text-base font-medium">
-        Cripto - {total}
+        Cripto - {originalTotal}
       </div>
-      <div className="text-yellow-400 text-sm font-medium flex items-center gap-1">
-        Capitalização de mercado
-        <span className="text-xs ml-1">↓</span>
-      </div>
+      <button
+        onClick={onSortClick}
+        className="text-yellow-400 text-sm font-medium flex items-center gap-1 hover:text-yellow-300 transition-colors"
+      >
+        {sortLabels[sortBy]}
+        <span className="text-xs ml-1">{sortDirection === 'desc' ? '↓' : '↑'}</span>
+      </button>
     </div>
   );
 }
