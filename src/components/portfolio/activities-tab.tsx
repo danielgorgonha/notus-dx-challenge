@@ -17,6 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TransactionDetailModal } from "./transaction-detail-modal";
 
 interface ActivitiesTabProps {
   history: any;
@@ -43,6 +44,7 @@ export function ActivitiesTab({ history, walletAddress }: ActivitiesTabProps) {
     to: null as string | null,
     network: null as string | null,
   });
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   const transactions = history?.transactions || [];
 
@@ -133,13 +135,21 @@ export function ActivitiesTab({ history, walletAddress }: ActivitiesTabProps) {
     });
   };
 
-  const formatAmount = (amount?: string, token?: string) => {
+  const formatAmount = (amount?: string, tokenDecimals: number = 18, tokenSymbol?: string) => {
     if (!amount) return '';
-    const num = parseFloat(amount);
-    if (isNaN(num)) return '';
+    // Se amount está em wei/smallest unit, converter considerando decimais
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum)) return '';
+    
+    // Se o número é muito grande, provavelmente está em smallest unit (wei)
+    // Converter dividindo por 10^decimals
+    const num = amountNum > 1e10 ? amountNum / Math.pow(10, tokenDecimals) : amountNum;
+    if (isNaN(num) || num === 0) return '';
+    
     // Formatação mais compacta: mostrar menos decimais para valores pequenos
-    const decimals = num < 0.001 ? 8 : num < 1 ? 6 : 2;
-    return `${num >= 0 ? '+' : ''}${num.toFixed(decimals)} ${token || ''}`.trim();
+    const displayDecimals = num < 0.001 ? 8 : num < 1 ? 6 : 2;
+    const formatted = num.toFixed(displayDecimals).replace(/\.?0+$/, '');
+    return `${num >= 0 ? '+' : ''}${formatted} ${tokenSymbol || ''}`.trim();
   };
 
   const formatCurrency = (value: number) => {
@@ -191,15 +201,57 @@ export function ActivitiesTab({ history, walletAddress }: ActivitiesTabProps) {
                   const { icon: TxIcon, color: txColor } = getTransactionIcon(tx.type || '');
                   const { icon: StatusIcon, color: statusColor, label: statusLabel } = getStatusIcon(tx.status || 'completed');
                   
-                  // Tentar extrair informações de tokens da metadata ou dos campos padrão
-                  const token0 = tx.metadata?.token0 || tx.metadata?.tokenIn || tx.token;
-                  const token1 = tx.metadata?.token1 || tx.metadata?.tokenOut;
-                  const amount0 = tx.metadata?.amount0 || tx.metadata?.amountIn || tx.amount;
-                  const amount1 = tx.metadata?.amount1 || tx.metadata?.amountOut;
-                  const amountUsd = tx.metadata?.amountUsd || tx.metadata?.amountUSD || tx.metadata?.amountUSd;
+                  // Extrair dados da API Notus
+                  // receivedAmount contém informações do token recebido
+                  const receivedAmount = (tx as any).receivedAmount;
+                  const receivedToken = receivedAmount?.token || receivedAmount?.cryptoCurrency;
+                  
+                  // Para transações de liquidez/swap, verificar metadata.operation
+                  const operation = tx.metadata?.operation;
+                  
+                  // Token 0 (do receivedAmount ou operation)
+                  const token0 = receivedToken || 
+                                 operation?.token0 || 
+                                 tx.metadata?.token0 || 
+                                 tx.metadata?.tokenIn ||
+                                 (tx as any).token;
+                  
+                  // Token 1 (apenas para swap/liquidity via operation)
+                  const token1 = operation?.token1 || 
+                                 tx.metadata?.token1 || 
+                                 tx.metadata?.tokenOut;
+                  
+                  // Amount 0 (do receivedAmount ou operation)
+                  const amount0Raw = receivedAmount?.amount || 
+                                     operation?.token0Amount ||
+                                     operation?.amountIn ||
+                                     tx.metadata?.amount0 || 
+                                     tx.metadata?.amountIn || 
+                                     (tx as any).amount;
+                  
+                  // Amount 1 (apenas para swap/liquidity)
+                  const amount1Raw = operation?.token1Amount ||
+                                     operation?.amountOut ||
+                                     tx.metadata?.amount1 || 
+                                     tx.metadata?.amountOut;
+                  
+                  // Valor USD (do amountIn.usd ou metadata)
+                  const amountUsd = receivedAmount?.amountIn?.usd || 
+                                   receivedAmount?.amountIn?.USD ||
+                                   operation?.amountInUSD ||
+                                   operation?.token0ValueUSD ||
+                                   tx.metadata?.amountUsd || 
+                                   tx.metadata?.amountUSD || 
+                                   tx.metadata?.amountUSd;
                   
                   // Se for uma transação de swap/liquidity, pode ter ambos os tokens
-                  const hasMultipleTokens = token0 && token1 && (tx.type?.toLowerCase() === 'swap' || tx.type?.toLowerCase() === 'liquidity' || tx.type?.toLowerCase() === 'invest');
+                  const hasMultipleTokens = token0 && token1 && (
+                    tx.type?.toLowerCase() === 'swap' || 
+                    tx.type?.toLowerCase() === 'liquidity' || 
+                    tx.type?.toLowerCase() === 'invest' ||
+                    tx.type?.toLowerCase()?.includes('swap') ||
+                    tx.type?.toLowerCase()?.includes('liquidity')
+                  );
 
                   // Lógica para formatação de valores conforme tipo de transação
                   const isBuy = tx.type?.toLowerCase() === 'buy';
@@ -208,7 +260,11 @@ export function ActivitiesTab({ history, walletAddress }: ActivitiesTabProps) {
                   return (
                     <div key={tx.id || tx.hash || index} className="space-y-3">
                       {/* Card principal da transação */}
-                      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+                      <button
+                        onClick={() => setSelectedTransaction(tx)}
+                        className="w-full bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 hover:bg-slate-700/50 transition-colors text-left"
+                      >
+                      <div className="w-full">
                         <div className="flex items-start justify-between">
                           {/* Lado esquerdo: ícone e informações */}
                           <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -239,24 +295,33 @@ export function ActivitiesTab({ history, walletAddress }: ActivitiesTabProps) {
                           <div className="text-right flex-shrink-0 ml-4">
                             {hasMultipleTokens ? (
                               <div className="space-y-1">
-                                {amount0 && (
+                                {amount0Raw && token0 && (
                                   <div className="text-white text-sm font-medium">
-                                    {formatAmount(amount0.toString(), token0)}
+                                    {formatAmount(
+                                      amount0Raw.toString(), 
+                                      typeof token0 === 'object' ? token0?.decimals || 18 : 18,
+                                      typeof token0 === 'object' ? token0?.symbol : token0
+                                    )}
                                   </div>
                                 )}
-                                {amount1 && (
+                                {amount1Raw && token1 && (
                                   <div className="text-white text-sm font-medium">
-                                    {formatAmount(amount1.toString(), token1)}
+                                    {formatAmount(
+                                      amount1Raw.toString(), 
+                                      typeof token1 === 'object' ? token1?.decimals || 18 : 18,
+                                      typeof token1 === 'object' ? token1?.symbol : token1
+                                    )}
                                   </div>
                                 )}
                               </div>
                             ) : (
                               <div className="space-y-1">
                                 <div className="text-white text-sm font-medium">
-                                  {isBuy 
-                                    ? formatAmount(amount0?.toString() || tx.amount || '0', token0)
-                                    : formatAmount(amount0?.toString() || tx.amount || '0', token0)
-                                  }
+                                  {formatAmount(
+                                    amount0Raw?.toString() || (tx as any).amount || '0',
+                                    typeof token0 === 'object' ? token0?.decimals || 18 : 18,
+                                    typeof token0 === 'object' ? token0?.symbol : token0 || ''
+                                  )}
                                 </div>
                                 {amountUsd && parseFloat(amountUsd.toString()) !== 0 && (
                                   <div className="text-slate-400 text-xs">
@@ -281,6 +346,7 @@ export function ActivitiesTab({ history, walletAddress }: ActivitiesTabProps) {
                           </div>
                         </div>
                       </div>
+                      </button>
 
                       {/* Status da transação - abaixo do card */}
                       <div className="flex items-center justify-between">
@@ -305,6 +371,15 @@ export function ActivitiesTab({ history, walletAddress }: ActivitiesTabProps) {
           </div>
         )}
       </div>
+
+      {/* Modal de detalhes da transação */}
+      {selectedTransaction && (
+        <TransactionDetailModal
+          isOpen={!!selectedTransaction}
+          onClose={() => setSelectedTransaction(null)}
+          transaction={selectedTransaction}
+        />
+      )}
     </div>
   );
 }

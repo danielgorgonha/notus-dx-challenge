@@ -114,3 +114,36 @@ export function removeUndefined<T extends Record<string, unknown>>(obj: T): T {
   }
   return result;
 }
+
+/**
+ * Gera URL do explorer da blockchain baseado no chainId
+ */
+export function getExplorerUrl(address: string, chainId?: number): string | null {
+  if (!address) return null;
+  
+  const chainIdNum = chainId || 137; // Default: Polygon
+  const explorers: Record<number, string> = {
+    1: 'https://etherscan.io',
+    137: 'https://polygonscan.com',
+    42161: 'https://arbiscan.io',
+    43114: 'https://snowtrace.io',
+    8453: 'https://basescan.org',
+    10: 'https://optimistic.etherscan.io',
+    56: 'https://bscscan.com',
+    100: 'https://gnosisscan.io',
+  };
+  
+  const baseUrl = explorers[chainIdNum] || 'https://polygonscan.com';
+  return `${baseUrl}/address/${address}`;
+}
+
+/**
+ * Formata balance de token considerando decimais
+ */
+export function formatTokenBalance(balance: string, decimals: number = 18): string {
+  const num = parseFloat(balance) / Math.pow(10, decimals);
+  if (num === 0) return '0';
+  if (num < 0.0001) return num.toFixed(8).replace(/\.?0+$/, '');
+  if (num < 1) return num.toFixed(6).replace(/\.?0+$/, '');
+  return num.toFixed(2).replace(/\.?0+$/, '');
+}
