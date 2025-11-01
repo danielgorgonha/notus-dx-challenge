@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth/auth";
 import { getWalletAddress, getPortfolio } from "@/lib/actions/dashboard";
 import { getTokenBySymbol } from "@/lib/actions/token";
+import { enrichTokensWithCoinGeckoData } from "@/lib/services/coingecko.service";
 import { AppLayout } from "@/components/layout/app-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { TokenDetailClient } from "@/components/token/token-detail-client";
@@ -49,10 +50,31 @@ export default async function TokenDetailPage({ params }: TokenDetailPageProps) 
   );
 
   // Combinar dados do portfolio com informações do token
-  const tokenData = tokenInPortfolio || tokenInfo;
+  let tokenData = tokenInPortfolio || tokenInfo;
   
   if (!tokenData) {
     redirect("/portfolio");
+  }
+
+  // Enriquecer token com dados do CoinGecko (price, priceChange24h, volume24h)
+  try {
+    const enrichedMap = await enrichTokensWithCoinGeckoData([tokenData]);
+    const symbol = tokenData.symbol?.toUpperCase() || '';
+    const enriched = enrichedMap.get(symbol);
+    
+    if (enriched) {
+      tokenData = {
+        ...tokenData,
+        price: enriched.price,
+        priceUsd: enriched.price,
+        priceChange24h: enriched.priceChange24h,
+        change24h: enriched.priceChange24h,
+        volume24h: enriched.volume24h,
+      };
+    }
+  } catch (error) {
+    console.error('⚠️ Erro ao enriquecer token com CoinGecko (continuando sem dados):', error);
+    // Continuar sem dados do CoinGecko se houver erro
   }
 
   return (

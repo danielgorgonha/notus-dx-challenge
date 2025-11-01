@@ -12,15 +12,26 @@ interface TokenPerformanceProps {
 }
 
 export function TokenPerformance({ token }: TokenPerformanceProps) {
-  const symbol = token?.symbol?.toUpperCase() || '';
+  // Usar dados reais quando disponíveis
+  // Por enquanto, só temos dados de 24h do CoinGecko
+  const priceChange24h = token?.priceChange24h || token?.change24h || 0;
+  const priceChangeNum = parseFloat(String(priceChange24h));
+  const isPositive = priceChangeNum >= 0;
   
-  // Performance mockada (podem vir da API depois)
+  // Formatar valor
+  const formatChange = (value: number) => {
+    const sign = value >= 0 ? '+' : '';
+    return `${sign}${value.toFixed(2)}%`;
+  };
+  
+  // Performance: mostrar apenas 24h (único dado disponível do CoinGecko)
+  // Outros períodos podem ser adicionados no futuro com dados históricos
   const performance: Record<string, { value: string; isPositive: boolean }> = {
-    '1H': { value: symbol === 'BRZ' ? '0,34%' : '0,0%', isPositive: true },
-    '1D': { value: symbol === 'BRZ' ? '0,31%' : '-0,0%', isPositive: symbol !== 'USDC' },
-    '7D': { value: symbol === 'BRZ' ? '0,41%' : '-0,0%', isPositive: symbol !== 'USDC' },
-    '30D': { value: symbol === 'BRZ' ? '-1,2%' : '0,0%', isPositive: symbol === 'USDC' },
-    '1A': { value: symbol === 'BRZ' ? '8,1%' : '0,03%', isPositive: true },
+    '1H': { value: 'N/A', isPositive: true }, // Não disponível via CoinGecko free tier
+    '1D': { value: formatChange(priceChangeNum), isPositive: isPositive },
+    '7D': { value: 'N/A', isPositive: true }, // Não disponível via CoinGecko free tier
+    '30D': { value: 'N/A', isPositive: true }, // Não disponível via CoinGecko free tier
+    '1A': { value: 'N/A', isPositive: true }, // Não disponível via CoinGecko free tier
   };
 
   return (

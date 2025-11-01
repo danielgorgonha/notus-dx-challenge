@@ -13,12 +13,31 @@ export function TokenInfo({ token }: TokenInfoProps) {
   const symbol = token?.symbol?.toUpperCase() || '';
   const name = token?.name || '';
   
-  // Informações da API (quando disponíveis)
-  // Por enquanto, apenas para BRZ e USDC temos informações mockadas
-  // Outros tokens podem ter dados reais da API no futuro
-  const rank = symbol === 'BRZ' ? 'BB 67.94' : symbol === 'USDC' ? '#7' : null;
-  const marketcap = symbol === 'BRZ' ? null : symbol === 'USDC' ? '$75.9 B' : null;
-  const volume = symbol === 'BRZ' ? '$179.9 K Vol' : symbol === 'USDC' ? '$18.0 B Vol' : null;
+  // Usar dados reais da API
+  const marketCap = token?.marketCap || token?.marketCapUSD || token?.marketCapUsd || null;
+  const volume24h = token?.volume24h || token?.volume24hUSD || token?.volume24hUsd || null;
+  
+  // Formatar marketcap
+  const formatMarketCap = (value: number) => {
+    if (value >= 1e12) return `$${(value / 1e12).toFixed(1)} T`;
+    if (value >= 1e9) return `$${(value / 1e9).toFixed(1)} B`;
+    if (value >= 1e6) return `$${(value / 1e6).toFixed(1)} M`;
+    if (value >= 1e3) return `$${(value / 1e3).toFixed(1)} K`;
+    return `$${value.toFixed(2)}`;
+  };
+  
+  // Formatar volume
+  const formatVolume = (value: number) => {
+    if (value >= 1e12) return `$${(value / 1e12).toFixed(1)} T Vol`;
+    if (value >= 1e9) return `$${(value / 1e9).toFixed(1)} B Vol`;
+    if (value >= 1e6) return `$${(value / 1e6).toFixed(1)} M Vol`;
+    if (value >= 1e3) return `$${(value / 1e3).toFixed(1)} K Vol`;
+    return `$${value.toFixed(2)} Vol`;
+  };
+  
+  const marketcap = marketCap ? formatMarketCap(marketCap) : null;
+  const volume = volume24h ? formatVolume(volume24h) : null;
+  const rank = null; // Rank não disponível nas APIs atuais
 
   return (
     <div className="px-4 lg:px-6">
