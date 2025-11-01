@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
@@ -76,17 +76,39 @@ export default function BuyTokenPage() {
   }, [portfolioData]);
 
   const usdcToken = useMemo(() => {
-    return portfolioData?.tokens?.find((t: any) => t.symbol?.toUpperCase() === 'USDC');
+    return portfolioData?.tokens?.find((t: any) => 
+      t.symbol?.toUpperCase() === 'USDC' || t.symbol?.toUpperCase() === 'USDC.E'
+    );
   }, [portfolioData]);
 
-  // Obter saldo da moeda selecionada
+  // Função para formatar balance (converter de wei para unidades legíveis)
+  const formatTokenBalance = useCallback((balance: string, decimals: number = 18): string => {
+    if (!balance || balance === '0') return '0';
+    const num = parseFloat(balance) / Math.pow(10, decimals);
+    if (num === 0) return '0';
+    if (num < 0.0001) return num.toFixed(8).replace(/\.?0+$/, '');
+    if (num < 1) return num.toFixed(6).replace(/\.?0+$/, '');
+    return num.toFixed(2).replace(/\.?0+$/, '');
+  }, []);
+
+  // Obter saldo formatado da moeda selecionada
   const selectedToken = useMemo(() => {
     if (selectedCurrency === 'BRZ') return brzToken;
     if (selectedCurrency === 'USDC') return usdcToken;
     return null;
   }, [selectedCurrency, brzToken, usdcToken]);
 
-  const selectedBalance = selectedToken?.balance || '0';
+  // Balance em unidades legíveis (já formatado)
+  const selectedBalance = useMemo(() => {
+    if (!selectedToken) return '0';
+    return formatTokenBalance(selectedToken.balance || '0', selectedToken.decimals || 18);
+  }, [selectedToken, formatTokenBalance]);
+
+  // Balance em wei (para cálculos e API)
+  const selectedBalanceWei = useMemo(() => {
+    if (!selectedToken) return '0';
+    return selectedToken.balance || '0';
+  }, [selectedToken]);
 
   // Validar valor
   const isValidAmount = useMemo(() => {
@@ -155,10 +177,10 @@ export default function BuyTokenPage() {
               </div>
               <div className="text-right">
                 <div className="text-white font-semibold">
-                  {brzToken?.balance ? formatFiatAmount(brzToken.balance) : 'R$ 0,00'}
+                  {brzToken ? formatFiatAmount(formatTokenBalance(brzToken.balance || '0', brzToken.decimals || 18)) : 'R$ 0,00'}
                 </div>
                 <div className="text-slate-400 text-sm">
-                  ${parseFloat(brzToken?.balanceUSD || '0').toFixed(2)}
+                  ${parseFloat(brzToken?.balanceUSD || brzToken?.balanceUsd || '0').toFixed(2)}
                 </div>
               </div>
             </div>
@@ -184,10 +206,10 @@ export default function BuyTokenPage() {
               </div>
               <div className="text-right">
                 <div className="text-white font-semibold">
-                  {usdcToken?.balance ? `${usdcToken.balance} USDC` : '0 USDC'}
+                  {usdcToken ? `${formatTokenBalance(usdcToken.balance || '0', usdcToken.decimals || 6)} USDC` : '0 USDC'}
                 </div>
                 <div className="text-slate-400 text-sm">
-                  ${parseFloat(usdcToken?.balanceUSD || '0').toFixed(2)}
+                  ${parseFloat(usdcToken?.balanceUSD || usdcToken?.balanceUsd || '0').toFixed(2)}
                 </div>
               </div>
             </div>
@@ -210,9 +232,13 @@ export default function BuyTokenPage() {
       const calculateEstimate = async () => {
         setIsCalculatingQuote(true);
         try {
+          // Converter amount para wei (considerando os decimals do token de entrada)
+          const decimals = selectedToken.decimals || (selectedCurrency === 'USDC' ? 6 : 18);
+          const amountInWei = (parseFloat(amount) * Math.pow(10, decimals)).toString();
+
           // Obter cotação preliminar
           const swapQuote = await createSwapQuote({
-            amountIn: amount,
+            amountIn: amountInWei,
             chainIdIn: SUPPORTED_CHAINS.POLYGON,
             chainIdOut: SUPPORTED_CHAINS.POLYGON,
             tokenIn: selectedToken.address,
@@ -226,7 +252,10 @@ export default function BuyTokenPage() {
 
           const quote = swapQuote.quotes?.[0] || swapQuote.swap;
           if (quote?.minAmountOut) {
-            setEstimatedReceived(quote.minAmountOut);
+            // Converter minAmountOut de wei para unidades legíveis
+            const tokenDecimals = tokenData.decimals || 18;
+            const receivedAmount = parseFloat(quote.minAmountOut) / Math.pow(10, tokenDecimals);
+            setEstimatedReceived(receivedAmount.toString());
           }
         } catch (error) {
           // Se falhar, não mostrar erro, apenas não atualizar estimativa
@@ -260,9 +289,13 @@ export default function BuyTokenPage() {
 
       setIsLoading(true);
       try {
+        // Converter amount para wei (considerando os decimals do token de entrada)
+        const decimals = selectedToken.decimals || (selectedCurrency === 'USDC' ? 6 : 18);
+        const amountInWei = (parseFloat(amount) * Math.pow(10, decimals)).toString();
+
         // Obter cotação final
         const swapQuote = await createSwapQuote({
-          amountIn: amount,
+          amountIn: amountInWei,
           chainIdIn: SUPPORTED_CHAINS.POLYGON,
           chainIdOut: SUPPORTED_CHAINS.POLYGON,
           tokenIn: selectedToken.address,
@@ -281,13 +314,18 @@ export default function BuyTokenPage() {
           throw new Error('Quantidade recebida muito baixa. Aumente o valor da compra.');
         }
         
+        // Converter minAmountOut de wei para unidades legíveis para exibição
+        const tokenDecimals = tokenData.decimals || 18;
+        const toAmountFormatted = parseFloat(quote.minAmountOut) / Math.pow(10, tokenDecimals);
+        
         const quoteData = {
           ...quote,
           fromToken: selectedToken,
           toToken: tokenData,
           fromAmount: amount,
-          toAmount: quote.minAmountOut,
-          exchangeRate: parseFloat(quote.minAmountOut) / parseFloat(amount),
+          toAmount: toAmountFormatted.toString(), // Valor formatado para exibição
+          toAmountWei: quote.minAmountOut, // Valor em wei para cálculos
+          exchangeRate: toAmountFormatted / parseFloat(amount),
           slippage,
           estimatedGasFee: quote.estimatedGasFees?.gasFeeTokenAmount,
           gasFeeToken: selectedToken.symbol,
