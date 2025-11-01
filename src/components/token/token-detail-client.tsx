@@ -101,10 +101,10 @@ export function TokenDetailClient({
 
         {/* Detalhes do Token */}
         <TokenDetails token={tokenData} />
-
-        {/* Botões de Rodapé (apenas para portfolio e stablecoins) */}
-        {mode === 'portfolio' && <TokenFooterButtons token={tokenData} />}
       </div>
+
+      {/* Botões de Rodapé (apenas para portfolio) */}
+      {mode === 'portfolio' && <TokenFooterButtons token={tokenData} />}
 
       {/* Modal Informativo */}
       {isStablecoin && (

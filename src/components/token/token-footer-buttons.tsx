@@ -41,7 +41,7 @@ export function TokenFooterButtons({ token }: TokenFooterButtonsProps) {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 p-4 pb-safe-area-inset-bottom z-[40] lg:relative lg:border-t-0 lg:p-0 lg:z-auto">
+    <div className="fixed bottom-16 left-0 right-0 bg-slate-900 border-t border-slate-800 p-4 pb-safe-area-inset-bottom z-[55] lg:bottom-0 lg:relative lg:border-t-0 lg:p-0 lg:z-auto">
       <div className="flex gap-3 max-w-7xl mx-auto lg:px-6">
         {/* Botão Vender */}
         <button
