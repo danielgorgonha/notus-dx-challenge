@@ -5,8 +5,11 @@
 
 "use client";
 
-import { Shield } from "lucide-react";
+import { Shield, LogOut, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { usePrivy } from "@privy-io/react-auth";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 interface DashboardHeaderProps {
   userEmail?: string;
@@ -20,11 +23,26 @@ export function DashboardHeader({
   onCurrencyToggle 
 }: DashboardHeaderProps) {
   const [currency, setCurrency] = useState<'USD' | 'BRL'>('BRL');
+  const { logout } = usePrivy();
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const toggleCurrency = () => {
     const newCurrency = currency === 'BRL' ? 'USD' : 'BRL';
     setCurrency(newCurrency);
     onCurrencyToggle?.(newCurrency);
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      router.push("/");
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -74,6 +92,28 @@ export function DashboardHeader({
               <span className="text-green-400 font-semibold text-sm">Seguro</span>
             </div>
           </div>
+
+          {/* Botão de Logout - Desktop */}
+          <Button
+            onClick={handleLogout}
+            variant="ghost"
+            size="sm"
+            className="hidden lg:flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800/60 active:bg-slate-700/60 px-4 py-2 rounded-xl border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200 text-sm backdrop-blur-sm"
+            disabled={isLoggingOut}
+            title="Sair"
+          >
+            {isLoggingOut ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin text-yellow-400" />
+                <span className="text-xs">Saindo...</span>
+              </>
+            ) : (
+              <>
+                <LogOut className="h-4 w-4" />
+                <span className="text-xs">Logout</span>
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </div>
