@@ -16,6 +16,8 @@ import { QuickActions } from "@/components/dashboard/quick-actions";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { DashboardClientWrapper } from "@/components/dashboard/dashboard-client-wrapper";
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
   // Autenticação no servidor
   // IMPORTANTE: Não fazer redirect aqui se falhar - deixar ProtectedRoute lidar no client

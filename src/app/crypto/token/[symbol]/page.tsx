@@ -16,6 +16,8 @@ interface CryptoTokenDetailPageProps {
   params: Promise<{ symbol: string }>;
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function CryptoTokenDetailPage({ params }: CryptoTokenDetailPageProps) {
   // Autenticação no servidor
   const user = await auth();

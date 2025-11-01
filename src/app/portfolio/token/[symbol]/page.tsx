@@ -16,6 +16,8 @@ interface TokenDetailPageProps {
   params: Promise<{ symbol: string }>;
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function TokenDetailPage({ params }: TokenDetailPageProps) {
   // Autenticação no servidor
   const user = await auth();

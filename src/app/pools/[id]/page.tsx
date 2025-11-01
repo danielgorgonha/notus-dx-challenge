@@ -16,6 +16,8 @@ interface PoolDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function PoolDetailPage({ params }: PoolDetailPageProps) {
   // Autenticação no servidor
   const user = await auth();

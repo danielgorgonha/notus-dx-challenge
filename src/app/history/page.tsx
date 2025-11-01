@@ -12,6 +12,8 @@ import { HistoryClient } from "@/components/history/history-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { History as HistoryIcon } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 export default async function HistoryPage() {
   // Autenticação no servidor
   const user = await auth();

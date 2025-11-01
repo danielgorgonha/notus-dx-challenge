@@ -11,6 +11,8 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { PortfolioClient } from "@/components/portfolio/portfolio-client";
 
+export const dynamic = 'force-dynamic';
+
 export default async function PortfolioPage() {
   // Autenticação no servidor
   const user = await auth();

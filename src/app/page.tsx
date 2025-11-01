@@ -106,7 +106,13 @@ export default function LandingPage() {
               <Button
                 size="sm"
                 className="bg-yellow-400 hover:bg-yellow-500 text-green-900 font-bold"
-                onClick={login}
+                onClick={() => {
+                  if (authenticated) {
+                    router.replace("/dashboard");
+                  } else {
+                    login();
+                  }
+                }}
               >
                 <Shield className="mr-2 h-4 w-4" />
                 Começar
@@ -131,7 +137,13 @@ export default function LandingPage() {
           
           <button 
             className="bg-yellow-400 hover:bg-yellow-500 text-green-900 font-bold text-lg px-8 py-4 rounded-lg transition-all transform hover:scale-105"
-            onClick={login}
+            onClick={() => {
+              if (authenticated) {
+                router.replace("/dashboard");
+              } else {
+                login();
+              }
+            }}
           >
             Criar Carteira Grátis
           </button>
@@ -324,7 +336,13 @@ export default function LandingPage() {
           </p>
           <button 
             className="bg-green-900 hover:bg-green-800 text-white font-bold text-lg px-8 py-4 rounded-lg transition-all transform hover:scale-105"
-            onClick={login}
+            onClick={() => {
+              if (authenticated) {
+                router.replace("/dashboard");
+              } else {
+                login();
+              }
+            }}
           >
             Criar Minha Carteira Agora
           </button>

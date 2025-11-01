@@ -11,6 +11,8 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { CryptoClient } from "@/components/crypto/crypto-client";
 
+export const dynamic = 'force-dynamic';
+
 export default async function CryptoPage() {
   // Autenticação no servidor
   const user = await auth();

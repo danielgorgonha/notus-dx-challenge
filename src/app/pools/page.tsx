@@ -13,6 +13,8 @@ import { PoolsClient } from "@/components/pools/pools-client";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Droplets } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 export default async function PoolsPage() {
   // Autenticação no servidor
   const user = await auth();

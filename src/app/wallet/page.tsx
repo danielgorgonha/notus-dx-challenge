@@ -4,6 +4,8 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { WalletInfo } from "@/components/wallet/wallet-info";
 import { WalletFeatures } from "@/components/wallet/wallet-features";
 
+export const dynamic = 'force-dynamic';
+
 export default async function WalletPage() {
   const user = await auth();
 
