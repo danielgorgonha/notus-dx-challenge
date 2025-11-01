@@ -65,7 +65,7 @@ export function TokenDetailClient({
     <>
       <div className={cn(
         "space-y-6",
-        mode === 'portfolio' ? "pb-24 lg:pb-6" : "pb-20 lg:pb-6"
+        "pb-24 lg:pb-6"
       )}>
         {/* Header */}
         <TokenDetailHeader

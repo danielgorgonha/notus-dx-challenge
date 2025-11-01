@@ -1,6 +1,6 @@
 /**
  * Token Footer Buttons Component
- * Botões de rodapé: Vender e Comprar (apenas para tokens não-stablecoin no portfolio)
+ * Botões de rodapé: Vender e Comprar (para tokens não-stablecoin em portfolio e crypto)
  * - Stablecoins (USDC/BRZ): Não renderiza botões (têm fluxos próprios de depositar/sacar via botões de ação)
  * - Outros tokens: Vender → swap (fromToken), Comprar → swap (toToken)
  */
@@ -17,11 +17,6 @@ interface TokenFooterButtonsProps {
 
 export function TokenFooterButtons({ token, mode = 'portfolio' }: TokenFooterButtonsProps) {
   const router = useRouter();
-  
-  // Só renderizar no modo portfolio
-  if (mode !== 'portfolio') {
-    return null;
-  }
   
   const symbol = token?.symbol?.toUpperCase() || '';
   const isStablecoin = symbol === 'BRZ' || symbol === 'USDC';
