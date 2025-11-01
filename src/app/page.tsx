@@ -31,16 +31,26 @@ export default function LandingPage() {
   const { ready, authenticated, user, login } = usePrivy();
   const router = useRouter();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [hasRedirected, setHasRedirected] = useState(false);
+
+  // Debug: Log do estado do Privy sempre que mudar
+  useEffect(() => {
+    console.log('🔍 Landing Page - Privy State:', {
+      ready,
+      authenticated,
+      hasUser: !!user,
+      userId: user?.id,
+      userEmail: user?.email,
+    });
+  }, [ready, authenticated, user]);
 
   // Handler para login com callback
   const handleLogin = async () => {
     try {
+      console.log('🔐 Iniciando login...');
       await login();
-      // Após login, o Privy vai atualizar o estado authenticated
-      // Não fazer redirect aqui, deixar o useEffect fazer
+      console.log('✅ Login chamado, aguardando Privy atualizar estado...');
     } catch (error) {
-      console.error('Error during login:', error);
+      console.error('❌ Error during login:', error);
     }
   };
 
@@ -52,21 +62,14 @@ export default function LandingPage() {
         authenticated,
         hasUser: !!user,
         userId: user?.id,
-        hasRedirected
       });
       
-      // Reset hasRedirected se ainda não redirecionou
-      if (!hasRedirected) {
-        setHasRedirected(true);
-        // Pequeno delay para garantir que o Privy finalizou a autenticação
-        const timer = setTimeout(() => {
-          router.replace("/dashboard");
-        }, 300);
-        
-        return () => clearTimeout(timer);
-      }
+      // Redirecionar imediatamente sem delay
+      router.replace("/dashboard");
+    } else if (ready && !authenticated) {
+      console.log('ℹ️ User not authenticated, showing landing page');
     }
-  }, [ready, authenticated, user, router, hasRedirected]);
+  }, [ready, authenticated, user, router]);
 
   if (!ready) {
     return (
