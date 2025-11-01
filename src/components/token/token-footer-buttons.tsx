@@ -12,10 +12,16 @@ import { Minus, Plus } from "lucide-react";
 
 interface TokenFooterButtonsProps {
   token: any;
+  mode?: 'portfolio' | 'crypto';
 }
 
-export function TokenFooterButtons({ token }: TokenFooterButtonsProps) {
+export function TokenFooterButtons({ token, mode = 'portfolio' }: TokenFooterButtonsProps) {
   const router = useRouter();
+  
+  // Só renderizar no modo portfolio
+  if (mode !== 'portfolio') {
+    return null;
+  }
   
   const symbol = token?.symbol?.toUpperCase() || '';
   const isStablecoin = symbol === 'BRZ' || symbol === 'USDC';
