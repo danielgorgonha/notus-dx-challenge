@@ -76,15 +76,15 @@ export function CryptoSortModal({
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-base">{option.label}</span>
                   {sortBy === option.value && (
-                    <button
+                    <span
                       onClick={(e) => {
                         e.stopPropagation();
                         onSortDirectionChange(sortDirection === 'desc' ? 'asc' : 'desc');
                       }}
-                      className="text-yellow-400 text-lg hover:text-yellow-300 transition-colors focus:outline-none"
+                      className="text-yellow-400 text-lg hover:text-yellow-300 transition-colors cursor-pointer select-none"
                     >
                       {sortDirection === 'desc' ? '↓' : '↑'}
-                    </button>
+                    </span>
                   )}
                 </div>
               </button>
