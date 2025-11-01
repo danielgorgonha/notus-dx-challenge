@@ -46,7 +46,7 @@ export default function LandingPage() {
 
   // Se o usuário já estiver autenticado, redirecionar para o dashboard
   useEffect(() => {
-    if (ready && authenticated && user && !hasRedirected) {
+    if (ready && authenticated && user) {
       console.log('✅ User authenticated, redirecting to dashboard...', {
         ready,
         authenticated,
@@ -54,27 +54,19 @@ export default function LandingPage() {
         userId: user?.id,
         hasRedirected
       });
-      setHasRedirected(true);
-      // Usar router.replace para evitar reload completo
-      router.replace("/dashboard");
+      
+      // Reset hasRedirected se ainda não redirecionou
+      if (!hasRedirected) {
+        setHasRedirected(true);
+        // Pequeno delay para garantir que o Privy finalizou a autenticação
+        const timer = setTimeout(() => {
+          router.replace("/dashboard");
+        }, 300);
+        
+        return () => clearTimeout(timer);
+      }
     }
   }, [ready, authenticated, user, router, hasRedirected]);
-
-  // Também verificar quando o componente monta se já está autenticado
-  // (útil quando volta do callback do OAuth)
-  useEffect(() => {
-    if (ready && authenticated && user && !hasRedirected) {
-      // Forçar re-render após um pequeno delay para garantir que o estado foi atualizado
-      const timer = setTimeout(() => {
-        if (authenticated && user) {
-          console.log('🔄 Re-checking auth status after delay...');
-          setHasRedirected(false); // Reset para permitir novo redirect se necessário
-        }
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [ready]);
 
   if (!ready) {
     return (
