@@ -96,33 +96,45 @@ export async function listTokens({
   filterByChainId?: number;
 } = {}): Promise<TokensResponse> {
   try {
+    // Construir parâmetros base
     const searchParams: Record<string, string | number | boolean> = {
       page, 
-      perPage,
-      filterWhitelist,
+      perPage: Math.min(perPage, 100), // Limitar ao máximo da API
       orderBy,
       orderDir
     };
 
-    // Adicionar projectId apenas se estiver definido
-    const projectId = process.env.NEXT_PUBLIC_PROJECT_ID || process.env.NOTUS_PROJECT_ID;
-    if (projectId) {
-      searchParams.projectId = projectId;
+    // Adicionar filterWhitelist apenas se fornecido (evitar enviar quando false)
+    if (filterWhitelist !== undefined && filterWhitelist !== false) {
+      searchParams.filterWhitelist = filterWhitelist;
     }
 
-    // Adicionar search se fornecido
-    if (search) {
-      searchParams.search = search;
+    // Adicionar projectId apenas se estiver definido e não vazio
+    const projectId = process.env.NEXT_PUBLIC_PROJECT_ID || process.env.NOTUS_PROJECT_ID;
+    if (projectId && projectId.trim()) {
+      searchParams.projectId = projectId.trim();
+    }
+
+    // Adicionar search se fornecido e não vazio
+    if (search && search.trim()) {
+      searchParams.search = search.trim();
     }
 
     // Adicionar filterByChainId se fornecido
     if (filterByChainId) {
       searchParams.filterByChainId = filterByChainId;
     }
+
+    console.log('📤 listTokens - Parâmetros enviados:', searchParams);
     
     const response = await notusAPI.get("crypto/tokens", {
       searchParams,
     }).json<TokensResponse>();
+
+    console.log('📥 listTokens - Resposta recebida:', {
+      total: response.total,
+      tokensCount: response.tokens?.length
+    });
 
     return response;
   } catch (error) {
