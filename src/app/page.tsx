@@ -31,22 +31,32 @@ export default function LandingPage() {
   const { ready, authenticated, user, login } = usePrivy();
   const router = useRouter();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [redirecting, setRedirecting] = useState(false);
+  const [hasRedirected, setHasRedirected] = useState(false);
+
+  // Handler para login com callback
+  const handleLogin = async () => {
+    try {
+      await login();
+      // Após login, o Privy vai atualizar o estado authenticated
+      // Não fazer redirect aqui, deixar o useEffect fazer
+    } catch (error) {
+      console.error('Error during login:', error);
+    }
+  };
 
   // Se o usuário já estiver autenticado, redirecionar para o dashboard
   useEffect(() => {
-    if (ready && authenticated && user && !redirecting) {
-      // Adicionar delay maior para garantir que o cookie seja definido pelo Privy
-      // após login via Google
-      setRedirecting(true);
+    if (ready && authenticated && user && !hasRedirected) {
+      console.log('✅ User authenticated, redirecting to dashboard...');
+      setHasRedirected(true);
+      // Pequeno delay para garantir que tudo está pronto
       const timer = setTimeout(() => {
-        // Usar replace ao invés de push para evitar loops
         router.replace("/dashboard");
-      }, 1500); // Aumentar delay para 1.5s
+      }, 100);
       
       return () => clearTimeout(timer);
     }
-  }, [ready, authenticated, user, router, redirecting]);
+  }, [ready, authenticated, user, router, hasRedirected]);
 
   if (!ready) {
     return (
@@ -110,7 +120,7 @@ export default function LandingPage() {
                   if (authenticated) {
                     router.replace("/dashboard");
                   } else {
-                    login();
+                    handleLogin();
                   }
                 }}
               >
@@ -141,7 +151,7 @@ export default function LandingPage() {
               if (authenticated) {
                 router.replace("/dashboard");
               } else {
-                login();
+                handleLogin();
               }
             }}
           >
@@ -340,7 +350,7 @@ export default function LandingPage() {
               if (authenticated) {
                 router.replace("/dashboard");
               } else {
-                login();
+                handleLogin();
               }
             }}
           >
