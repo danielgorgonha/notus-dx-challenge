@@ -26,18 +26,20 @@ export function TokenFooterButtons({ token, mode = 'portfolio' }: TokenFooterBut
   const symbol = token?.symbol?.toUpperCase() || '';
   const isStablecoin = symbol === 'BRZ' || symbol === 'USDC';
 
-  // Não renderizar botões para stablecoins (elas têm fluxos próprios de depositar/sacar)
+  // Não renderizar botões para stablecoins (USDC/BRZ)
+  // Elas têm fluxos próprios de depositar/sacar via botões de ação no topo
   if (isStablecoin) {
     return null;
   }
 
+  // Para tokens não-stablecoin (LINK, BTC, ETH, etc.): mostrar botões de Vender/Comprar
   const handleSell = () => {
-    // Para outros tokens: navegar para swap com token pré-selecionado como "De"
+    // Vender: navegar para swap com token pré-selecionado como "De" (fromToken)
     router.push(`/swap?fromToken=${encodeURIComponent(symbol)}`);
   };
 
   const handleBuy = () => {
-    // Para outros tokens: navegar para swap com token pré-selecionado como "Para"
+    // Comprar: navegar para swap com token pré-selecionado como "Para" (toToken)
     router.push(`/swap?toToken=${encodeURIComponent(symbol)}`);
   };
 
