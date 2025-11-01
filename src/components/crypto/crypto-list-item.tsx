@@ -73,8 +73,8 @@ export function CryptoListItem({ token, currency }: CryptoListItemProps) {
   const tokenColor = getTokenColor(symbol);
 
   const handleClick = () => {
-    // Navegar para detalhes do token (usar rota existente de portfolio ou criar nova)
-    router.push(`/portfolio/token/${symbol}`);
+    // Navegar para detalhes do token via menu Cripto
+    router.push(`/crypto/token/${symbol}`);
   };
 
   return (

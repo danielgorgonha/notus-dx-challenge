@@ -1,6 +1,6 @@
 /**
  * Token Action Buttons Component
- * Botões de ação: Depositar, Sacar, Receber, Enviar, Converter
+ * Botões de ação diferenciados por contexto: Portfolio ou Cripto
  */
 
 "use client";
@@ -10,12 +10,17 @@ import { Building2, DollarSign, ArrowDown, ArrowUp, ArrowRightLeft } from "lucid
 
 interface TokenActionButtonsProps {
   token: any;
+  mode?: 'portfolio' | 'crypto';
 }
 
-export function TokenActionButtons({ token }: TokenActionButtonsProps) {
+export function TokenActionButtons({ token, mode = 'portfolio' }: TokenActionButtonsProps) {
   const router = useRouter();
 
-  const actions = [
+  const symbol = token?.symbol?.toUpperCase() || '';
+  const isStablecoin = symbol === 'BRZ' || symbol === 'USDC';
+
+  // Ações para Portfolio - USDC/BRZ (tokens que podem fazer on-ramp/off-ramp)
+  const portfolioStablecoinActions = [
     {
       label: 'Depositar',
       icon: Building2,
@@ -42,6 +47,54 @@ export function TokenActionButtons({ token }: TokenActionButtonsProps) {
       action: () => router.push('/swap'),
     },
   ];
+
+  // Ações para Portfolio - Outros tokens (somente transações básicas)
+  const portfolioOtherActions = [
+    {
+      label: 'Receber',
+      icon: ArrowDown,
+      action: () => router.push('/wallet/receive'),
+    },
+    {
+      label: 'Enviar',
+      icon: ArrowUp,
+      action: () => router.push('/transfer'),
+    },
+    {
+      label: 'Converter',
+      icon: ArrowRightLeft,
+      action: () => router.push('/swap'),
+    },
+  ];
+
+  // Ações para Cripto (sempre somente transações básicas)
+  const cryptoActions = [
+    {
+      label: 'Receber',
+      icon: ArrowDown,
+      action: () => router.push('/wallet/receive'),
+    },
+    {
+      label: 'Enviar',
+      icon: ArrowUp,
+      action: () => router.push('/transfer'),
+    },
+    {
+      label: 'Converter',
+      icon: ArrowRightLeft,
+      action: () => router.push('/swap'),
+    },
+  ];
+
+  // Determinar ações baseado no modo e tipo de token
+  let actions;
+  if (mode === 'crypto') {
+    actions = cryptoActions;
+  } else if (mode === 'portfolio' && isStablecoin) {
+    actions = portfolioStablecoinActions;
+  } else {
+    actions = portfolioOtherActions;
+  }
 
   return (
     <div className="px-4 lg:px-6">

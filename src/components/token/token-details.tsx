@@ -16,9 +16,9 @@ export function TokenDetails({ token }: TokenDetailsProps) {
   const symbol = token?.symbol?.toUpperCase() || '';
   const address = token?.address || '';
   
-  // Dados reais da API
-  const network = token?.chain?.name?.toUpperCase() || 'POLYGON';
-  const chainId = token?.chain?.id || 137;
+  // Sempre usar Polygon (chainId: 137)
+  const network = 'POLYGON';
+  const chainId = 137;
   
   const allTimeHigh = symbol === 'BRZ' 
     ? { date: '29 Oct 2023, 20:35', price: '$9.99', change: '-98.14%' }

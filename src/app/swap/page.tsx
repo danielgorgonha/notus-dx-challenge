@@ -1110,7 +1110,7 @@ export default function SwapPage() {
                 <span className="text-slate-400">Rede:</span>
                 <div className="flex items-center space-x-2">
                   <img src={fromToken.chain?.logo || ''} alt="Polygon" className="w-6 h-6" />
-                  <span className="text-white">{fromToken.chain?.name || 'Polygon'}</span>
+                  <span className="text-white">Polygon</span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
@@ -1159,7 +1159,7 @@ export default function SwapPage() {
                 <span className="text-slate-400">Rede:</span>
                 <div className="flex items-center space-x-2">
                   <img src={fromToken.chain?.logo} alt="Polygon" className="w-6 h-6" />
-                  <span className="text-white">{fromToken.chain?.name || 'Polygon'}</span>
+                  <span className="text-white">Polygon</span>
                 </div>
               </div>
               <div className="flex items-center justify-between">

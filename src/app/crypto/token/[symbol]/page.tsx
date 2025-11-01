@@ -1,6 +1,6 @@
 /**
- * Token Detail Page - Server Component
- * Tela de detalhes de um token específico
+ * Crypto Token Detail Page - Server Component
+ * Tela de detalhes de um token específico acessado via menu Cripto
  */
 
 import { redirect } from "next/navigation";
@@ -11,11 +11,11 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { TokenDetailClient } from "@/components/token/token-detail-client";
 
-interface TokenDetailPageProps {
+interface CryptoTokenDetailPageProps {
   params: Promise<{ symbol: string }>;
 }
 
-export default async function TokenDetailPage({ params }: TokenDetailPageProps) {
+export default async function CryptoTokenDetailPage({ params }: CryptoTokenDetailPageProps) {
   // Autenticação no servidor
   const user = await auth();
   
@@ -43,7 +43,7 @@ export default async function TokenDetailPage({ params }: TokenDetailPageProps) 
     }),
   ]);
 
-  // Encontrar o token no portfolio
+  // Encontrar o token no portfolio (se existir)
   const tokenInPortfolio = portfolio?.tokens?.find((t: any) => 
     t.symbol?.toUpperCase() === symbol.toUpperCase()
   );
@@ -52,7 +52,7 @@ export default async function TokenDetailPage({ params }: TokenDetailPageProps) 
   const tokenData = tokenInPortfolio || tokenInfo;
   
   if (!tokenData) {
-    redirect("/portfolio");
+    redirect("/crypto");
   }
 
   return (
@@ -66,7 +66,7 @@ export default async function TokenDetailPage({ params }: TokenDetailPageProps) 
           token={tokenData}
           tokenInfo={tokenInfo}
           walletAddress={accountAbstractionAddress || ''}
-          mode="portfolio"
+          mode="crypto"
         />
       </AppLayout>
     </ProtectedRoute>
