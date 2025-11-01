@@ -226,6 +226,12 @@ export default function BuyTokenPage() {
     }
   }, [showSlippageModal, slippage]);
 
+  // Calcular valor em USD do estimado (no nível do componente)
+  const estimatedUSD = useMemo(() => {
+    if (!estimatedReceived || !tokenData?.price) return '0.00';
+    return (parseFloat(estimatedReceived) * (tokenData.price || 0)).toFixed(2);
+  }, [estimatedReceived, tokenData?.price]);
+
   // Calcular estimativa quando o valor muda
   useEffect(() => {
     if (currentStep === 'amount' && amount && isValidAmount && selectedToken && tokenData && walletAddress) {
@@ -350,12 +356,6 @@ export default function BuyTokenPage() {
 
     // Calcular quantidade mínima baseada no token (placeholder - pode ser ajustado)
     const minAmount = minRequiredAmount || '1.0';
-    
-    // Calcular valor em USD do estimado
-    const estimatedUSD = useMemo(() => {
-      if (!estimatedReceived || !tokenData.price) return '0.00';
-      return (parseFloat(estimatedReceived) * (tokenData.price || 0)).toFixed(2);
-    }, [estimatedReceived, tokenData.price]);
 
     return (
       <div className="space-y-6">
