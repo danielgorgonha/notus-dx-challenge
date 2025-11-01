@@ -96,18 +96,14 @@ export async function listTokens({
   filterByChainId?: number;
 } = {}): Promise<TokensResponse> {
   try {
-    // Construir parâmetros base
+    // Construir parâmetros base conforme documentação da API Notus
     const searchParams: Record<string, string | number | boolean> = {
       page, 
-      perPage: Math.min(perPage, 100), // Limitar ao máximo da API
+      perPage: Math.min(perPage, 100), // Limitar ao máximo da API (100)
       orderBy,
-      orderDir
+      orderDir,
+      filterWhitelist: String(filterWhitelist) as any, // API espera string "true" ou "false"
     };
-
-    // Adicionar filterWhitelist apenas se fornecido (evitar enviar quando false)
-    if (filterWhitelist !== undefined && filterWhitelist !== false) {
-      searchParams.filterWhitelist = filterWhitelist;
-    }
 
     // Adicionar projectId apenas se estiver definido e não vazio
     const projectId = process.env.NEXT_PUBLIC_PROJECT_ID || process.env.NOTUS_PROJECT_ID;
@@ -126,6 +122,7 @@ export async function listTokens({
     }
 
     console.log('📤 listTokens - Parâmetros enviados:', searchParams);
+    console.log('📤 listTokens - URL completa será:', `crypto/tokens?${new URLSearchParams(Object.entries(searchParams).map(([k, v]) => [k, String(v)])).toString()}`);
     
     const response = await notusAPI.get("crypto/tokens", {
       searchParams,
