@@ -18,7 +18,7 @@ export default async function CryptoPage() {
     redirect("/");
   }
 
-  // Buscar lista de tokens ordenados por marketCap
+  // Buscar lista de tokens ordenados por marketCap - apenas Polygon (chainId: 137)
   let tokensData;
   try {
     // A API Notus tem limite máximo de 100 tokens por página
@@ -28,6 +28,7 @@ export default async function CryptoPage() {
       orderBy: 'marketCap',
       orderDir: 'desc',
       filterWhitelist: false,
+      filterByChainId: 137, // Polygon
     });
     console.log('📊 CryptoPage - Tokens recebidos:', {
       total: tokensData?.total,
