@@ -34,11 +34,6 @@ export default async function PoolsPage() {
   let poolsData;
   try {
     poolsData = await listPools();
-    console.log('📊 PoolsPage - Dados recebidos:', {
-      total: poolsData?.total,
-      poolsLength: poolsData?.pools?.length,
-      error: poolsData?.error
-    });
   } catch (error) {
     console.error('❌ Erro ao buscar pools:', error);
     poolsData = { pools: [], total: 0, error: error instanceof Error ? error.message : 'Unknown error' };

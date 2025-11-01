@@ -169,7 +169,6 @@ export default function KYCPage() {
   const isLevel2Completed = kycData?.kycLevel >= 2 || kycPhase2Completed;
   
   // Debug logs
-  console.log('KYC Debug:', {
     kycData,
     isLoadingKYC,
     isLevel1Completed,

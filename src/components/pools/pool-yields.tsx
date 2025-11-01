@@ -34,7 +34,6 @@ export function PoolYields({ pool, token0, token1, walletAddress, poolId }: Pool
     try {
       // TODO: Implementar coleta de rendimentos
       // await liquidityActions.collectFees({...});
-      console.log('Coletar rendimentos');
     } catch (error) {
       console.error('Erro ao coletar rendimentos:', error);
     } finally {

@@ -21,7 +21,6 @@ export function calculateRentabilityFromHistoricalData(
   currentTvl: number,
   rangeInDays: number = 30
 ): RentabilityCalculation {
-  console.log(`🔍 Calculando rentabilidade com ${historicalData.length} dias de dados históricos da API Notus`);
   
   let totalFees = 0;
   let totalVolume = 0;
@@ -55,7 +54,6 @@ export function calculateRentabilityFromHistoricalData(
     apr = (annualFees / averageTvl) * 100;
   }
   
-  console.log(`💰 Rentabilidade calculada com dados históricos da API Notus:`, {
     totalFees,
     totalVolume,
     averageTvl,
@@ -83,7 +81,6 @@ export function calculateRentabilityFromStats(
   currentTvl: number,
   rangeInDays: number = 30
 ): RentabilityCalculation {
-  console.log('📊 Calculando rentabilidade com dados de stats');
   
   const historicalFees = parseFloat(stats?.feesInUSD) || 0;
   const historicalVolume = parseFloat(stats?.volumeInUSD) || 0;
@@ -97,7 +94,6 @@ export function calculateRentabilityFromStats(
     apr = (annualFees / currentTvl) * 100;
   }
   
-  console.log(`💰 Rentabilidade calculada com stats:`, {
     historicalFees,
     historicalVolume,
     currentTvl,
@@ -123,7 +119,6 @@ export function calculateRentabilityFrom24h(
   fee: number,
   currentTvl: number
 ): RentabilityCalculation {
-  console.log('📊 Calculando rentabilidade com dados de 24h (fallback)');
   
   let apr = 0;
   
@@ -133,7 +128,6 @@ export function calculateRentabilityFrom24h(
     apr = (annualFees / currentTvl) * 100;
   }
   
-  console.log(`💰 Rentabilidade calculada com 24h:`, {
     volume24h,
     fee,
     currentTvl,
@@ -163,7 +157,6 @@ export function calculatePoolRentability(
   const stats = pool.stats;
   const fee = parseFloat(pool.fee) || 0;
   
-  console.log('🔍 Calculando rentabilidade do pool:', {
     poolId: pool.id,
     tvl,
     hasHistoricalData: !!historicalData?.length,

@@ -13,7 +13,6 @@ export async function GET(
 ) {
   try {
     const { id: poolId } = await params;
-    console.log('🚀 [API] Buscando detalhes da pool:', poolId);
     
     if (!poolId) {
       return NextResponse.json(
@@ -28,10 +27,8 @@ export async function GET(
     
     // Fazer requisição para a API da Notus
     const url = `liquidity/pools/${poolId}?rangeInDays=${rangeInDays}`;
-    console.log('🔗 [API] URL da requisição:', url);
     
     const response = await notusAPI.get(url);
-    console.log('✅ [API] Resposta recebida:', response.status);
     
     const responseData = await response.json() as any;
     
@@ -69,7 +66,6 @@ export async function GET(
       stats: pool.stats
     };
     
-    console.log('✅ [API] Pool processada com sucesso:', {
       id: processedPool.id,
       hasMetrics: !!processedPool.metrics
     });

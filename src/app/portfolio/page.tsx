@@ -43,10 +43,6 @@ export default async function PortfolioPage() {
       return { pools: [], total: 0 };
     }),
   ]);
-
-  // Log para debug
-  console.log('📊 Portfolio data:', {
-    tokensCount: portfolio?.tokens?.length || 0,
     totalValueUSD: portfolio?.totalValueUSD,
     historyCount: history?.transactions?.length || 0,
     poolsCount: poolsData?.pools?.length || 0,

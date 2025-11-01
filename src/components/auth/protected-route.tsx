@@ -12,34 +12,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { ready, authenticated, user } = usePrivy();
   const router = useRouter();
 
-  // Debug logging
-  useEffect(() => {
-    console.log('🔐 ProtectedRoute - Auth State:', {
-      ready,
-      authenticated,
-      hasUser: !!user,
-      userId: user?.id,
-    });
-  }, [ready, authenticated, user]);
-
   useEffect(() => {
     if (ready && !authenticated) {
-      console.log('❌ ProtectedRoute: User not authenticated, redirecting to /');
-      // Usar replace para evitar loop de navegação
       router.replace("/");
     }
   }, [ready, authenticated, router]);
-
-  // Adicionar timeout para evitar ficar carregando indefinidamente
-  useEffect(() => {
-    if (!ready) {
-      const timeout = setTimeout(() => {
-        console.warn('⚠️ ProtectedRoute: Privy ready state taking too long (>5s), checking auth anyway...');
-      }, 5000); // 5 segundos
-      
-      return () => clearTimeout(timeout);
-    }
-  }, [ready]);
 
   if (!ready) {
     return (

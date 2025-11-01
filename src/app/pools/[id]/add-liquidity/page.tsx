@@ -21,7 +21,6 @@ import { executeUserOperation } from '@/lib/actions/user-operation';
 
 // Função para processar dados dos tokens (mesma abordagem do TokenSelector)
 const processTokensData = (tokens: any[], portfolioTokens: any) => {
-  console.log('🔄 [ADD-LIQUIDITY] Processando tokens:', {
     supportedTokens: tokens?.length || 0,
     portfolioTokens: portfolioTokens?.tokens?.length || 0,
     hasBalances: !!portfolioTokens?.balances
@@ -41,19 +40,16 @@ const processTokensData = (tokens: any[], portfolioTokens: any) => {
     token.name.toLowerCase().includes('brazilian')
   );
   
-  console.log('🔍 [ADD-LIQUIDITY] Tokens encontrados:', {
     usdc: usdcToken ? { symbol: usdcToken.symbol, name: usdcToken.name } : null,
     brz: brzToken ? { symbol: brzToken.symbol, name: brzToken.name } : null
   });
   
   // Verificar se os dados estão disponíveis
   if (!tokens || !Array.isArray(tokens)) {
-    console.log('❌ [ADD-LIQUIDITY] Tokens não disponíveis');
     return result;
   }
 
   if (!portfolioTokens || !portfolioTokens.balances) {
-    console.log('❌ [ADD-LIQUIDITY] Portfolio não disponível');
     return result;
   }
 
@@ -61,7 +57,6 @@ const processTokensData = (tokens: any[], portfolioTokens: any) => {
   const usdcBalance = portfolioTokens.balances.USDC || 0;
   const brzBalance = portfolioTokens.balances.BRZ || 0;
   
-  console.log('💰 [ADD-LIQUIDITY] Saldos encontrados no portfolio:', {
     usdc: usdcBalance,
     brz: brzBalance,
     balances: portfolioTokens.balances
@@ -78,7 +73,6 @@ const processTokensData = (tokens: any[], portfolioTokens: any) => {
       balance: balance,
       chain: usdcToken.chain
     };
-    console.log('✅ [ADD-LIQUIDITY] USDC processado:', { symbol: usdcToken.symbol, balance });
   }
   
   if (brzToken) {
@@ -92,10 +86,8 @@ const processTokensData = (tokens: any[], portfolioTokens: any) => {
       balance: balance,
       chain: brzToken.chain
     };
-    console.log('✅ [ADD-LIQUIDITY] BRZ processado:', { symbol: brzToken.symbol, balance });
   }
   
-  console.log('🎯 [ADD-LIQUIDITY] Resultado final:', result);
   return result;
 };
 
@@ -157,7 +149,6 @@ export default function AddLiquidityPage() {
       return [];
     }
     
-    console.log('📊 [ADD-LIQUIDITY] Processando dados históricos para gráfico:', historicalData.dailyData);
     
     // Converter dados históricos para formato do gráfico
     const processedData = historicalData.dailyData.map((day, index) => {
@@ -188,7 +179,6 @@ export default function AddLiquidityPage() {
       };
     });
     
-    console.log('📈 [ADD-LIQUIDITY] Dados do gráfico processados:', processedData);
     return processedData;
   }, [historicalData]);
 
@@ -200,16 +190,13 @@ export default function AddLiquidityPage() {
   const { data: tokensData, isLoading: tokensLoading, error: tokensError } = useQuery({
     queryKey: ['tokens-usdc-brz', 137],
     queryFn: async () => {
-      console.log('🔍 [ADD-LIQUIDITY] Iniciando busca de tokens USDC e BRZ...');
       
       // Buscar USDC e BRZ separadamente
-      console.log('📡 [ADD-LIQUIDITY] Fazendo requisições para API de tokens...');
       const [usdcResponse, brzResponse] = await Promise.all([
         fetch('/api/crypto/tokens?search=USDC&filterByChainId=137&filterWhitelist=false&page=1&perPage=100'),
         fetch('/api/crypto/tokens?search=BRZ&filterByChainId=137&filterWhitelist=false&page=1&perPage=100')
       ]);
 
-      console.log('📊 [ADD-LIQUIDITY] Status das respostas:', {
         usdc: usdcResponse.status,
         brz: brzResponse.status
       });
@@ -224,19 +211,16 @@ export default function AddLiquidityPage() {
         brzResponse.json()
       ]);
 
-      console.log('✅ [ADD-LIQUIDITY] Dados USDC recebidos:', {
         tokens: usdcData.tokens?.length || 0,
         total: usdcData.total
       });
       
-      console.log('✅ [ADD-LIQUIDITY] Dados BRZ recebidos:', {
         tokens: brzData.tokens?.length || 0,
         total: brzData.total
       });
 
       // Combinar os tokens encontrados
       const combinedTokens = [...usdcData.tokens, ...brzData.tokens];
-      console.log('🎯 [ADD-LIQUIDITY] Tokens combinados:', {
         total: combinedTokens.length,
         symbols: combinedTokens.map(t => t.symbol)
       });
@@ -257,18 +241,15 @@ export default function AddLiquidityPage() {
   const { data: portfolioData, isLoading: portfolioLoading, error: portfolioError } = useQuery({
     queryKey: ['portfolio', walletAddress],
     queryFn: async () => {
-      console.log('💰 [ADD-LIQUIDITY] Buscando portfolio da wallet:', walletAddress);
       try {
         const response = await fetch(`/api/wallet/balances?address=${walletAddress}&chainId=137`);
         if (!response.ok) {
           throw new Error(`Erro na requisição: ${response.status}`);
         }
         const data = await response.json();
-        console.log('✅ [ADD-LIQUIDITY] Portfolio recebido:', {
           balances: data.balances,
           tokens: data.portfolio?.tokens?.length || 0
         });
-        console.log('📊 [ADD-LIQUIDITY] Saldos extraídos:', data.balances);
         return data;
       } catch (error) {
         console.error('❌ [ADD-LIQUIDITY] Erro ao buscar portfolio:', error);
@@ -281,12 +262,10 @@ export default function AddLiquidityPage() {
 
   // Combinar tokens suportados com saldos do portfolio (mesma lógica do TokenSelector)
   const polygonTokens = React.useMemo(() => {
-    console.log('🔄 [ADD-LIQUIDITY] Combinando dados de tokens e portfolio...');
     
     const supportedTokens = tokensData?.tokens || [];
     const portfolioTokens = portfolioData?.tokens || [];
     
-    console.log('📊 [ADD-LIQUIDITY] Dados disponíveis:', {
       supportedTokens: supportedTokens.length,
       portfolioTokens: portfolioTokens.length,
       tokensDataExists: !!tokensData,
@@ -295,7 +274,6 @@ export default function AddLiquidityPage() {
     
     const result = processTokensData(supportedTokens, portfolioData);
     
-    console.log('🎯 [ADD-LIQUIDITY] Resultado da combinação:', result);
     return result;
   }, [tokensData, portfolioData]);
 
@@ -309,12 +287,10 @@ export default function AddLiquidityPage() {
         throw new Error('Pool ID não fornecido');
       }
       
-      console.log('🔍 [ADD-LIQUIDITY] Buscando detalhes do pool:', poolId);
       
       try {
         const response = await liquidityActions.getPool(poolId, 365);
         const responseWithPool = response as any;
-        console.log('✅ [ADD-LIQUIDITY] Resposta da API para detalhes do pool:', {
           poolId: responseWithPool?.pool?.address,
           provider: responseWithPool?.pool?.provider,
           fee: responseWithPool?.pool?.fee,
@@ -327,7 +303,6 @@ export default function AddLiquidityPage() {
         }
 
         const apiResponse = (response as any).pool;
-        console.log('📊 Dados do pool da API:', apiResponse);
         
         if (!apiResponse) {
           throw new Error('Dados do pool não encontrados na resposta');
@@ -364,7 +339,6 @@ export default function AddLiquidityPage() {
           } as any : undefined
         };
 
-        console.log('✅ Pool processado com sucesso:', processedPool);
         return processedPool;
         
       } catch (error) {
@@ -403,7 +377,6 @@ export default function AddLiquidityPage() {
       setMinPrice(newMinPrice);
       setMaxPrice(newMaxPrice);
       
-      console.log('🎯 [ADD-LIQUIDITY] Pool inicializado:', {
         token1: token1.symbol,
         token2: token2.symbol,
         minPrice: newMinPrice,
@@ -415,7 +388,6 @@ export default function AddLiquidityPage() {
       
       // Aplicar intervalo de 10% se estiver selecionado (ocorre apenas na primeira carga)
       if (priceRange === '± 10%' && newMinPrice > 0 && newMaxPrice > 0) {
-        console.log('🎯 [ADD-LIQUIDITY] Aplicando intervalo de 10% baseado no preço calculado');
         // O intervalo já foi aplicado acima (0.9 e 1.1), então apenas confirmamos
       }
     }
@@ -432,7 +404,6 @@ export default function AddLiquidityPage() {
       setMinPrice(newMin);
       setMaxPrice(newMax);
       
-      console.log('🔄 [ADD-LIQUIDITY] Tokens invertidos, preços recalculados:', {
         oldMin: minPrice,
         oldMax: maxPrice,
         newMin,
@@ -482,7 +453,6 @@ export default function AddLiquidityPage() {
   // Função para criar liquidez com swaps automáticos (seguindo padrão do swap/page.tsx)
   const createLiquidityWithApproval = async () => {
     if (!poolData?.tokens || poolData.tokens.length < 2 || !selectedInputToken || !inputAmount) {
-      console.log('⚠️ [ADD-LIQUIDITY] Dados insuficientes para criar liquidez');
       return;
     }
 
@@ -490,7 +460,6 @@ export default function AddLiquidityPage() {
       setIsApproving(true);
       setApprovalError(null);
       
-      console.log('🚀 [ADD-LIQUIDITY] Iniciando criação de liquidez com swaps automáticos:', {
         selectedInputToken,
         inputAmount,
         poolTokens: poolData.tokens.map((t: any) => t.symbol)
@@ -504,7 +473,6 @@ export default function AddLiquidityPage() {
       const hasToken0 = portfolioTokens.find((t: any) => t.address?.toLowerCase() === token0.address?.toLowerCase());
       const hasToken1 = portfolioTokens.find((t: any) => t.address?.toLowerCase() === token1.address?.toLowerCase());
       
-      console.log('🔍 [ADD-LIQUIDITY] Verificando tokens no portfolio:', {
         token0Symbol: token0.symbol,
         token0Address: token0.address,
         token1Symbol: token1.symbol,
@@ -518,14 +486,12 @@ export default function AddLiquidityPage() {
       // Se já temos ambos os tokens, não precisa de swaps
       const needsSwap = !(hasToken0 && hasToken1);
       
-      console.log('🔄 [ADD-LIQUIDITY] Precisa de swaps:', needsSwap);
 
       let finalToken0Amount = '0';
       let finalToken1Amount = '0';
 
       if (needsSwap) {
         // Executar swaps seguindo o padrão do swap/page.tsx
-        console.log('🔄 [ADD-LIQUIDITY] Executando swaps...');
         
         // Calcular valores 50/50 para cada token
         const totalValue = parseFloat(inputAmount);
@@ -533,8 +499,6 @@ export default function AddLiquidityPage() {
         
         // Swap 1: BRZ → WETH
         if (token0.symbol !== selectedInputToken) {
-          console.log(`🔄 [ADD-LIQUIDITY] Executando swap: ${selectedInputToken} → ${token0.symbol}`);
-          console.log(`🔄 [ADD-LIQUIDITY] Parâmetros do swap 1:`, {
             amountIn: halfValue.toString(),
             tokenIn: selectedInputToken === 'USDC' ? '0x576cf361711cd940cd9c397bb98c4c896cbd38de' : '0x4ed141110f6eeeaba9a1df36d8c26f684d2475dc',
             tokenOut: token0.address,
@@ -556,25 +520,20 @@ export default function AddLiquidityPage() {
           
           const quote1 = swapQuote1.quotes?.[0];
           if (quote1?.userOperationHash) {
-            console.log('✍️ [ADD-LIQUIDITY] Solicitando assinatura para swap 1...');
             const signature1 = await signMessage({ message: quote1.userOperationHash });
             
             if (signature1) {
-              console.log('🚀 [ADD-LIQUIDITY] Executando swap 1...');
               await executeUserOperation({
                 userOperationHash: quote1.userOperationHash,
                 signature: (signature1 as any).signature || signature1
               });
               finalToken0Amount = quote1.minAmountOut;
-              console.log('✅ [ADD-LIQUIDITY] Swap 1 executado com sucesso');
             }
           }
         }
         
         // Swap 2: BRZ → USDT
         if (token1.symbol !== selectedInputToken) {
-          console.log(`🔄 [ADD-LIQUIDITY] Executando swap: ${selectedInputToken} → ${token1.symbol}`);
-          console.log(`🔄 [ADD-LIQUIDITY] Parâmetros do swap 2:`, {
             amountIn: halfValue.toString(),
             tokenIn: selectedInputToken === 'USDC' ? '0x576cf361711cd940cd9c397bb98c4c896cbd38de' : '0x4ed141110f6eeeaba9a1df36d8c26f684d2475dc',
             tokenOut: token1.address,
@@ -596,23 +555,19 @@ export default function AddLiquidityPage() {
           
           const quote2 = swapQuote2.quotes?.[0];
           if (quote2?.userOperationHash) {
-            console.log('✍️ [ADD-LIQUIDITY] Solicitando assinatura para swap 2...');
             const signature2 = await signMessage({ message: quote2.userOperationHash });
             
             if (signature2) {
-              console.log('🚀 [ADD-LIQUIDITY] Executando swap 2...');
               await executeUserOperation({
                 userOperationHash: quote2.userOperationHash,
                 signature: (signature2 as any).signature || signature2
               });
               finalToken1Amount = quote2.minAmountOut;
-              console.log('✅ [ADD-LIQUIDITY] Swap 2 executado com sucesso');
             }
           }
         }
       } else {
         // Não precisa de swap, usar saldos existentes
-        console.log('✅ [ADD-LIQUIDITY] Usando saldos existentes do portfolio');
         
         // Calcular proporções baseadas no valor total
         const totalValue = parseFloat(inputAmount);
@@ -626,7 +581,6 @@ export default function AddLiquidityPage() {
         finalToken0Amount = Math.min(token0Value, token0Balance).toString();
         finalToken1Amount = Math.min(token1Value, token1Balance).toString();
         
-        console.log('💰 [ADD-LIQUIDITY] Valores calculados dos saldos existentes:', {
           totalValue,
           token0Value,
           token1Value,
@@ -637,7 +591,6 @@ export default function AddLiquidityPage() {
         });
       }
       
-      console.log('📊 [ADD-LIQUIDITY] Valores finais para liquidez:', {
         finalToken0Amount,
         finalToken1Amount,
         token0Symbol: token0.symbol,
@@ -645,7 +598,6 @@ export default function AddLiquidityPage() {
       });
       
       // Criar liquidez seguindo o padrão do swap/page.tsx
-      console.log('🏊‍♂️ [ADD-LIQUIDITY] Criando liquidez...');
       
       const liquidityParams = {
         walletAddress: walletAddress,
@@ -665,7 +617,6 @@ export default function AddLiquidityPage() {
         transactionFeePercent: 2.5
       };
       
-      console.log('🚀 [ADD-LIQUIDITY] Parâmetros da liquidez:', liquidityParams);
       
       const response = await fetch('/api/liquidity/create', {
         method: 'POST',
@@ -681,8 +632,6 @@ export default function AddLiquidityPage() {
       }
 
       const liquidityResponse = await response.json();
-      console.log('📋 [ADD-LIQUIDITY] Resposta da API de liquidez:', liquidityResponse);
-      console.log('📋 [ADD-LIQUIDITY] Estrutura da resposta:', {
         hasOperation: !!liquidityResponse.operation,
         operationKeys: liquidityResponse.operation ? Object.keys(liquidityResponse.operation) : [],
         fullResponse: liquidityResponse
@@ -691,7 +640,6 @@ export default function AddLiquidityPage() {
       // O endpoint /api/v1/liquidity/create não retorna userOperationHash
       // Ele cria a liquidez diretamente, então vamos para a tela de sucesso
       if (liquidityResponse.operation) {
-        console.log('✅ [ADD-LIQUIDITY] Liquidez criada com sucesso!');
         setCurrentStep(4);
         setIsApproved(true);
         
@@ -766,7 +714,6 @@ export default function AddLiquidityPage() {
     const token0 = poolData.tokens[0];
     const token1 = poolData.tokens[1];
     
-    console.log('🧮 [ADD-LIQUIDITY] Calculando proporções:', {
       selectedToken,
       token0Symbol: token0.symbol,
       token1Symbol: token1.symbol,
@@ -788,17 +735,14 @@ export default function AddLiquidityPage() {
     
     // Se há correspondência exata, usar todo o valor para o token correspondente
     if (isToken0Match) {
-      console.log('✅ [ADD-LIQUIDITY] Token0 corresponde, usando todo o valor');
       return { token0Amount: inputAmount, token1Amount: '0' };
     }
     
     if (isToken1Match) {
-      console.log('✅ [ADD-LIQUIDITY] Token1 corresponde, usando todo o valor');
       return { token0Amount: '0', token1Amount: inputAmount };
     }
     
     // Se não há correspondência, simular conversão baseada no preço do pool
-    console.log('⚠️ [ADD-LIQUIDITY] Nenhuma correspondência exata, simulando conversão para pool:', {
       poolTokens: [token0.symbol, token1.symbol],
       selectedToken,
       strategy: 'simulate_conversion'
@@ -831,7 +775,6 @@ export default function AddLiquidityPage() {
     const token0Amount = (amount * 0.6 / token0Price).toFixed(6); // 60% para token0
     const token1Amount = (amount * 0.4 / token1Price).toFixed(6); // 40% para token1
     
-    console.log('🔄 [ADD-LIQUIDITY] Simulação de conversão:', {
       inputAmount: amount,
       selectedToken,
       token0Price,
@@ -850,7 +793,6 @@ export default function AddLiquidityPage() {
     }
 
     try {
-      console.log('🧮 [ADD-LIQUIDITY] Calculando quantidades:', {
         selectedInputToken,
         inputAmount,
         poolTokens: poolData.tokens.map((t: any) => t.symbol)
@@ -870,7 +812,6 @@ export default function AddLiquidityPage() {
         token1.symbol?.toUpperCase().includes('BRL')
       );
       
-      console.log('🔍 [ADD-LIQUIDITY] Verificando correspondência de tokens:', {
         selectedInputToken,
         token0Symbol: token0.symbol,
         token1Symbol: token1.symbol,
@@ -880,7 +821,6 @@ export default function AddLiquidityPage() {
       });
       
       if (!isToken0Selected && !isToken1Selected) {
-        console.log('⚠️ [ADD-LIQUIDITY] Token selecionado não corresponde aos tokens do pool, usando simulação inteligente');
         // Usar simulação inteligente em vez de retornar
         const simulatedAmounts = calculateTokenProportions(inputAmount, selectedInputToken);
         setAmountsData({
@@ -919,10 +859,8 @@ export default function AddLiquidityPage() {
         params.token1MaxAmount = inputAmount;
       }
 
-      console.log('🚀 [ADD-LIQUIDITY] Chamando API getAmounts:', params);
 
       const response = await liquidityActions.getAmounts(params);
-      console.log('✅ [ADD-LIQUIDITY] Resposta da API getAmounts:', response);
 
       setAmountsData(response);
       
@@ -948,7 +886,6 @@ export default function AddLiquidityPage() {
 
   const refetchData = () => {
     // Refetch dos dados quando o timer zerar
-    console.log('🔄 [ADD-LIQUIDITY] Refazendo busca de dados...');
     // Aqui você pode adicionar lógica para refetch dos dados se necessário
   };
 
@@ -961,7 +898,6 @@ export default function AddLiquidityPage() {
       return () => clearTimeout(timer);
     } else if (timerActive && countdown === 0) {
       // Quando zerar, buscar dados atualizados e resetar timer
-      console.log('🔄 [ADD-LIQUIDITY] Timer zerou, buscando dados atualizados...');
       refetchData();
       setCountdown(120); // Reset para 2 minutos
     }
@@ -971,11 +907,9 @@ export default function AddLiquidityPage() {
   useEffect(() => {
     if (inputAmount && parseFloat(inputAmount) > 0) {
       if (!timerActive) {
-        console.log('⏰ [ADD-LIQUIDITY] Usuário informou valor, iniciando timer...');
         startTimer();
       } else {
         // Se já está ativo, resetar o timer para 2 minutos
-        console.log('⏰ [ADD-LIQUIDITY] Valor alterado, resetando timer...');
         setCountdown(120);
       }
     }
@@ -1542,7 +1476,6 @@ export default function AddLiquidityPage() {
           <Button
             variant="outline"
             onClick={() => {
-              console.log('🔄 [ADD-LIQUIDITY] Selecionando USDC, dados disponíveis:', polygonTokens?.USDC);
               setSelectedInputToken('USDC');
             }}
             className={`p-6 h-auto flex flex-col items-center space-y-3 ${
@@ -1581,7 +1514,6 @@ export default function AddLiquidityPage() {
           <Button
             variant="outline"
             onClick={() => {
-              console.log('🔄 [ADD-LIQUIDITY] Selecionando BRZ, dados disponíveis:', polygonTokens?.BRZ);
               setSelectedInputToken('BRZ');
             }}
             className={`p-6 h-auto flex flex-col items-center space-y-3 ${

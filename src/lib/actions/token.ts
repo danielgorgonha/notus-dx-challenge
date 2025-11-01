@@ -13,7 +13,6 @@ import { listTokens } from './blockchain';
  */
 export async function getTokenBySymbol(symbol: string) {
   try {
-    console.log('🔍 Buscando token por símbolo:', symbol);
     
     // Usar o parâmetro search da API Notus para buscar diretamente
     const response = await listTokens({
@@ -30,9 +29,7 @@ export async function getTokenBySymbol(symbol: string) {
     );
 
     if (token) {
-      console.log('✅ Token encontrado:', token.symbol, token.name, token.priceUsd);
     } else {
-      console.log('⚠️ Token não encontrado na primeira busca, tentando sem search...');
       
       // Se não encontrou com search, tentar buscar sem filtro (pode estar em outra página)
       const fallbackResponse = await listTokens({
@@ -47,7 +44,6 @@ export async function getTokenBySymbol(symbol: string) {
       );
       
       if (fallbackToken) {
-        console.log('✅ Token encontrado no fallback:', fallbackToken.symbol);
         return fallbackToken;
       }
     }

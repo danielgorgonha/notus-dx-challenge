@@ -249,7 +249,6 @@ export function TransactionDetailModal({
             className="text-white hover:text-slate-300 transition-colors"
             onClick={() => {
               // TODO: Implementar compartilhamento
-              console.log('Compartilhar transação');
             }}
           >
             <Share2 className="h-6 w-6" />

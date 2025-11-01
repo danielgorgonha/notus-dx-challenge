@@ -213,12 +213,10 @@ function SwapPageContent() {
     
     // Verificar se há dados mínimos para executar a cotação
     if (!walletAddress) {
-      console.log('🔍 DEBUG handleGetQuote: Wallet não conectada');
       return;
     }
     
     if (!fromAmount || !currentFromToken || !currentToToken) {
-      console.log('🔍 DEBUG handleGetQuote: Dados insuficientes', {
         fromAmount,
         currentFromToken: currentFromToken?.symbol,
         currentToToken: currentToToken?.symbol
@@ -227,7 +225,6 @@ function SwapPageContent() {
     }
     
     if (!canProceed) {
-      console.log('🔍 DEBUG handleGetQuote: Não pode prosseguir', {
         canProceed,
         isValidAmount: isValidAmount(fromAmount),
         sameToken: currentFromToken.symbol === currentToToken.symbol
@@ -327,11 +324,9 @@ function SwapPageContent() {
       setQuoteTimer(prev => {
         if (prev <= 1) {
           // Timer chegou a zero, obter nova cotação
-          console.log('🔄 Timer chegou a zero, obter nova cotação');
           setTimeout(() => {
             if (timerData.walletAddress && timerData.currentFromToken && timerData.currentToToken && timerData.fromAmount) {
               handleGetQuoteRef.current(true); // true = auto refresh
-              console.log('🔄 Nova cotação obtida automaticamente');
             }
           }, 0);
           return 47; // Reset para 47 segundos
@@ -361,10 +356,8 @@ function SwapPageContent() {
     // Verificar se deve iniciar timer
     if (walletAddress && currentFromToken && currentToToken && fromAmount) {
       isTimerActiveRef.current = true;
-      console.log('🔄 Timer iniciado - condições válidas');
     } else {
       isTimerActiveRef.current = false;
-      console.log('⏸️ Timer pausado - condições não atendidas');
     }
   }, [walletAddress, currentFromToken, currentToToken, fromAmount]);
 
@@ -622,7 +615,6 @@ function SwapPageContent() {
       validation.message = `BRZ: API=${validation.apiPrice}`;
     }
 
-    console.log('🔍 DEBUG validateFiatConversion:', validation);
     return validation;
   };
 

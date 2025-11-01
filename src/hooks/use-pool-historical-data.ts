@@ -42,7 +42,6 @@ export function usePoolHistoricalData(poolId: string, rangeInDays: number = 365)
     queryKey: ['pool-historical-data', poolId, rangeInDays],
     queryFn: async () => {
       if (!poolId) {
-        console.log('⚠️ PoolId não fornecido, retornando dados vazios');
         return {
           totalFees: 0,
           totalVolume: 0,
@@ -52,15 +51,12 @@ export function usePoolHistoricalData(poolId: string, rangeInDays: number = 365)
           dailyData: []
         };
       }
-      console.log(`🔍 Buscando dados históricos para pool ${poolId} - ${rangeInDays} dias`);
       
       try {
         // Endpoint 3: GET /liquidity/pools/{id}/historical-data
         const response = await liquidityActions.getHistoricalData(poolId, { days: rangeInDays });
-        console.log('📊 Dados históricos recebidos:', response);
         
         if (!(response as any)?.statistics?.items) {
-          console.log('⚠️ Nenhum dado histórico encontrado');
           return {
             totalFees: 0,
             totalVolume: 0,
@@ -72,7 +68,6 @@ export function usePoolHistoricalData(poolId: string, rangeInDays: number = 365)
         }
         
         const historicalData = (response as any).statistics.items;
-        console.log(`📈 Processando ${historicalData.length} dias de dados históricos`);
         
         // Processar dados históricos
         let totalFees = 0;
@@ -113,7 +108,6 @@ export function usePoolHistoricalData(poolId: string, rangeInDays: number = 365)
           apr = (annualFees / averageTvl) * 100;
         }
         
-        console.log(`💰 Dados históricos processados:`, {
           totalFees,
           totalVolume,
           averageTvl,

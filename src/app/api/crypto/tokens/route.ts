@@ -9,7 +9,6 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get('page') || '1';
     const perPage = searchParams.get('perPage') || '100';
 
-    console.log('🔍 Buscando tokens na API da Notus:', { search, filterByChainId, filterWhitelist, page, perPage });
 
     // Construir URL da API da Notus
     const notusApiUrl = new URL('https://api.notus.team/api/v1/crypto/tokens');
@@ -19,7 +18,6 @@ export async function GET(request: NextRequest) {
     notusApiUrl.searchParams.set('page', page);
     notusApiUrl.searchParams.set('perPage', perPage);
 
-    console.log('🌐 URL da API Notus:', notusApiUrl.toString());
 
     // Fazer requisição para a API da Notus
     const response = await fetch(notusApiUrl.toString(), {
@@ -36,7 +34,6 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log('✅ Resposta da API Notus:', data);
 
     return NextResponse.json(data);
 

@@ -202,19 +202,6 @@ export function DashboardClientWrapper({
   const usdcData = getTokenData('USDC');
   const [showBalance, setShowBalance] = useState(true);
   const [headerHeight, setHeaderHeight] = useState(220);
-  
-  // Debug: Log quando dados são buscados no cliente
-  useEffect(() => {
-    if (needsClientFetch) {
-      console.log('🔄 DashboardClientWrapper: Buscando dados no cliente...', {
-        hasWalletAddress: !!user?.wallet?.address,
-        hasWalletData: !!walletData,
-        hasPortfolio: !!portfolioData,
-        hasHistory: !!historyData,
-        accountAddress: finalAccountAddress,
-      });
-    }
-  }, [needsClientFetch, walletData, portfolioData, historyData, finalAccountAddress, user]);
 
   // Ajustar altura do espaçador baseado no scroll
   useEffect(() => {

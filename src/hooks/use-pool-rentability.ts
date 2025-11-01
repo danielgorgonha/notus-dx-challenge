@@ -17,15 +17,12 @@ export function usePoolRentability(poolId: string, rangeInDays: number = 365) {
   return useQuery<RentabilityData>({
     queryKey: ['pool-rentability', poolId, rangeInDays],
     queryFn: async () => {
-      console.log(`🔍 Calculando rentabilidade para pool ${poolId} com ${rangeInDays} dias`);
       
       try {
         // Buscar dados históricos do pool
         const historicalResponse = await liquidityActions.getHistoricalData(poolId, { days: rangeInDays });
-        console.log('📊 Dados históricos recebidos:', historicalResponse);
         
         if (!historicalResponse?.statistics?.items) {
-          console.log('⚠️ Nenhum dado histórico encontrado');
           return {
             apr: 0,
             totalFees: 0,
@@ -36,7 +33,6 @@ export function usePoolRentability(poolId: string, rangeInDays: number = 365) {
         }
         
         const historicalData = historicalResponse.statistics.items;
-        console.log(`📈 Processando ${historicalData.length} dias de dados históricos`);
         
         // Calcular totais dos dados históricos
         let totalFees = 0;
@@ -69,7 +65,6 @@ export function usePoolRentability(poolId: string, rangeInDays: number = 365) {
           apr = (annualizedFees / averageTvl) * 100;
         }
         
-        console.log(`💰 Cálculos de rentabilidade:`, {
           totalFees,
           totalVolume,
           averageTvl,

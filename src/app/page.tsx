@@ -32,42 +32,19 @@ export default function LandingPage() {
   const router = useRouter();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Debug: Log do estado do Privy sempre que mudar
-  useEffect(() => {
-    console.log('🔍 Landing Page - Privy State:', {
-      ready,
-      authenticated,
-      hasUser: !!user,
-      userId: user?.id,
-      userEmail: user?.email,
-    });
-  }, [ready, authenticated, user]);
-
   // Handler para login com callback
   const handleLogin = async () => {
     try {
-      console.log('🔐 Iniciando login...');
       await login();
-      console.log('✅ Login chamado, aguardando Privy atualizar estado...');
     } catch (error) {
-      console.error('❌ Error during login:', error);
+      console.error('Error during login:', error);
     }
   };
 
   // Se o usuário já estiver autenticado, redirecionar para o dashboard
   useEffect(() => {
     if (ready && authenticated && user) {
-      console.log('✅ User authenticated, redirecting to dashboard...', {
-        ready,
-        authenticated,
-        hasUser: !!user,
-        userId: user?.id,
-      });
-      
-      // Redirecionar imediatamente sem delay
       router.replace("/dashboard");
-    } else if (ready && !authenticated) {
-      console.log('ℹ️ User not authenticated, showing landing page');
     }
   }, [ready, authenticated, user, router]);
 

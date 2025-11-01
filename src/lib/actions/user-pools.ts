@@ -55,7 +55,6 @@ export async function getUserPools(walletAddress: string) {
       }
     });
 
-    console.log('🏊 Pools identificados do histórico:', Array.from(poolIds));
 
     if (poolIds.size === 0) {
       return { pools: [], total: 0 };
@@ -95,7 +94,6 @@ export async function getUserPools(walletAddress: string) {
       .filter((result) => result.status === 'fulfilled' && result.value)
       .map((result) => (result as PromiseFulfilledResult<any>).value);
 
-    console.log(`✅ ${validPools.length} pools do usuário encontrados`);
 
     return {
       pools: validPools,

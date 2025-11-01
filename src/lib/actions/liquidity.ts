@@ -18,8 +18,6 @@ export const liquidityActions = {
     rangeInDays?: number;
     ids?: string;
   }) => {
-    console.log('🔧 liquidityActions.listPools chamada com params:', params);
-    console.log('🌐 URL completa:', `${process.env.NEXT_PUBLIC_NOTUS_API_URL || 'https://api.notus.team/api/v1'}/liquidity/pools`);
     
     return notusAPI.get("liquidity/pools", {
       searchParams: params,

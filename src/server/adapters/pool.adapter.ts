@@ -17,13 +17,11 @@ export class PoolAdapter {
    */
   async listPools(params?: PoolListParams): Promise<Pool[]> {
     try {
-      console.log('🌐 PoolAdapter.listPools - Chamando API com params:', params);
       
       const response = await notusAPI.get('liquidity/pools', {
         searchParams: params,
       }).json<any>();
 
-      console.log('📦 PoolAdapter.listPools - Resposta recebida:', {
         type: typeof response,
         isArray: Array.isArray(response),
         hasPools: !!response.pools,
@@ -38,14 +36,12 @@ export class PoolAdapter {
       // 4. Objeto com ambos: { pools: [...], data: [...] }
       
       if (Array.isArray(response)) {
-        console.log(`✅ Retornando ${response.length} pools (array direto)`);
         return response;
       }
       
       const pools = response.pools || response.data || [];
       
       if (Array.isArray(pools)) {
-        console.log(`✅ Retornando ${pools.length} pools (de propriedade)`);
         return pools;
       }
       

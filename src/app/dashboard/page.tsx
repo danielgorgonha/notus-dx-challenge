@@ -26,7 +26,6 @@ export default async function DashboardPage() {
   try {
     user = await auth();
   } catch (error) {
-    console.error('❌ Dashboard: Error in auth():', error);
     // Continuar mesmo com erro - ProtectedRoute vai verificar no client
   }
   
@@ -70,7 +69,6 @@ export default async function DashboardPage() {
       transactionCount = history?.transactions?.length || 0;
       tokenCount = portfolio?.tokens?.length || 0;
     } catch (error) {
-      console.error('❌ Dashboard: Error fetching data:', error);
       // Continuar mesmo com erro - dados serão buscados no client se necessário
     }
   }

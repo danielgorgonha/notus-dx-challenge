@@ -120,18 +120,10 @@ export async function listTokens({
     if (filterByChainId) {
       searchParams.filterByChainId = filterByChainId;
     }
-
-    console.log('📤 listTokens - Parâmetros enviados:', searchParams);
-    console.log('📤 listTokens - URL completa será:', `crypto/tokens?${new URLSearchParams(Object.entries(searchParams).map(([k, v]) => [k, String(v)])).toString()}`);
     
     const response = await notusAPI.get("crypto/tokens", {
       searchParams,
     }).json<TokensResponse>();
-
-    console.log('📥 listTokens - Resposta recebida:', {
-      total: response.total,
-      tokensCount: response.tokens?.length
-    });
 
     return response;
   } catch (error) {

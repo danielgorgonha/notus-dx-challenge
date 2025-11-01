@@ -33,11 +33,9 @@ export async function listPools() {
       params.ids = config.ids.join(',');
     }
     
-    console.log('🔍 Buscando pools com params:', params);
     
     const responseData = await listPoolsUseCase.execute(params);
     
-    console.log('📊 Resposta da API:', {
       isArray: Array.isArray(responseData),
       length: Array.isArray(responseData) ? responseData.length : 'not array',
       firstItem: Array.isArray(responseData) && responseData.length > 0 ? responseData[0] : null
@@ -54,7 +52,6 @@ export async function listPools() {
       return { pools: [], total: 0 };
     }
     
-    console.log(`✅ ${pools.length} pools encontrados`);
     
     const processedPools = pools
       .filter((pool: any) => {
@@ -86,7 +83,6 @@ export async function listPools() {
       })
       .filter((pool: any) => pool !== null);
     
-    console.log(`✅ ${processedPools.length} pools processados com sucesso`);
     
     return {
       pools: processedPools,

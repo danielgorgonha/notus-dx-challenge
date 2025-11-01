@@ -33,10 +33,6 @@ export default async function CryptoPage() {
       filterWhitelist: false,
       filterByChainId: 137, // Polygon
     });
-    console.log('📊 CryptoPage - Tokens recebidos:', {
-      total: tokensData?.total,
-      tokensLength: tokensData?.tokens?.length,
-    });
 
     // Enriquecer tokens com dados do CoinGecko (price, priceChange24h, volume24h)
     if (tokensData?.tokens && tokensData.tokens.length > 0) {
@@ -57,10 +53,7 @@ export default async function CryptoPage() {
             volume24h: enriched?.volume24h,
           };
         });
-        
-        console.log('✅ Tokens enriquecidos com dados do CoinGecko');
       } catch (error) {
-        console.error('⚠️ Erro ao enriquecer tokens com CoinGecko (continuando sem dados):', error);
         // Continuar sem dados do CoinGecko se houver erro
       }
     }

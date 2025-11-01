@@ -240,7 +240,6 @@ export default function BuyTokenPage() {
           }
         } catch (error) {
           // Se falhar, não mostrar erro, apenas não atualizar estimativa
-          console.log('⚠️ Erro ao calcular estimativa:', error);
         } finally {
           setIsCalculatingQuote(false);
         }

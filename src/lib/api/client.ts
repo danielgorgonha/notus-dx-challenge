@@ -36,17 +36,13 @@ export const notusAPI = ky.create({
       hooks: {
         beforeRequest: [
           (request) => {
-            console.log('🚀 Fazendo requisição para:', request.url);
-            console.log('🔑 Headers da requisição:', Object.fromEntries(request.headers.entries()));
           }
         ],
         beforeError: [
           async (error) => {
-            console.log('❌ Erro na requisição:', error);
             const { response } = error;
             if (response && response.body) {
               const errorText = await response.text();
-              console.log('📄 Resposta de erro:', errorText);
               let errorMessage = `API Error: ${response.status} ${response.statusText}`;
               let errorId: string | undefined;
 
