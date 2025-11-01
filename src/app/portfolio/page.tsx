@@ -43,10 +43,6 @@ export default async function PortfolioPage() {
       return { pools: [], total: 0 };
     }),
   ]);
-    totalValueUSD: portfolio?.totalValueUSD,
-    historyCount: history?.transactions?.length || 0,
-    poolsCount: poolsData?.pools?.length || 0,
-  });
 
   // Calcular totais (usar balanceUSD da API Notus)
   const totalBalance = portfolio?.tokens?.reduce((sum: number, token: any) => {
