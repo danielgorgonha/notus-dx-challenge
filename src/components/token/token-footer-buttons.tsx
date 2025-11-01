@@ -1,8 +1,8 @@
 /**
  * Token Footer Buttons Component
- * Botões de rodapé: Vender e Comprar (para todos os tokens no portfolio)
- * - Stablecoins (USDC/BRZ): Vender → withdraw, Comprar → deposit
- * - Outros tokens: Vender e Comprar → swap
+ * Botões de rodapé: Vender e Comprar (apenas para tokens não-stablecoin no portfolio)
+ * - Stablecoins (USDC/BRZ): Não renderiza botões (têm fluxos próprios de depositar/sacar via botões de ação)
+ * - Outros tokens: Vender → swap (fromToken), Comprar → swap (toToken)
  */
 
 "use client";
@@ -26,24 +26,19 @@ export function TokenFooterButtons({ token, mode = 'portfolio' }: TokenFooterBut
   const symbol = token?.symbol?.toUpperCase() || '';
   const isStablecoin = symbol === 'BRZ' || symbol === 'USDC';
 
+  // Não renderizar botões para stablecoins (elas têm fluxos próprios de depositar/sacar)
+  if (isStablecoin) {
+    return null;
+  }
+
   const handleSell = () => {
-    if (isStablecoin) {
-      // Para stablecoins: navegar para withdraw (off-ramp)
-      router.push('/wallet/withdraw');
-    } else {
-      // Para outros tokens: navegar para swap com token pré-selecionado como "De"
-      router.push(`/swap?fromToken=${encodeURIComponent(symbol)}`);
-    }
+    // Para outros tokens: navegar para swap com token pré-selecionado como "De"
+    router.push(`/swap?fromToken=${encodeURIComponent(symbol)}`);
   };
 
   const handleBuy = () => {
-    if (isStablecoin) {
-      // Para stablecoins: navegar para deposit (on-ramp)
-      router.push('/wallet/deposit');
-    } else {
-      // Para outros tokens: navegar para swap com token pré-selecionado como "Para"
-      router.push(`/swap?toToken=${encodeURIComponent(symbol)}`);
-    }
+    // Para outros tokens: navegar para swap com token pré-selecionado como "Para"
+    router.push(`/swap?toToken=${encodeURIComponent(symbol)}`);
   };
 
   return (
