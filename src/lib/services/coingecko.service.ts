@@ -148,7 +148,6 @@ export async function enrichTokensWithCoinGeckoData(
           );
 
           if (!response.ok) {
-            console.warn(`⚠️ CoinGecko batch request failed:`, response.status);
             return;
           }
 

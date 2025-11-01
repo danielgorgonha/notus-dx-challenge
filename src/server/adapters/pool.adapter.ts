@@ -45,7 +45,6 @@ export class PoolAdapter {
         return pools;
       }
       
-      console.warn('⚠️ Formato de resposta inesperado, retornando array vazio');
       return [];
     } catch (error) {
       console.error('❌ PoolAdapter.listPools - Erro:', error);

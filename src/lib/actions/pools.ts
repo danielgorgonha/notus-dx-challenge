@@ -48,19 +48,12 @@ export async function listPools() {
       : (responseData?.pools || responseData?.data || []);
     
     if (!pools || pools.length === 0) {
-      console.warn('⚠️ Nenhum pool retornado da API');
       return { pools: [], total: 0 };
     }
     
     
     const processedPools = pools
-      .filter((pool: any) => {
-        const valid = isValidPool(pool);
-        if (!valid) {
-          console.warn('⚠️ Pool inválido ignorado:', pool?.id || 'unknown');
-        }
-        return valid;
-      })
+      .filter((pool: any) => isValidPool(pool))
       .map((pool: any) => {
         try {
           const metrics = processPoolMetrics(pool);
