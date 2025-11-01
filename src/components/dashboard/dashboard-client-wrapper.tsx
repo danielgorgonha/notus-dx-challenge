@@ -22,6 +22,7 @@ import { listPools } from "@/lib/actions/pools";
 import { DashboardYieldsSection } from "./dashboard-yields-section";
 import { DashboardPoolsSection } from "./dashboard-pools-section";
 import { DashboardMarketCapSection } from "./dashboard-market-cap-section";
+import { DashboardHeader } from "./dashboard-header";
 
 interface DashboardClientWrapperProps {
   initialTotalBalance: number;
@@ -219,6 +220,13 @@ export function DashboardClientWrapper({
 
       {/* Layout Desktop */}
       <div className="hidden lg:block space-y-4 sm:space-y-6 lg:space-y-8">
+        {/* Header Desktop */}
+        {user?.email && (
+          <DashboardHeader 
+            userEmail={typeof user.email === 'string' ? user.email : user.email?.address}
+          />
+        )}
+        
         <DashboardStats
           totalBalance={totalBalance}
           transactionCount={transactionCount}
