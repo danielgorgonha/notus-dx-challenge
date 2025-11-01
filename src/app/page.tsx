@@ -47,16 +47,34 @@ export default function LandingPage() {
   // Se o usuário já estiver autenticado, redirecionar para o dashboard
   useEffect(() => {
     if (ready && authenticated && user && !hasRedirected) {
-      console.log('✅ User authenticated, redirecting to dashboard...');
+      console.log('✅ User authenticated, redirecting to dashboard...', {
+        ready,
+        authenticated,
+        hasUser: !!user,
+        userId: user?.id,
+        hasRedirected
+      });
       setHasRedirected(true);
-      // Pequeno delay para garantir que tudo está pronto
+      // Usar router.replace para evitar reload completo
+      router.replace("/dashboard");
+    }
+  }, [ready, authenticated, user, router, hasRedirected]);
+
+  // Também verificar quando o componente monta se já está autenticado
+  // (útil quando volta do callback do OAuth)
+  useEffect(() => {
+    if (ready && authenticated && user && !hasRedirected) {
+      // Forçar re-render após um pequeno delay para garantir que o estado foi atualizado
       const timer = setTimeout(() => {
-        router.replace("/dashboard");
-      }, 100);
+        if (authenticated && user) {
+          console.log('🔄 Re-checking auth status after delay...');
+          setHasRedirected(false); // Reset para permitir novo redirect se necessário
+        }
+      }, 500);
       
       return () => clearTimeout(timer);
     }
-  }, [ready, authenticated, user, router, hasRedirected]);
+  }, [ready]);
 
   if (!ready) {
     return (
