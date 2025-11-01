@@ -39,19 +39,19 @@ export function CryptoSortModal({
     <>
       {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black/60 z-40"
+        className="fixed inset-0 bg-black/60 z-[55]"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-slate-800 rounded-t-2xl border-t border-slate-700">
+      <div className="fixed inset-x-0 bottom-0 z-[60] bg-slate-800 rounded-t-2xl border-t border-slate-700 pb-safe-area-inset-bottom">
         {/* Drag Handle */}
         <div className="flex justify-center pt-3 pb-2">
           <div className="w-12 h-1 bg-slate-600 rounded-full" />
         </div>
 
         {/* Content */}
-        <div className="px-6 pb-6">
+        <div className="px-6 pb-20 lg:pb-6">
           <h3 className="text-white font-bold text-xl mb-6">Classificação</h3>
           
           <div className="space-y-3 mb-6">
