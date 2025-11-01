@@ -20,27 +20,91 @@ export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   // Autenticação no servidor
-  // IMPORTANTE: Não fazer redirect aqui se falhar - deixar ProtectedRoute lidar no client
-  // Isso evita loop infinito quando o cookie ainda não está disponível após login via Google
-  let user;
+  // Em produção, o cookie pode não estar disponível imediatamente
+  // Por isso, sempre renderizar o ProtectedRoute que faz a verificação no client
+  let user = null;
   try {
     user = await auth();
   } catch (error) {
     console.error('❌ Dashboard: Error in auth():', error);
-    user = null;
+    // Continuar mesmo com erro - ProtectedRoute vai verificar no client
   }
   
-  // Se não tiver user autenticado, ainda renderizar ProtectedRoute
-  // que vai verificar no client-side e fazer redirect se necessário
-  // Isso evita loop de redirect servidor <-> cliente
-  if (!user || !user.wallet?.address) {
-    return (
-      <ProtectedRoute>
-        <AppLayout 
-          title="Dashboard"
-          description="Loading..."
-          showHeader={false}
-        >
+  // Se tiver user no servidor, buscar dados; caso contrário, ProtectedRoute fará redirect
+  let portfolio = null;
+  let history = null;
+  let tokens = null;
+  let poolsData = { pools: [], total: 0 };
+  let totalBalance = 0;
+  let transactionCount = 0;
+  let tokenCount = 0;
+  let accountAbstractionAddress = '';
+  
+  if (user?.wallet?.address) {
+    try {
+      const externallyOwnedAccount = user.wallet.address;
+      
+      // Buscar wallet address primeiro para obter accountAbstraction
+      const walletData = await getWalletAddress({ externallyOwnedAccount });
+      const wallet = walletData.wallet;
+      accountAbstractionAddress = wallet?.accountAbstraction || user.accountAbstractionAddress || '';
+
+      // Buscar dados no servidor usando accountAbstractionAddress
+      const [portfolioData, historyData, tokensData, poolsDataResult] = await Promise.all([
+        getPortfolio(accountAbstractionAddress || '').catch(() => null),
+        getHistory(accountAbstractionAddress || '', { take: 10 }).catch(() => null),
+        listSupportedTokens({ page: 1, perPage: 50 }).catch(() => null),
+        listPools().catch(() => ({ pools: [], total: 0 })),
+      ]);
+
+      portfolio = portfolioData;
+      history = historyData;
+      tokens = tokensData;
+      poolsData = poolsDataResult || { pools: [], total: 0 };
+
+      // Calcular estatísticas
+      totalBalance = portfolio?.tokens?.reduce((sum: number, token: any) => {
+        return sum + parseFloat(token.balanceUsd || '0');
+      }, 0) || 0;
+
+      transactionCount = history?.transactions?.length || 0;
+      tokenCount = portfolio?.tokens?.length || 0;
+    } catch (error) {
+      console.error('❌ Dashboard: Error fetching data:', error);
+      // Continuar mesmo com erro - dados serão buscados no client se necessário
+    }
+  }
+
+  return (
+    <ProtectedRoute>
+      <AppLayout 
+        title="Dashboard"
+        description="Testing Notus API - Authentication, Transfers, Swaps, and Liquidity Pools"
+        showHeader={false}
+      >
+        {user?.wallet?.address ? (
+          <div className="space-y-0 sm:space-y-4 lg:space-y-8">
+            {/* Header Desktop - oculto no mobile */}
+            <div className="hidden lg:block">
+              <DashboardHeader 
+                userEmail={typeof user.email === 'string' ? user.email : user.email?.address}
+              />
+            </div>
+
+            <DashboardClientWrapper
+              initialTotalBalance={totalBalance}
+              initialPortfolio={portfolio}
+              initialHistory={history}
+              initialTransactionCount={transactionCount}
+              initialTokenCount={tokenCount}
+              accountAbstractionAddress={accountAbstractionAddress}
+              initialPools={poolsData?.pools || []}
+              initialTokens={tokens?.tokens || []}
+            />
+          </div>
+        ) : (
+          // Se não tiver dados do servidor, mostrar loading
+          // ProtectedRoute já vai fazer redirect se necessário
           <div className="flex items-center justify-center min-h-[50vh]">
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-emerald-500 rounded-xl mx-auto mb-4 flex items-center justify-center animate-pulse">
@@ -52,63 +116,7 @@ export default async function DashboardPage() {
               <p className="text-white text-lg">Carregando...</p>
             </div>
           </div>
-        </AppLayout>
-      </ProtectedRoute>
-    );
-  }
-
-  const externallyOwnedAccount = user.wallet.address;
-  
-  // Buscar wallet address primeiro para obter accountAbstraction
-  const walletData = await getWalletAddress({ externallyOwnedAccount });
-  const wallet = walletData.wallet;
-  const accountAbstractionAddress = wallet?.accountAbstraction || user.accountAbstractionAddress;
-
-  // Buscar dados no servidor usando accountAbstractionAddress
-  const [portfolio, history, tokens, poolsData] = await Promise.all([
-    getPortfolio(accountAbstractionAddress || ''),
-    getHistory(accountAbstractionAddress || '', { take: 10 }),
-    listSupportedTokens({ page: 1, perPage: 50 }),
-    listPools().catch(() => ({ pools: [], total: 0 })),
-  ]);
-
-  // Calcular estatísticas
-  const totalBalance = portfolio?.tokens?.reduce((sum: number, token: any) => {
-    return sum + parseFloat(token.balanceUsd || '0');
-  }, 0) || 0;
-
-  const transactionCount = history?.transactions?.length || 0;
-  const tokenCount = portfolio?.tokens?.length || 0;
-
-  // Funções de formatação (serão passadas para componentes client)
-  // Essas serão usadas no DashboardClientWrapper
-
-  return (
-    <ProtectedRoute>
-      <AppLayout 
-        title="Dashboard"
-        description="Testing Notus API - Authentication, Transfers, Swaps, and Liquidity Pools"
-        showHeader={false}
-      >
-        <div className="space-y-0 sm:space-y-4 lg:space-y-8">
-          {/* Header Desktop - oculto no mobile */}
-          <div className="hidden lg:block">
-            <DashboardHeader 
-              userEmail={typeof user.email === 'string' ? user.email : user.email?.address}
-            />
-          </div>
-
-          <DashboardClientWrapper
-            initialTotalBalance={totalBalance}
-            initialPortfolio={portfolio}
-            initialHistory={history}
-            initialTransactionCount={transactionCount}
-            initialTokenCount={tokenCount}
-            accountAbstractionAddress={accountAbstractionAddress || ''}
-            initialPools={poolsData?.pools || []}
-            initialTokens={tokens?.tokens || []}
-          />
-        </div>
+        )}
       </AppLayout>
     </ProtectedRoute>
   );
