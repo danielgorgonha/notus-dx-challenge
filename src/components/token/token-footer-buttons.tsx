@@ -34,8 +34,8 @@ export function TokenFooterButtons({ token, mode = 'portfolio' }: TokenFooterBut
   };
 
   const handleBuy = () => {
-    // Comprar: navegar para swap com token pré-selecionado como "Para" (toToken)
-    router.push(`/swap?toToken=${encodeURIComponent(symbol)}`);
+    // Comprar: navegar para página de compra dedicada
+    router.push(`/wallet/buy/${encodeURIComponent(symbol)}`);
   };
 
   return (
