@@ -15,7 +15,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { useKYCData } from "@/hooks/use-kyc-data";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
 // Importar Server Actions para KYC
-import { createStandardSession, saveKYCSessionId, processSession } from '@/lib/actions/kyc';
+import { createStandardSession, processSession, saveKYCSessionId } from '@/lib/actions/kyc';
 import { getWalletAddress } from '@/lib/actions/dashboard';
 
   // Client-side API functions for document upload

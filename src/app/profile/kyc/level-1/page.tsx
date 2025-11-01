@@ -13,7 +13,7 @@ import { useKYC } from "@/contexts/kyc-context";
 import { useToast } from "@/hooks/use-toast";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { validateLevel1Data, formatCPF, formatDate } from "@/lib/validation/personal-data";
-import { updateWalletMetadata } from "@/lib/actions/dashboard";
+import { updateWalletMetadata } from "@/lib/actions/wallet";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
 
 export default function KYCLevel1Page() {

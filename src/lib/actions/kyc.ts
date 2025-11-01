@@ -12,6 +12,7 @@ import {
 } from '@/server/use-cases/kyc';
 import type { CreateKYCSessionParams } from '@/server/adapters';
 import type { KYCSessionResponse } from '@/types/kyc';
+import { updateWalletMetadata } from './wallet';
 
 const kycService = createKYCService();
 
@@ -49,6 +50,30 @@ export async function processSession(sessionId: string): Promise<void> {
     return await useCase.execute({ sessionId });
   } catch (error) {
     console.error('Error processing KYC session:', error);
+    throw error;
+  }
+}
+
+/**
+ * Salva sessionId e individualId na metadata da wallet
+ */
+export async function saveKYCSessionId(
+  sessionId: string,
+  individualId: string | null,
+  level1Data: any,
+  walletAddress: string
+): Promise<void> {
+  try {
+    await updateWalletMetadata({
+      walletAddress,
+      metadata: {
+        kycSessionId: sessionId,
+        individualId: individualId,
+        level1Data: level1Data,
+      },
+    });
+  } catch (error) {
+    console.error('Error saving KYC session ID:', error);
     throw error;
   }
 }
