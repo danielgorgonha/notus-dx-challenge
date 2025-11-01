@@ -27,10 +27,14 @@ export function CryptoListHeader({
   sortDirection,
   onSortClick 
 }: CryptoListHeaderProps) {
+  // Mostrar o total da API (representa o total de tokens disponíveis)
+  // Se houver filtro de busca ativo, o total pode ser menor que originalTotal
+  const displayTotal = total > 0 && total < originalTotal ? total : originalTotal;
+  
   return (
     <div className="flex items-center justify-between py-3">
       <div className="text-white text-base font-medium">
-        Cripto - {originalTotal}
+        Cripto - {displayTotal}
       </div>
       <button
         onClick={onSortClick}
