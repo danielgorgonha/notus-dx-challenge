@@ -54,6 +54,11 @@ const navigation = [
     icon: Zap,
   },
   {
+    name: "Portfolio",
+    href: "/portfolio",
+    icon: Wallet,
+  },
+  {
     name: "Perfil",
     href: "/profile",
     icon: Lock,

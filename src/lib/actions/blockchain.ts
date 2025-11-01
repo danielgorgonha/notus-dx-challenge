@@ -83,25 +83,40 @@ export async function listTokens({
   perPage = 100,
   filterWhitelist = false,
   orderBy = 'marketCap',
-  orderDir = 'desc'
+  orderDir = 'desc',
+  search,
+  filterByChainId
 }: {
   page?: number;
   perPage?: number;
   filterWhitelist?: boolean;
   orderBy?: 'marketCap' | 'chainId';
   orderDir?: 'asc' | 'desc';
+  search?: string;
+  filterByChainId?: number;
 } = {}): Promise<TokensResponse> {
   try {
+    const searchParams: Record<string, string | number | boolean> = {
+      page, 
+      perPage,
+      projectId: process.env.NEXT_PUBLIC_PROJECT_ID || '',
+      filterWhitelist,
+      orderBy,
+      orderDir
+    };
+
+    // Adicionar search se fornecido
+    if (search) {
+      searchParams.search = search;
+    }
+
+    // Adicionar filterByChainId se fornecido
+    if (filterByChainId) {
+      searchParams.filterByChainId = filterByChainId;
+    }
     
     const response = await notusAPI.get("crypto/tokens", {
-      searchParams: { 
-        page, 
-        perPage,
-        projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
-        filterWhitelist,
-        orderBy,
-        orderDir
-      },
+      searchParams,
     }).json<TokensResponse>();
 
     return response;

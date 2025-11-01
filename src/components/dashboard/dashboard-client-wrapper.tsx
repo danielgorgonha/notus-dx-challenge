@@ -5,11 +5,18 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardStats } from "./dashboard-stats";
 import { PortfolioSection } from "./portfolio-section";
 import { QuickActions } from "./quick-actions";
 import { RecentTransactions } from "./recent-transactions";
+import { DashboardMobileHeader } from "./dashboard-mobile-header";
+import { DashboardMobileBalances } from "./dashboard-mobile-balances";
+import { DashboardMobileActions } from "./dashboard-mobile-actions";
+
+import { DashboardYieldsSection } from "./dashboard-yields-section";
+import { DashboardPoolsSection } from "./dashboard-pools-section";
+import { DashboardMarketCapSection } from "./dashboard-market-cap-section";
 
 interface DashboardClientWrapperProps {
   initialTotalBalance: number;
@@ -18,6 +25,8 @@ interface DashboardClientWrapperProps {
   initialTransactionCount: number;
   initialTokenCount: number;
   accountAbstractionAddress: string;
+  initialPools?: any[];
+  initialTokens?: any[];
 }
 
 export function DashboardClientWrapper({
@@ -27,6 +36,8 @@ export function DashboardClientWrapper({
   initialTransactionCount,
   initialTokenCount,
   accountAbstractionAddress,
+  initialPools = [],
+  initialTokens = [],
 }: DashboardClientWrapperProps) {
   const [currency, setCurrency] = useState<'USD' | 'BRL'>('BRL');
   const [exchangeRate] = useState(5.32);
@@ -84,30 +95,95 @@ export function DashboardClientWrapper({
     return currency === 'BRL' ? formatCurrency(convertedValue) : formatUSD(convertedValue);
   };
 
+  // Calcular saldos de BRZ e USDC
+  const getTokenData = (symbol: string) => {
+    const token = initialPortfolio?.tokens?.find((t: any) => 
+      t.symbol?.toUpperCase() === symbol.toUpperCase()
+    );
+    return {
+      balance: token ? parseFloat(token.balanceUsd || '0') : 0,
+      token: token || null
+    };
+  };
+
+  const brzData = getTokenData('BRZ');
+  const usdcData = getTokenData('USDC');
+  const [showBalance, setShowBalance] = useState(true);
+  const [headerHeight, setHeaderHeight] = useState(220);
+
+  // Ajustar altura do espaçador baseado no scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      setHeaderHeight(scrollY > 50 ? 70 : 220);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <>
-      <DashboardStats
-        totalBalance={initialTotalBalance}
-        transactionCount={initialTransactionCount}
-        tokenCount={initialTokenCount}
-        exchangeRate={exchangeRate}
-        currency={currency}
-        onCurrencyChange={handleCurrencyChange}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <PortfolioSection
-          tokens={initialPortfolio?.tokens || []}
-          formatTokenBalance={formatTokenBalance}
-          formatValue={formatValue}
+      {/* Layout Mobile */}
+      <div className="lg:hidden">
+        <DashboardMobileHeader
+          totalBalance={initialTotalBalance}
+          currency={currency}
+          onCurrencyChange={handleCurrencyChange}
+          exchangeRate={exchangeRate}
+          showBalance={showBalance}
+          onToggleBalance={setShowBalance}
         />
 
-        <QuickActions />
+        {/* Espaçador para compensar header fixo - altura dinâmica baseada no scroll */}
+        <div 
+          className="transition-all duration-300 lg:h-0" 
+          style={{ height: `${headerHeight}px` }}
+          id="dashboard-header-spacer" 
+        />
+
+        <DashboardMobileBalances
+          brzBalance={brzData.balance}
+          usdcBalance={usdcData.balance}
+          formatValue={formatValue}
+          showBalance={showBalance}
+          brzToken={brzData.token}
+          usdcToken={usdcData.token}
+        />
+
+        <DashboardMobileActions />
+
+        {/* Seções adicionais */}
+        <DashboardYieldsSection />
+        <DashboardPoolsSection pools={initialPools} />
+        <DashboardMarketCapSection tokens={initialTokens} />
       </div>
 
-      <RecentTransactions
-        transactions={initialHistory?.transactions || []}
-      />
+      {/* Layout Desktop */}
+      <div className="hidden lg:block space-y-4 sm:space-y-6 lg:space-y-8">
+        <DashboardStats
+          totalBalance={initialTotalBalance}
+          transactionCount={initialTransactionCount}
+          tokenCount={initialTokenCount}
+          exchangeRate={exchangeRate}
+          currency={currency}
+          onCurrencyChange={handleCurrencyChange}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <PortfolioSection
+            tokens={initialPortfolio?.tokens || []}
+            formatTokenBalance={formatTokenBalance}
+            formatValue={formatValue}
+          />
+
+          <QuickActions />
+        </div>
+
+        <RecentTransactions
+          transactions={initialHistory?.transactions || []}
+        />
+      </div>
     </>
   );
 }

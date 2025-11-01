@@ -6,6 +6,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth/auth";
 import { getWalletAddress, getPortfolio, getHistory, listSupportedTokens } from "@/lib/actions/dashboard";
+import { listPools } from "@/lib/actions/pools";
 import { AppLayout } from "@/components/layout/app-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
@@ -31,10 +32,11 @@ export default async function DashboardPage() {
   const accountAbstractionAddress = wallet?.accountAbstraction || user.accountAbstractionAddress;
 
   // Buscar dados no servidor usando accountAbstractionAddress
-  const [portfolio, history, tokens] = await Promise.all([
+  const [portfolio, history, tokens, poolsData] = await Promise.all([
     getPortfolio(accountAbstractionAddress || ''),
     getHistory(accountAbstractionAddress || '', { take: 10 }),
     listSupportedTokens({ page: 1, perPage: 50 }),
+    listPools().catch(() => ({ pools: [], total: 0 })),
   ]);
 
   // Calcular estatísticas
@@ -53,11 +55,15 @@ export default async function DashboardPage() {
       <AppLayout 
         title="Dashboard"
         description="Testing Notus API - Authentication, Transfers, Swaps, and Liquidity Pools"
+        showHeader={false}
       >
-        <div className="space-y-8">
-          <DashboardHeader 
-            userEmail={typeof user.email === 'string' ? user.email : user.email?.address}
-          />
+        <div className="space-y-0 sm:space-y-4 lg:space-y-8">
+          {/* Header Desktop - oculto no mobile */}
+          <div className="hidden lg:block">
+            <DashboardHeader 
+              userEmail={typeof user.email === 'string' ? user.email : user.email?.address}
+            />
+          </div>
 
           <DashboardClientWrapper
             initialTotalBalance={totalBalance}
@@ -66,6 +72,8 @@ export default async function DashboardPage() {
             initialTransactionCount={transactionCount}
             initialTokenCount={tokenCount}
             accountAbstractionAddress={accountAbstractionAddress || ''}
+            initialPools={poolsData?.pools || []}
+            initialTokens={tokens?.tokens || []}
           />
         </div>
       </AppLayout>

@@ -58,60 +58,89 @@ export function DashboardStats({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-      <div className="glass-card text-center">
-        <div className="w-12 h-12 bg-gradient-to-r from-yellow-500/80 to-yellow-600/80 rounded-xl mx-auto mb-4 flex items-center justify-center">
-          <TrendingUp className="h-6 w-6 text-slate-900" />
-        </div>
-        <div className="text-2xl font-bold text-white mb-1">
-          {portfolioLoading ? (
-            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-          ) : (
-            formatValue(totalBalance)
-          )}
-        </div>
-        <div className="text-slate-300 text-sm mb-1">Total na Carteira</div>
-        <div className="text-yellow-400 text-sm">
-          {portfolioLoading ? 'Carregando...' : formatValue(totalBalance)}
-        </div>
-        <div className="mt-2 text-xs text-slate-400">
-          ℹ️ Seu dinheiro está seguro e só você pode movimentar
-        </div>
-      </div>
-
-      <div className="glass-card text-center">
-        <div className="w-12 h-12 bg-gradient-to-r from-blue-500/80 to-blue-600/80 rounded-xl mx-auto mb-4 flex items-center justify-center">
-          <Activity className="h-6 w-6 text-white" />
-        </div>
-        <div className="text-2xl font-bold text-white mb-1">
-          {historyLoading ? (
-            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-          ) : (
-            transactionCount
-          )}
-        </div>
-        <div className="text-slate-300 text-sm mb-1">Transações</div>
-        <div className="text-blue-400 text-sm">
-          {historyLoading ? 'Carregando...' : `${transactionCount} realizadas`}
+      {/* Card Total na Carteira */}
+      <div className="glass-card text-center relative overflow-hidden group hover:shadow-2xl hover:shadow-yellow-500/10 transition-all duration-300">
+        {/* Gradiente decorativo de fundo */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-yellow-500/10 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        <div className="relative">
+          <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-yellow-500/30 group-hover:scale-110 transition-transform duration-300">
+            <TrendingUp className="h-7 w-7 text-slate-900" />
+          </div>
+          <div className="text-3xl sm:text-4xl font-bold text-white mb-2 bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent">
+            {portfolioLoading ? (
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-yellow-400" />
+            ) : (
+              formatValue(totalBalance)
+            )}
+          </div>
+          <div className="text-slate-300 text-sm font-medium mb-2">Total na Carteira</div>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-full">
+            <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
+            <span className="text-yellow-400 text-xs font-semibold">
+              {portfolioLoading ? 'Carregando...' : 'Ativo'}
+            </span>
+          </div>
+          <div className="mt-4 text-xs text-slate-400/80 flex items-center justify-center gap-1">
+            <span>🔒</span>
+            <span>Protegido e seguro</span>
+          </div>
         </div>
       </div>
 
-      <div className="glass-card text-center">
-        <div className="w-12 h-12 bg-gradient-to-r from-green-500/80 to-green-600/80 rounded-xl mx-auto mb-4 flex items-center justify-center">
-          <Zap className="h-6 w-6 text-white" />
-        </div>
-        <div className="text-2xl font-bold text-white mb-1">
-          {portfolioLoading ? (
-            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-          ) : (
-            tokenCount
-          )}
-        </div>
-        <div className="text-slate-300 text-sm mb-1">Tokens na Carteira</div>
-        <div className="text-green-400 text-sm">
-          {tokenCount} tokens
+      {/* Card Transações */}
+      <div className="glass-card text-center relative overflow-hidden group hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        <div className="relative">
+          <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform duration-300">
+            <Activity className="h-7 w-7 text-white" />
+          </div>
+          <div className="text-3xl sm:text-4xl font-bold text-white mb-2">
+            {historyLoading ? (
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-400" />
+            ) : (
+              transactionCount
+            )}
+          </div>
+          <div className="text-slate-300 text-sm font-medium mb-2">Transações</div>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full">
+            <span className="text-blue-400 text-xs font-semibold">
+              {historyLoading ? 'Carregando...' : `${transactionCount} realizadas`}
+            </span>
+          </div>
+          <div className="mt-4 text-xs text-slate-400/80">
+            Todas as operações registradas
+          </div>
         </div>
       </div>
 
+      {/* Card Tokens */}
+      <div className="glass-card text-center relative overflow-hidden group hover:shadow-2xl hover:shadow-green-500/10 transition-all duration-300">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-500/10 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        <div className="relative">
+          <div className="w-14 h-14 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-green-500/30 group-hover:scale-110 transition-transform duration-300">
+            <Zap className="h-7 w-7 text-white" />
+          </div>
+          <div className="text-3xl sm:text-4xl font-bold text-white mb-2">
+            {portfolioLoading ? (
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-green-400" />
+            ) : (
+              tokenCount
+            )}
+          </div>
+          <div className="text-slate-300 text-sm font-medium mb-2">Tokens na Carteira</div>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
+            <span className="text-green-400 text-xs font-semibold">
+              {tokenCount} {tokenCount === 1 ? 'token' : 'tokens'}
+            </span>
+          </div>
+          <div className="mt-4 text-xs text-slate-400/80">
+            Diversificação de ativos
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
