@@ -22,7 +22,7 @@ const config = {
   mfa: {
     noPromptOnMfaRequired: false,
   },
-  loginMethods: ['email', 'wallet'],
+  loginMethods: ['google'],
   legal: {
     termsAndConditionsUrl: 'https://notus.team/terms',
     privacyPolicyUrl: 'https://notus.team/privacy',
