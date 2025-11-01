@@ -25,21 +25,23 @@ export function CryptoHeader({ currency, onCurrencyToggle }: CryptoHeaderProps) 
           variant="ghost"
           size="icon"
           onClick={() => router.back()}
-          className="text-white hover:bg-slate-800/50"
+          className="text-white hover:bg-slate-800/50 -ml-2"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-6 w-6" />
         </Button>
 
         {/* Título */}
-        <h1 className="text-2xl font-bold text-white">Criptomoedas</h1>
+        <h1 className="text-2xl lg:text-3xl font-bold text-white flex-1 text-center">
+          Criptomoedas
+        </h1>
 
         {/* Botão de Moeda */}
         <button
           onClick={onCurrencyToggle}
-          className="w-10 h-10 rounded-full bg-white border-2 border-white/20 hover:border-white/40 flex items-center justify-center transition-all active:scale-95"
+          className="w-10 h-10 rounded-full bg-white border-2 border-white/20 hover:border-white/40 flex items-center justify-center transition-all active:scale-95 flex-shrink-0"
           title={`Alternar para ${currency === 'BRL' ? 'USD' : 'BRL'}`}
         >
-          <span className="text-slate-900 font-bold text-sm">
+          <span className="text-slate-900 font-bold text-base">
             {currency === 'BRL' ? 'R$' : '$'}
           </span>
         </button>
