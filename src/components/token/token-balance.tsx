@@ -5,6 +5,8 @@
 
 "use client";
 
+import { formatTokenBalance, formatCurrency as formatCurrencyUtil } from "@/lib/utils";
+
 interface TokenBalanceProps {
   token: any;
   showBalance: boolean;
@@ -19,23 +21,18 @@ export function TokenBalance({ token, showBalance, currency }: TokenBalanceProps
   const balanceUSD = token?.balanceUSD || token?.balanceUsd || '0';
   const decimals = token?.decimals || 18;
 
-  const formatCurrency = (value: number) => {
+  const formatCurrencyLocal = (value: number) => {
     if (!showBalance) return '••••';
-    return new Intl.NumberFormat(currency === 'BRL' ? 'pt-BR' : 'en-US', {
-      style: 'currency',
-      currency: currency === 'BRL' ? 'BRL' : 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
+    return formatCurrencyUtil(value, currency === 'BRL' ? 'BRL' : 'USD', currency === 'BRL' ? 'pt-BR' : 'en-US');
   };
 
-  const formatTokenBalance = (balance: string, decimals: number = 18) => {
-    if (!showBalance) return '••••';
-    const num = parseFloat(balance || '0') / Math.pow(10, decimals);
-    return new Intl.NumberFormat('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6,
-    }).format(num);
+  const formatTokenBalanceLocal = (balance: string, decimals: number = 18) => {
+    return formatTokenBalance(balance, decimals, {
+      showHidden: !showBalance,
+      formatLocale: 'pt-BR',
+      minDecimals: 2,
+      maxDecimals: 6,
+    });
   };
 
   return (
@@ -45,10 +42,10 @@ export function TokenBalance({ token, showBalance, currency }: TokenBalanceProps
         <div className="flex items-center justify-between">
           <div>
             <div className="text-2xl font-bold text-white">
-              {formatCurrency(parseFloat(balanceUSD))}
+              {formatCurrencyLocal(parseFloat(balanceUSD))}
             </div>
             <div className="text-slate-400 text-sm mt-1">
-              {formatTokenBalance(balance, decimals)} {symbol}
+              {formatTokenBalanceLocal(balance, decimals)} {symbol}
             </div>
           </div>
         </div>

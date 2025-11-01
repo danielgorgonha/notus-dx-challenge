@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { TokenDetailHeader } from "./token-detail-header";
 import { TokenInfo } from "./token-info";
 import { TokenPriceChart } from "./token-price-chart";
@@ -15,17 +16,20 @@ import { TokenBalance } from "./token-balance";
 import { TokenActionButtons } from "./token-action-buttons";
 import { TokenDetails } from "./token-details";
 import { TokenInfoModal } from "./token-info-modal";
+import { TokenFooterButtons } from "./token-footer-buttons";
 
 interface TokenDetailClientProps {
   token: any;
   tokenInfo: any;
   walletAddress: string;
+  mode?: 'portfolio' | 'crypto';
 }
 
 export function TokenDetailClient({
   token,
   tokenInfo,
   walletAddress,
+  mode = 'portfolio',
 }: TokenDetailClientProps) {
   const router = useRouter();
   const [showBalance, setShowBalance] = useState(true);
@@ -59,7 +63,10 @@ export function TokenDetailClient({
 
   return (
     <>
-      <div className="space-y-6 pb-20 lg:pb-6">
+      <div className={cn(
+        "space-y-6",
+        "pb-24 lg:pb-6"
+      )}>
         {/* Header */}
         <TokenDetailHeader
           onBack={() => router.back()}
@@ -90,11 +97,14 @@ export function TokenDetailClient({
         />
 
         {/* Botões de Ação */}
-        <TokenActionButtons token={tokenData} />
+        <TokenActionButtons token={tokenData} mode={mode} />
 
         {/* Detalhes do Token */}
         <TokenDetails token={tokenData} />
       </div>
+
+      {/* Botões de Rodapé (apenas para portfolio) */}
+      <TokenFooterButtons token={tokenData} mode={mode} />
 
       {/* Modal Informativo */}
       {isStablecoin && (

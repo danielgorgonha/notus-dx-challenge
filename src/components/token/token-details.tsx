@@ -16,9 +16,9 @@ export function TokenDetails({ token }: TokenDetailsProps) {
   const symbol = token?.symbol?.toUpperCase() || '';
   const address = token?.address || '';
   
-  // Dados reais da API
-  const network = token?.chain?.name?.toUpperCase() || 'POLYGON';
-  const chainId = token?.chain?.id || 137;
+  // Sempre usar Polygon (chainId: 137)
+  const network = 'POLYGON';
+  const chainId = 137;
   
   const allTimeHigh = symbol === 'BRZ' 
     ? { date: '29 Oct 2023, 20:35', price: '$9.99', change: '-98.14%' }
@@ -28,8 +28,21 @@ export function TokenDetails({ token }: TokenDetailsProps) {
     ? { date: '09 Jun 2023, 01:54', price: '$0.0055', change: '+3268.57%' }
     : { date: '11 Mar 2023, 05:02', price: '$0.877', change: '+13.91%' };
 
-  const volume24h = symbol === 'BRZ' ? '$ 179.9 K' : '$ 18.0 B';
-  const marketcap = symbol === 'BRZ' ? null : '$ 75.9 B';
+  // Usar dados reais da API
+  const volume24hValue = token?.volume24h || token?.volume24hUSD || token?.volume24hUsd || 0;
+  const marketCapValue = token?.marketCap || token?.marketCapUSD || token?.marketCapUsd || 0;
+  
+  const formatLargeNumber = (value: number) => {
+    if (value === 0) return null;
+    if (value >= 1e12) return `$ ${(value / 1e12).toFixed(1)} T`;
+    if (value >= 1e9) return `$ ${(value / 1e9).toFixed(1)} B`;
+    if (value >= 1e6) return `$ ${(value / 1e6).toFixed(1)} M`;
+    if (value >= 1e3) return `$ ${(value / 1e3).toFixed(1)} K`;
+    return `$ ${value.toFixed(2)}`;
+  };
+  
+  const volume24h = formatLargeNumber(volume24hValue);
+  const marketcap = formatLargeNumber(marketCapValue);
   const circulatingSupply = symbol === 'BRZ' ? null : '75.9 B';
   const totalSupply = symbol === 'BRZ' ? '9.0 M' : '75.9 B';
 

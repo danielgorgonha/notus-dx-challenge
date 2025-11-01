@@ -13,13 +13,22 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Formata valor monetário em BRL
+ * Formata valor monetário
+ * @param value - Valor numérico ou string
+ * @param currency - Código da moeda ('BRL' ou 'USD')
+ * @param locale - Localização ('pt-BR' ou 'en-US')
  */
-export function formatCurrency(value: number | string): string {
+export function formatCurrency(
+  value: number | string, 
+  currency: 'BRL' | 'USD' = 'BRL',
+  locale?: string
+): string {
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  return new Intl.NumberFormat('pt-BR', {
+  const localeValue = locale || (currency === 'BRL' ? 'pt-BR' : 'en-US');
+  
+  return new Intl.NumberFormat(localeValue, {
     style: 'currency',
-    currency: 'BRL'
+    currency: currency
   }).format(numValue);
 }
 
@@ -139,10 +148,37 @@ export function getExplorerUrl(address: string, chainId?: number): string | null
 
 /**
  * Formata balance de token considerando decimais
+ * @param balance - Balance em wei (string)
+ * @param decimals - Número de decimais do token (padrão: 18)
+ * @param options - Opções de formatação
  */
-export function formatTokenBalance(balance: string, decimals: number = 18): string {
+export function formatTokenBalance(
+  balance: string, 
+  decimals: number = 18,
+  options?: {
+    showHidden?: boolean; // Se true, retorna '••••' quando balance está oculto
+    formatLocale?: string; // 'pt-BR' ou 'en-US'
+    minDecimals?: number;
+    maxDecimals?: number;
+  }
+): string {
+  if (options?.showHidden) return '••••';
+  
+  if (!balance || balance === '0') return '0';
+  
   const num = parseFloat(balance) / Math.pow(10, decimals);
   if (num === 0) return '0';
+  
+  // Se especificados minDecimals/maxDecimals, usar Intl.NumberFormat
+  if (options?.minDecimals !== undefined || options?.maxDecimals !== undefined) {
+    const locale = options.formatLocale || 'pt-BR';
+    return new Intl.NumberFormat(locale, {
+      minimumFractionDigits: options.minDecimals ?? 2,
+      maximumFractionDigits: options.maxDecimals ?? 6,
+    }).format(num);
+  }
+  
+  // Formatação padrão baseada em valor
   if (num < 0.0001) return num.toFixed(8).replace(/\.?0+$/, '');
   if (num < 1) return num.toFixed(6).replace(/\.?0+$/, '');
   return num.toFixed(2).replace(/\.?0+$/, '');

@@ -16,9 +16,9 @@ interface TokenPriceChartProps {
 export function TokenPriceChart({ token, period, onPeriodChange }: TokenPriceChartProps) {
   const symbol = token?.symbol?.toUpperCase() || '';
   
-  // Usar preço real da API quando disponível
-  const priceUsd = token?.priceUsd || token?.priceUSD || '0';
-  const currentPriceNum = parseFloat(priceUsd);
+  // Usar preço real da API
+  const priceUsd = token?.priceUsd || token?.priceUSD || token?.price || '0';
+  const currentPriceNum = parseFloat(String(priceUsd));
   
   // Formatar preço
   const formatPrice = (price: number) => {
@@ -28,10 +28,15 @@ export function TokenPriceChart({ token, period, onPeriodChange }: TokenPriceCha
     return `$${price.toFixed(2)}`;
   };
   
-  // Calcular mudança (mockado por enquanto, pode vir da API no futuro)
+  // Usar mudança de preço real do CoinGecko (24h)
+  const priceChange24h = token?.priceChange24h || token?.change24h || 0;
+  const priceChangeNum = parseFloat(String(priceChange24h));
+  const priceChangeValue = (currentPriceNum * priceChangeNum) / 100;
+  const isPositive = priceChangeNum >= 0;
+  const sign = isPositive ? '+' : '';
+  
   const currentPrice = formatPrice(currentPriceNum);
-  const priceChange = symbol === 'BRZ' ? '+$0.00077 (+0.41%)' : symbol === 'USDC' ? '-$0.000104 (-0.01%)' : '$0.00 (0.00%)';
-  const isPositive = priceChange.includes('+');
+  const priceChange = `${sign}${formatPrice(Math.abs(priceChangeValue))} (${sign}${priceChangeNum.toFixed(2)}%)`;
 
   const periods: Array<'1D' | '7D' | '1M' | '3M' | '1A' | 'ALL'> = ['1D', '7D', '1M', '3M', '1A', 'ALL'];
 

@@ -123,7 +123,7 @@ export function PoolInformation({ pool, token0, token1 }: PoolInformationProps) 
               <div className="w-6 h-6 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
                 <span className="text-purple-400 font-bold text-xs">P</span>
               </div>
-              <span className="text-white font-semibold">{pool?.chain?.name || 'POLYGON'}</span>
+              <span className="text-white font-semibold">POLYGON</span>
             </div>
           </div>
 

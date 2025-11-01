@@ -13,6 +13,7 @@ import {
   Zap,
   Wallet,
   TrendingUp,
+  DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,8 +30,8 @@ const navigationItems = [
   },
   {
     name: "Cripto",
-    href: "/swap",
-    icon: ArrowRightLeft,
+    href: "/crypto",
+    icon: DollarSign,
   },
   {
     name: "Renda",

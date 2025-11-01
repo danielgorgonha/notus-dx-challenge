@@ -83,9 +83,9 @@ export function TransactionDetailModal({
                      transaction.metadata?.amount1USD || 
                      transaction.metadata?.token1ValueUSD;
   
-  // Rede: do objeto chain da transação
-  const chainId = transaction.chain?.id || transaction.metadata?.chainId || (transaction as any).chainId || 137;
-  const chainName = transaction.chain?.name || transaction.metadata?.chainName || 'POLYGON';
+  // Sempre usar Polygon (chainId: 137)
+  const chainId = 137;
+  const chainName = 'POLYGON';
   
   // Hash: do transactionHash.hash ou userOperationHash
   const txHashObj = (transaction as any).transactionHash;

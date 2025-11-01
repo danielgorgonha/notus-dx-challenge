@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +22,7 @@ import {
   Settings,
   ExternalLink
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSmartWallet } from "@/hooks/use-smart-wallet";
 import { useToast } from "@/hooks/use-toast";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -35,10 +35,12 @@ import { Copy, ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getPortfolio } from "@/lib/actions/dashboard";
 import { TokenSelector } from "@/components/ui/token-selector";
+import { SlippageModal } from "@/components/ui/slippage-modal";
 
 
-export default function SwapPage() {
+function SwapPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { wallet } = useSmartWallet();
   const { signMessage } = usePrivy();
   const toast = useToast();
@@ -46,6 +48,10 @@ export default function SwapPage() {
   const [currentStep, setCurrentStep] = useState<"form" | "preview" | "executing" | "success">("form");
   const [fromToken, setFromToken] = useState<any>(null);
   const [toToken, setToToken] = useState<any>(null);
+  
+  // Token inicial de query params (para "Comprar" ou "Vender")
+  const initialFromTokenSymbol = searchParams.get('fromToken');
+  const initialToTokenSymbol = searchParams.get('toToken');
 
   // Funções para seleção de tokens com validação
   const handleFromTokenSelect = useCallback((token: any) => {
@@ -75,9 +81,6 @@ export default function SwapPage() {
   const [transactionHash, setTransactionHash] = useState("");
   const [userOperationHash, setUserOperationHash] = useState("");
   const [showSlippageModal, setShowSlippageModal] = useState(false);
-  const [customSlippage, setCustomSlippage] = useState("");
-  const [showCustomInput, setShowCustomInput] = useState(false);
-  const [tempSlippage, setTempSlippage] = useState(0.5);
   const [isQuoteDetailsOpen, setIsQuoteDetailsOpen] = useState(false);
   const [isFromTokenDetailsOpen, setIsFromTokenDetailsOpen] = useState(false);
   const [isToTokenDetailsOpen, setIsToTokenDetailsOpen] = useState(false);
@@ -465,31 +468,9 @@ export default function SwapPage() {
     }
   };
 
-  const handleSlippageModalOpen = () => {
-    setTempSlippage(slippage);
-    setShowSlippageModal(true);
-    setShowCustomInput(false);
-    setCustomSlippage("");
-  };
-
-  const handleSlippageAccept = () => {
-    if (showCustomInput && customSlippage) {
-      const value = parseFloat(customSlippage);
-      if (!isNaN(value) && value >= 0.1 && value <= 50) {
-        setSlippage(value);
-      }
-    } else {
-      setSlippage(tempSlippage);
-    }
+  const handleSlippageAccept = (newSlippage: number) => {
+    setSlippage(newSlippage);
     setShowSlippageModal(false);
-    setShowCustomInput(false);
-    setCustomSlippage("");
-  };
-
-  const handleSlippageModalClose = () => {
-    setShowSlippageModal(false);
-    setShowCustomInput(false);
-    setCustomSlippage("");
   };
 
   // Funções de formatação
@@ -657,7 +638,7 @@ export default function SwapPage() {
           </p>
         </div>
         <Button
-          onClick={handleSlippageModalOpen}
+          onClick={() => setShowSlippageModal(true)}
           variant="outline"
           size="sm"
           className="border-slate-600/50 text-slate-300 hover:border-blue-500/70 hover:text-blue-400 hover:bg-blue-500/10 transition-all duration-200 backdrop-blur-sm bg-slate-800/30"
@@ -702,7 +683,7 @@ export default function SwapPage() {
               walletAddress={walletAddress}
               placeholder="Selecionar token"
               showBalance={false}
-              autoSelectSymbol="BRZ"
+              autoSelectSymbol={initialFromTokenSymbol || "BRZ"}
               compact={true}
             />
               </div>
@@ -800,7 +781,7 @@ export default function SwapPage() {
               walletAddress={walletAddress}
               placeholder="Selecionar token"
               showBalance={false}
-              autoSelectSymbol="USDC"
+              autoSelectSymbol={initialToTokenSymbol || "USDC"}
               compact={true}
             />
           </div>
@@ -1110,7 +1091,7 @@ export default function SwapPage() {
                 <span className="text-slate-400">Rede:</span>
                 <div className="flex items-center space-x-2">
                   <img src={fromToken.chain?.logo || ''} alt="Polygon" className="w-6 h-6" />
-                  <span className="text-white">{fromToken.chain?.name || 'Polygon'}</span>
+                  <span className="text-white">Polygon</span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
@@ -1159,7 +1140,7 @@ export default function SwapPage() {
                 <span className="text-slate-400">Rede:</span>
                 <div className="flex items-center space-x-2">
                   <img src={fromToken.chain?.logo} alt="Polygon" className="w-6 h-6" />
-                  <span className="text-white">{fromToken.chain?.name || 'Polygon'}</span>
+                  <span className="text-white">Polygon</span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
@@ -1327,79 +1308,6 @@ export default function SwapPage() {
     </div>
   );
 
-  const renderSlippageModal = () => (
-    showSlippageModal && (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-slate-800 rounded-xl w-full max-w-md p-6 space-y-6 mx-4 relative">
-          <button
-            onClick={handleSlippageModalClose}
-            className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          
-          <div className="text-center">
-            <h3 className="text-xl font-bold text-white mb-2">Tolerância a Slippage</h3>
-            <p className="text-slate-400 text-sm">
-              Sua transação será revertida se o preço mudar mais do que a porcentagem (%) de slippage selecionada.
-            </p>
-          </div>
-          
-          <div className="space-y-3">
-            <Button
-              onClick={() => setTempSlippage(0.1)}
-              variant={tempSlippage === 0.1 ? "default" : "outline"}
-              className={`w-full ${tempSlippage === 0.1 ? 'bg-blue-600 text-white' : 'bg-slate-700 border-slate-600 text-slate-300'}`}
-            >
-              0.1%
-            </Button>
-            <Button
-              onClick={() => setTempSlippage(0.5)}
-              variant={tempSlippage === 0.5 ? "default" : "outline"}
-              className={`w-full ${tempSlippage === 0.5 ? 'bg-blue-600 text-white' : 'bg-slate-700 border-slate-600 text-slate-300'}`}
-            >
-              0.5%
-            </Button>
-            {!showCustomInput ? (
-              <Button
-                onClick={() => setShowCustomInput(true)}
-                variant="outline"
-                className="w-full bg-slate-700 border-slate-600 text-slate-300"
-              >
-                Definir %
-              </Button>
-            ) : (
-              <div className="space-y-2">
-                <Input
-                  type="number"
-                  value={customSlippage}
-                  onChange={(e) => setCustomSlippage(e.target.value)}
-                  placeholder="Ex: 2.5"
-                  className="bg-slate-700 border-slate-600 text-white"
-                  min="0.1"
-                  max="50"
-                  step="0.1"
-                  autoFocus
-                />
-                <p className="text-slate-400 text-xs">
-                  Valor entre 0.1% e 50%
-                </p>
-              </div>
-            )}
-          </div>
-          
-          <Button
-            onClick={handleSlippageAccept}
-            className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-3 rounded-lg"
-          >
-            Aceitar
-          </Button>
-      </div>
-      </div>
-    )
-  );
 
   return (
     <ProtectedRoute>
@@ -1415,8 +1323,32 @@ export default function SwapPage() {
             {currentStep === "success" && renderSuccessStep()}
           </div>
         </div>
-        {renderSlippageModal()}
+        <SlippageModal
+          isOpen={showSlippageModal}
+          onClose={() => setShowSlippageModal(false)}
+          currentSlippage={slippage}
+          onAccept={handleSlippageAccept}
+        />
     </AppLayout>
     </ProtectedRoute>
+  );
+}
+
+export default function SwapPage() {
+  return (
+    <Suspense fallback={
+      <ProtectedRoute>
+        <AppLayout 
+          title="Conversão de criptomoedas"
+          description="Troque tokens instantaneamente"
+        >
+          <div className="flex justify-center items-center min-h-[400px]">
+            <Loader2 className="h-8 w-8 animate-spin text-yellow-400" />
+          </div>
+        </AppLayout>
+      </ProtectedRoute>
+    }>
+      <SwapPageContent />
+    </Suspense>
   );
 }
