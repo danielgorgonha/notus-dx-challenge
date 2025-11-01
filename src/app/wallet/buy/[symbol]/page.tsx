@@ -197,6 +197,13 @@ export default function BuyTokenPage() {
     );
   };
 
+  // Atualizar tempSlippage quando o modal abrir
+  useEffect(() => {
+    if (showSlippageModal) {
+      setTempSlippage(slippage);
+    }
+  }, [showSlippageModal, slippage]);
+
   // Calcular estimativa quando o valor muda
   useEffect(() => {
     if (currentStep === 'amount' && amount && isValidAmount && selectedToken && tokenData && walletAddress) {
