@@ -37,6 +37,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           queries: {
             staleTime: 60 * 1000, // 1 minute
             retry: 1,
+            refetchOnWindowFocus: false, // Desabilitar refetch automático no focus
+            refetchOnMount: false, // Desabilitar refetch automático no mount
+            refetchOnReconnect: false, // Desabilitar refetch automático na reconexão
           },
         },
       })

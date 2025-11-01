@@ -35,7 +35,7 @@ const navigationItems = [
   },
   {
     name: "Renda",
-    href: "/pools",
+    href: "/income",
     icon: TrendingUp,
   },
   {
