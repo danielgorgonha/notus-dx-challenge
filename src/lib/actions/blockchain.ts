@@ -150,13 +150,14 @@ export async function listTokensByChain({
   orderDir?: 'asc' | 'desc';
 }): Promise<TokensResponse> {
   try {
-    const searchParams: Record<string, string | number | boolean> = {
-      filterByChainId: chainId, 
-      page, 
-      perPage,
-      filterWhitelist,
-      orderBy,
-      orderDir
+    // Construir parâmetros conforme a API Notus espera
+    const searchParams: Record<string, string | number> = {
+      filterByChainId: String(chainId), 
+      page: String(page), 
+      perPage: String(perPage),
+      filterWhitelist: String(filterWhitelist),
+      orderBy: String(orderBy),
+      orderDir: String(orderDir)
     };
 
     // Adicionar projectId apenas se estiver definido

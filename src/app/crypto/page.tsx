@@ -21,9 +21,10 @@ export default async function CryptoPage() {
   // Buscar lista de tokens ordenados por marketCap
   let tokensData;
   try {
+    // A API Notus tem limite máximo de 100 tokens por página
     tokensData = await listTokens({
       page: 1,
-      perPage: 200, // Buscar mais tokens para ter uma lista completa
+      perPage: 100, // Máximo permitido pela API
       orderBy: 'marketCap',
       orderDir: 'desc',
       filterWhitelist: false,
