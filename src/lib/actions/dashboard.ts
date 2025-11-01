@@ -25,7 +25,8 @@ export async function getWalletAddress(params: { externallyOwnedAccount: string 
     return { wallet };
   } catch (error) {
     console.error('Error fetching wallet address:', error);
-    throw error;
+    // Retornar null em vez de lançar erro para permitir fallback no cliente
+    return { wallet: null };
   }
 }
 
@@ -34,11 +35,13 @@ export async function getWalletAddress(params: { externallyOwnedAccount: string 
  */
 export async function getPortfolio(walletAddress: string) {
   try {
+    if (!walletAddress) return null;
     const useCase = new GetPortfolioUseCase(walletService);
     return await useCase.execute({ walletAddress });
   } catch (error) {
     console.error('Error fetching portfolio:', error);
-    throw error;
+    // Retornar null em vez de lançar erro para permitir fallback no cliente
+    return null;
   }
 }
 
@@ -47,6 +50,7 @@ export async function getPortfolio(walletAddress: string) {
  */
 export async function getHistory(walletAddress: string, params?: { take?: number }) {
   try {
+    if (!walletAddress) return null;
     const useCase = new GetHistoryUseCase(walletService);
     return await useCase.execute({
       walletAddress,
@@ -54,7 +58,8 @@ export async function getHistory(walletAddress: string, params?: { take?: number
     });
   } catch (error) {
     console.error('Error fetching history:', error);
-    throw error;
+    // Retornar null em vez de lançar erro para permitir fallback no cliente
+    return null;
   }
 }
 
@@ -94,7 +99,8 @@ export async function listSupportedTokens({
     return await listTokens({ page, perPage });
   } catch (error) {
     console.error('Error listing tokens:', error);
-    throw error;
+    // Retornar estrutura vazia em vez de lançar erro
+    return { tokens: [], total: 0 };
   }
 }
 

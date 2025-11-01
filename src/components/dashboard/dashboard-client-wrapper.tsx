@@ -53,44 +53,90 @@ export function DashboardClientWrapper({
   const needsClientFetch = !accountAbstractionAddress && ready && authenticated && user?.wallet?.address;
   
   // Buscar wallet address no cliente se necessário
-  const { data: walletData } = useQuery({
+  const { data: walletData, isLoading: isLoadingWallet } = useQuery({
     queryKey: ['wallet-address', user?.wallet?.address],
     queryFn: async () => {
       if (!user?.wallet?.address) return null;
-      const data = await getWalletAddress({ externallyOwnedAccount: user.wallet.address });
-      return data.wallet;
+      try {
+        const data = await getWalletAddress({ externallyOwnedAccount: user.wallet.address });
+        return data?.wallet || null;
+      } catch (error) {
+        console.error('Error fetching wallet address in client:', error);
+        return null;
+      }
     },
     enabled: needsClientFetch && !!user?.wallet?.address,
+    retry: 1,
+    retryDelay: 1000,
   });
   
   const finalAccountAddress = accountAbstractionAddress || walletData?.accountAbstraction || '';
+  const hasFinalAddress = !!finalAccountAddress && (!needsClientFetch || !isLoadingWallet);
   
   // Buscar portfolio no cliente se necessário
   const { data: portfolioData } = useQuery({
     queryKey: ['portfolio', finalAccountAddress],
-    queryFn: () => getPortfolio(finalAccountAddress),
-    enabled: needsClientFetch && !!finalAccountAddress,
+    queryFn: async () => {
+      if (!finalAccountAddress) return null;
+      try {
+        return await getPortfolio(finalAccountAddress);
+      } catch (error) {
+        console.error('Error fetching portfolio in client:', error);
+        return null;
+      }
+    },
+    enabled: hasFinalAddress,
+    retry: 1,
+    retryDelay: 1000,
   });
   
   // Buscar history no cliente se necessário
   const { data: historyData } = useQuery({
     queryKey: ['history', finalAccountAddress],
-    queryFn: () => getHistory(finalAccountAddress, { take: 10 }),
-    enabled: needsClientFetch && !!finalAccountAddress,
+    queryFn: async () => {
+      if (!finalAccountAddress) return null;
+      try {
+        return await getHistory(finalAccountAddress, { take: 10 });
+      } catch (error) {
+        console.error('Error fetching history in client:', error);
+        return null;
+      }
+    },
+    enabled: hasFinalAddress,
+    retry: 1,
+    retryDelay: 1000,
   });
   
   // Buscar tokens no cliente se necessário
   const { data: tokensData } = useQuery({
     queryKey: ['supported-tokens'],
-    queryFn: () => listSupportedTokens({ page: 1, perPage: 50 }),
+    queryFn: async () => {
+      try {
+        return await listSupportedTokens({ page: 1, perPage: 50 });
+      } catch (error) {
+        console.error('Error fetching tokens in client:', error);
+        return { tokens: [], total: 0 };
+      }
+    },
     enabled: needsClientFetch && (!initialTokens || initialTokens.length === 0),
+    retry: 1,
+    retryDelay: 1000,
   });
   
   // Buscar pools no cliente se necessário
   const { data: poolsData } = useQuery({
     queryKey: ['pools'],
-    queryFn: () => listPools(),
+    queryFn: async () => {
+      try {
+        return await listPools();
+      } catch (error) {
+        console.error('Error fetching pools in client:', error);
+        return { pools: [], total: 0 };
+      }
+    },
     enabled: needsClientFetch && (!initialPools || initialPools.length === 0),
+    retry: 1,
+    retryDelay: 1000,
   });
   
   // Usar dados do cliente se disponíveis, senão usar dados iniciais
